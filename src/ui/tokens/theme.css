@@ -1,0 +1,65 @@
+@import "tailwindcss";
+
+@theme {
+  --color-void: #08090a;
+  --color-surface: #101214;
+  --color-raised: #1a1d21;
+  --color-line: #2a2f35;
+  --color-line-soft: #1c2126;
+
+  --color-solar: #10b981;
+  --color-solar-lift: #34d399;
+  --color-grid: #f59e0b;
+  --color-batt: #60a5fa;
+  --color-alert: #f87171;
+
+  --color-ink: #f4f5f6;
+  --color-ink-dim: #8a9299;
+  --color-ink-faint: #565d64;
+
+  --font-sans: "Geist", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "Geist Mono", ui-monospace, monospace;
+}
+
+@layer base {
+  html {
+    color-scheme: dark;
+  }
+
+  body {
+    margin: 0;
+    background-color: var(--color-void);
+    color: var(--color-ink);
+    font-family: var(--font-sans);
+    font-weight: 400;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* Tailwind v4's preflight resets buttons to cursor: default. Every clickable
+     control should read as clickable. */
+  button:not(:disabled),
+  [role="button"],
+  select,
+  summary,
+  label[for] {
+    cursor: pointer;
+  }
+
+  /* Numbers must not reflow when a poll lands. */
+  .tnum {
+    font-family: var(--font-mono);
+    font-variant-numeric: tabular-nums;
+    font-feature-settings: "tnum";
+  }
+}
+
+@layer utilities {
+  .grain {
+    background-image: radial-gradient(
+      circle at 1px 1px,
+      rgb(255 255 255 / 0.022) 1px,
+      transparent 0
+    );
+    background-size: 4px 4px;
+  }
+}

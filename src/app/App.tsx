@@ -1,0 +1,405 @@
+import { useMemo, useState } from "react";
+import { summarizeDay } from "@core/energy/services/summarize-day";
+import type { SystemTopology } from "@core/energy/model/power";
+import { ApiError } from "@/api/client";
+import {
+  useBillingSummary,
+  useHealth,
+  useSnapshot,
+  useToday,
+  useTopology,
+} from "@/api/queries";
+import { Card, Stat } from "@/ui/primitives/Card";
+import { EnergyFlow } from "@/ui/charts/EnergyFlow";
+import { RadialGauge } from "@/ui/charts/RadialGauge";
+import { PowerGauge } from "@/ui/charts/PowerGauge";
+import { StringHealth } from "@/ui/charts/StringHealth";
+import { EnergyAnalysis } from "@/features/analysis/EnergyAnalysis";
+import { WeatherCard } from "@/features/weather/WeatherCard";
+import { ImpactCard } from "@/features/impact/ImpactCard";
+import { BillHistory } from "@/features/bolsa/BillHistory";
+import { BolsaPanel } from "@/features/bolsa/BolsaPanel";
+import { ReadingsForm } from "@/features/readings/ReadingsForm";
+import { InverterFleet } from "@/features/inverters/InverterFleet";
+import { useSunWindow } from "@/features/sun/useSunWindow";
+
+/**
+ * The dashboard composes itself from the DISCOVERED topology. Nothing assumes a
+ * battery or a meter, because both are genuinely optional on a residential
+ * SolaX install and half the metrics die without grid metering.
+ *
+ * Four views: Hoy (live), Historia (the past), CFE (the bill side, which SolaX
+ * cannot see) and Sistema (hardware health).
+ */
+
+const MIN_SOC = 15;
+const MAX_SOC = 97;
+
+type Tab = "hoy" | "cfe" | "sistema";
+
+const TABS: { id: Tab; label: string }[] = [
+  { id: "hoy", label: "Hoy" },
+  { id: "cfe", label: "CFE" },
+  { id: "sistema", label: "Sistema" },
+];
+
+function Nav({ tab, onChange }: { tab: Tab; onChange: (tab: Tab) => void }) {
+  return (
+    <nav className="flex gap-1 rounded-lg border border-line/60 bg-surface/80 p-1">
+      {TABS.map((item) => (
+        <button
+          key={item.id}
+          type="button"
+          aria-current={tab === item.id ? "page" : undefined}
+          onClick={() => onChange(item.id)}
+          className={`rounded-md px-3.5 py-1.5 text-[13px] transition-colors ${
+            tab === item.id ? "bg-raised text-ink" : "text-ink-dim hover:bg-raised/50 hover:text-ink"
+          }`}
+        >
+          {item.label}
+        </button>
+      ))}
+    </nav>
+  );
+}
+
+function Skeleton({ label }: { label: string }) {
+  return (
+    <div className="flex min-h-[120px] items-center justify-center rounded-2xl border border-line/50 bg-surface/60">
+      <span className="animate-pulse text-[13px] text-ink-faint">{label}</span>
+    </div>
+  );
+}
+
+/**
+ * Turns a failure into something actionable. A credential or configuration
+ * problem needs a different response from a spent quota, so they are not
+ * collapsed into one "something went wrong".
+ */
+function ErrorPanel({ error }: { error: Error }) {
+  const api = error instanceof ApiError ? error : null;
+
+  let hint: string | null = null;
+  if (api?.isBudgetRefusal) {
+    hint =
+      "El servidor frenó la llamada para proteger la cuota diaria de SolaX. " +
+      "Se reintenta solo; no hace falta recargar.";
+  } else if (api?.solaxCode === 10401 || api?.solaxCode === 10402) {
+    hint = "Revisa SOLAX_CLIENT_ID y SOLAX_CLIENT_SECRET en el .env.";
+  } else if (api?.solaxCode === 10403) {
+    hint = "Ese endpoint no está en el paquete de servicios API de tu cuenta del Developer Portal.";
+  } else if (api?.solaxCode === 10405) {
+    hint = "Se agotó la cuota diaria de llamadas. Se restablece mañana.";
+  } else if (api?.status === 502) {
+    hint = "SolaX respondió mal. Suele ser temporal.";
+  } else if (!api) {
+    hint = "¿Está corriendo el servidor? `pnpm dev:server` en otra terminal.";
+  }
+
+  return (
+    <div className="rounded-2xl border border-alert/30 bg-alert/5 px-5 py-4">
+      <p className="text-[13px] font-medium text-alert">No se pudieron cargar los datos</p>
+      <p className="mt-1.5 text-[12.5px] text-ink-dim">{error.message}</p>
+      {hint && <p className="mt-2 text-[12.5px] text-ink-faint">{hint}</p>}
+    </div>
+  );
+}
+
+function MeteringNotice({ topology }: { topology: SystemTopology }) {
+  if (topology.hasGridMetering) return null;
+  return (
+    <div className="rounded-lg border border-grid/25 bg-grid/5 px-4 py-3 text-[12.5px] leading-relaxed text-ink-dim">
+      <span className="text-grid">Sin medidor ni pinza CT.</span> Consumo de la casa, importado
+      y exportado no se miden en vivo. La generación y los microinversores sí son reales, y la
+      parte de red sale de tus lecturas en la pestaña CFE.
+    </div>
+  );
+}
+
+function SunIcon({ color, rays }: { color: string; rays: boolean }) {
+  return (
+    <svg width="12" height="12" viewBox="-8 -8 16 16" aria-hidden="true">
+      <path
+        d={rays ? "M -7 5 L 7 5 M 0 -6 L 0 -3 M -4.5 -2 L -2.8 -0.6 M 4.5 -2 L 2.8 -0.6" : "M -7 5 L 7 5 M 0 -6 L 0 -3"}
+        stroke={color}
+        strokeWidth="1.3"
+        strokeLinecap="round"
+        fill="none"
+      />
+      <path d="M -3.4 5 A 3.4 3.4 0 0 1 3.4 5" fill={color} />
+    </svg>
+  );
+}
+
+export function App() {
+  const [tab, setTab] = useState<Tab>("hoy");
+
+  const topologyQuery = useTopology();
+  const snapshotQuery = useSnapshot();
+  const todayQuery = useToday(5);
+  const billingQuery = useBillingSummary();
+  const health = useHealth().data;
+
+  const topology = topologyQuery.data;
+  const snapshot = snapshotQuery.data;
+  const today = todayQuery.data;
+  const sun = useSunWindow(topology);
+
+  /**
+   * One line describing the inverter fleet. With a microinverter array a
+   * single status would hide a unit that is down — the count of healthy units
+   * and the hottest temperature are what matter.
+   */
+  const fleetSummary = useMemo(() => {
+    const units = snapshot?.inverters ?? [];
+    if (units.length === 0) return "";
+    const temps = units.map((u) => u.temperatureC).filter((t): t is number => t !== null);
+    const hottest = temps.length > 0 ? Math.max(...temps) : null;
+    if (units.length === 1) {
+      return ` · ${units[0]?.status ?? ""}${hottest === null ? "" : ` · ${hottest} °C`}`;
+    }
+    const normal = units.filter((u) => u.status === "Normal").length;
+    const healthLine =
+      normal === units.length ? `${units.length} inversores OK` : `${normal}/${units.length} inversores OK`;
+    return ` · ${healthLine}${hottest === null ? "" : ` · máx ${hottest} °C`}`;
+  }, [snapshot?.inverters]);
+
+  const summary = useMemo(() => {
+    if (!today) return null;
+    return summarizeDay(today.samples, {
+      stepMinutes: today.interval,
+      pvCapacityKwp: topology?.pvCapacityKwp ?? null,
+    });
+  }, [today, topology?.pvCapacityKwp]);
+
+  if (topologyQuery.isError) {
+    return (
+      <div className="min-h-screen bg-void p-6">
+        <div className="mx-auto max-w-[900px] pt-10">
+          <ErrorPanel error={topologyQuery.error} />
+        </div>
+      </div>
+    );
+  }
+
+  const gaugeCaption = sun
+    ? sun.isDaylight
+      ? `sol arriba · anochece ${sun.sunset}`
+      : `de noche · amanece ${sun.sunrise}`
+    : undefined;
+
+  return (
+    <div className="min-h-screen bg-void">
+      <header className="sticky top-0 z-10 border-b border-line/50 bg-void/85 backdrop-blur-xl">
+        <div className="mx-auto flex max-w-[1440px] flex-wrap items-center justify-between gap-4 px-6 py-4">
+          <div className="flex items-center gap-4">
+            <div className="flex h-9 w-9 items-center justify-center rounded-lg border border-solar/25 bg-solar/10">
+              <span className="h-2.5 w-2.5 rounded-full bg-solar" />
+            </div>
+            <div>
+              <h1 className="text-[15px] font-medium text-ink">{topology?.plantName ?? "Cargando…"}</h1>
+              <p className="tnum mt-0.5 text-[12px] text-ink-faint">
+                {topology?.pvCapacityKwp ? `${topology.pvCapacityKwp} kWp` : "— kWp"}
+                {topology?.batteryCapacityKwh ? ` · ${topology.batteryCapacityKwh} kWh` : ""}
+                {fleetSummary}
+              </p>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-4">
+            {sun && (
+              <span className="hidden items-center gap-3 text-[12px] text-ink-faint md:flex">
+                <span className="flex items-center gap-1.5">
+                  <SunIcon color="var(--color-grid)" rays />
+                  <span className="tnum">{sun.sunrise}</span>
+                </span>
+                <span className="flex items-center gap-1.5">
+                  <SunIcon color="var(--color-ink-faint)" rays={false} />
+                  <span className="tnum">{sun.sunset}</span>
+                </span>
+              </span>
+            )}
+            {snapshot && (
+              <span
+                className={`flex items-center gap-2 rounded-full border px-3 py-1 text-[12px] ${
+                  snapshot.stale ? "border-grid/25 bg-grid/8 text-grid" : "border-solar/25 bg-solar/8 text-solar"
+                }`}
+              >
+                <span className="relative flex h-1.5 w-1.5">
+                  {!snapshot.stale && (
+                    <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-solar opacity-70" />
+                  )}
+                  <span className={`relative inline-flex h-1.5 w-1.5 rounded-full ${snapshot.stale ? "bg-grid" : "bg-solar"}`} />
+                </span>
+                {snapshot.stale ? "Datos en caché" : "En línea"}
+                <span className="tnum">
+                  {snapshot.power.at.toLocaleTimeString("es-MX", { hour: "2-digit", minute: "2-digit" })}
+                </span>
+              </span>
+            )}
+            <Nav tab={tab} onChange={setTab} />
+          </div>
+        </div>
+      </header>
+
+      <main className="mx-auto max-w-[1440px] space-y-5 px-6 py-6">
+        {snapshotQuery.isError && <ErrorPanel error={snapshotQuery.error} />}
+
+        {tab === "hoy" && (
+          <>
+            {topology && <MeteringNotice topology={topology} />}
+
+            <div className="grid gap-5 lg:grid-cols-[330px_minmax(0,1fr)]">
+              <div className="space-y-5">
+                <Card title="Potencia solar">
+                  {snapshot ? (
+                    <PowerGauge
+                      watts={snapshot.power.pv}
+                      capacityKwp={topology?.pvCapacityKwp ?? null}
+                      {...(gaugeCaption ? { caption: gaugeCaption } : {})}
+                    />
+                  ) : (
+                    <Skeleton label="Leyendo los inversores…" />
+                  )}
+                </Card>
+
+                {/* The informative cards fill the column under the gauge. */}
+                {summary && (
+                  <div className="grid grid-cols-2 gap-3">
+                    <Stat label="Generado hoy" value={summary.pvKwh.toFixed(1)} unit="kWh" tone="solar"
+                      detail={`pico ${summary.peakPvKw} kW`} />
+                    <Stat label="Rendimiento"
+                      value={summary.specificYield === null ? "—" : summary.specificYield.toFixed(2)}
+                      unit={summary.specificYield === null ? undefined : "kWh/kWp"}
+                      detail="horas sol equiv." tone="batt" />
+                    <Stat label="CO₂ evitado" value={summary.co2AvoidedKg.toFixed(1)} unit="kg" tone="solar"
+                      detail="hoy" />
+                    {summary.loadKwh !== null ? (
+                      <Stat label="Autosuficiencia"
+                        value={summary.selfSufficiency === null ? "—" : summary.selfSufficiency.toFixed(0)}
+                        unit="%" detail={`${summary.loadKwh.toFixed(1)} kWh consumidos`} tone="solar" />
+                    ) : (
+                      <Stat label="Consumo en vivo" value="—" detail="con el Shelly" />
+                    )}
+                  </div>
+                )}
+
+                {topology?.hasBattery && snapshot?.battery && (
+                  <Card title="Batería">
+                    <RadialGauge
+                      soc={snapshot.battery.soc}
+                      capacityKwh={snapshot.battery.capacityKwh}
+                      minSoc={MIN_SOC}
+                      maxSoc={MAX_SOC}
+                      flowWatts={snapshot.battery.power}
+                    />
+                  </Card>
+                )}
+              </div>
+
+              <Card title="Flujo en tiempo real" hint="Las líneas corren más rápido donde pasan más watts">
+                {snapshot ? (
+                  <EnergyFlow
+                    snapshot={snapshot.power}
+                    hasBattery={topology?.hasBattery ?? false}
+                    hasGridMetering={topology?.hasGridMetering ?? false}
+                    {...(sun ? { isDaylight: sun.isDaylight, sunrise: sun.sunrise } : {})}
+                  />
+                ) : (
+                  <Skeleton label="Leyendo el inversor…" />
+                )}
+              </Card>
+            </div>
+
+            {/* One chart with Día / Mes / Año / Todo — no separate history tab. */}
+            <EnergyAnalysis installedAt={topology?.installedAt ?? null} />
+
+            <div className="grid gap-5 lg:grid-cols-2">
+              <WeatherCard
+                latitude={topology?.latitude ?? null}
+                longitude={topology?.longitude ?? null}
+                pvCapacityKwp={topology?.pvCapacityKwp ?? null}
+                sun={sun}
+              />
+              <ImpactCard />
+            </div>
+          </>
+        )}
+
+        {tab === "cfe" && (
+          <>
+            <BolsaPanel query={billingQuery} />
+            <BillHistory />
+            <ReadingsForm />
+          </>
+        )}
+
+        {tab === "sistema" && (
+          <div className="grid gap-5 lg:grid-cols-2">
+            <Card
+              title={snapshot && snapshot.inverters.length > 1 ? `Microinversores · ${snapshot.inverters.length}` : "Inversor"}
+              hint="Cada unidad con sus propios paneles"
+            >
+              {snapshot ? (
+                <InverterFleet inverters={snapshot.inverters} strings={snapshot.strings} />
+              ) : (
+                <Skeleton label="Leyendo inversores…" />
+              )}
+            </Card>
+
+            <div className="space-y-5">
+              <Card title="Alarmas activas">
+                {snapshot && snapshot.alarms.length > 0 ? (
+                  <ul className="space-y-2.5">
+                    {snapshot.alarms.map((alarm, i) => (
+                      <li key={`${alarm.errorCode}-${i}`} className="rounded-lg border border-alert/25 bg-alert/5 px-3.5 py-2.5 text-[12.5px]">
+                        <p className="text-alert">{alarm.alarmName ?? alarm.errorCode}</p>
+                        <p className="tnum mt-1 text-ink-faint">
+                          {alarm.deviceSn} · desde {alarm.alarmStartTime}
+                        </p>
+                        {alarm.handleSuggestion && alarm.handleSuggestion !== "/" && (
+                          <p className="mt-1 text-ink-dim">{alarm.handleSuggestion}</p>
+                        )}
+                      </li>
+                    ))}
+                  </ul>
+                ) : (
+                  <p className="py-4 text-center text-[13px] text-ink-faint">Sin alarmas. Todo en orden.</p>
+                )}
+              </Card>
+
+              <Card title="Conexión con SolaX">
+                {health ? (
+                  <dl className="tnum grid grid-cols-2 gap-y-2 text-[12.5px]">
+                    <dt className="text-ink-faint">Token</dt>
+                    <dd className="text-right text-ink">
+                      {health.token.hasToken && health.token.expiresInMs !== null
+                        ? `vence en ${Math.round(health.token.expiresInMs / 86_400_000)} días`
+                        : "sin token aún"}
+                    </dd>
+                    <dt className="text-ink-faint">Llamadas hoy</dt>
+                    <dd className="text-right text-ink">
+                      {health.budget.perDayUsed} / {health.budget.perDayLimit.toLocaleString("es-MX")}
+                    </dd>
+                    <dt className="text-ink-faint">Último minuto</dt>
+                    <dd className="text-right text-ink">
+                      {health.budget.perMinuteUsed} / {health.budget.perMinuteLimit}
+                    </dd>
+                  </dl>
+                ) : (
+                  <Skeleton label="Consultando…" />
+                )}
+              </Card>
+            </div>
+
+            {snapshot && snapshot.strings.length > 0 && (
+              <Card title="Paneles" hint="Cada panel comparado contra el promedio del arreglo">
+                <StringHealth strings={snapshot.strings} />
+              </Card>
+            )}
+          </div>
+        )}
+      </main>
+    </div>
+  );
+}
