@@ -32,6 +32,9 @@ import { useSunWindow } from "@/features/sun/useSunWindow";
  * cannot see) and Sistema (hardware health).
  */
 
+/** Stat cards that stretch to their grid cell: label on top, detail at the foot. */
+const FILL = "flex flex-col justify-between";
+
 const MIN_SOC = 15;
 const MAX_SOC = 97;
 
@@ -250,7 +253,9 @@ export function App() {
             {topology && <MeteringNotice topology={topology} />}
 
             <div className="grid gap-5 lg:grid-cols-[330px_minmax(0,1fr)]">
-              <div className="space-y-5">
+              {/* Flex column stretched to the row: the stat grid takes whatever
+                  height the flow diagram leaves, so there is no dead space. */}
+              <div className="flex flex-col gap-5">
                 <Card title="Potencia solar">
                   {snapshot ? (
                     <PowerGauge
@@ -265,21 +270,21 @@ export function App() {
 
                 {/* The informative cards fill the column under the gauge. */}
                 {summary && (
-                  <div className="grid grid-cols-2 gap-3">
-                    <Stat label="Generado hoy" value={summary.pvKwh.toFixed(1)} unit="kWh" tone="solar"
+                  <div className="grid flex-1 auto-rows-fr grid-cols-2 gap-3">
+                    <Stat className={FILL} label="Generado hoy" value={summary.pvKwh.toFixed(1)} unit="kWh" tone="solar"
                       detail={`pico ${summary.peakPvKw} kW`} />
-                    <Stat label="Rendimiento"
+                    <Stat className={FILL} label="Rendimiento"
                       value={summary.specificYield === null ? "—" : summary.specificYield.toFixed(2)}
                       unit={summary.specificYield === null ? undefined : "kWh/kWp"}
                       detail="horas sol equiv." tone="batt" />
-                    <Stat label="CO₂ evitado" value={summary.co2AvoidedKg.toFixed(1)} unit="kg" tone="solar"
+                    <Stat className={FILL} label="CO₂ evitado" value={summary.co2AvoidedKg.toFixed(1)} unit="kg" tone="solar"
                       detail="hoy" />
                     {summary.loadKwh !== null ? (
-                      <Stat label="Autosuficiencia"
+                      <Stat className={FILL} label="Autosuficiencia"
                         value={summary.selfSufficiency === null ? "—" : summary.selfSufficiency.toFixed(0)}
                         unit="%" detail={`${summary.loadKwh.toFixed(1)} kWh consumidos`} tone="solar" />
                     ) : (
-                      <Stat label="Consumo en vivo" value="—" detail="con el Shelly" />
+                      <Stat className={FILL} label="Consumo en vivo" value="—" detail="con el Shelly" />
                     )}
                   </div>
                 )}
@@ -328,9 +333,10 @@ export function App() {
 
         {tab === "cfe" && (
           <>
+            {/* Input → result → history. */}
+            <ReadingsForm />
             <BolsaPanel query={billingQuery} />
             <BillHistory />
-            <ReadingsForm />
           </>
         )}
 

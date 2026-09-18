@@ -37,6 +37,7 @@ interface StatProps {
   unit?: string;
   detail?: string;
   tone?: "solar" | "grid" | "batt" | "plain";
+  className?: string;
 }
 
 const TONE: Record<NonNullable<StatProps["tone"]>, string> = {
@@ -46,9 +47,9 @@ const TONE: Record<NonNullable<StatProps["tone"]>, string> = {
   plain: "text-ink",
 };
 
-export function Stat({ label, value, unit, detail, tone = "plain" }: StatProps) {
+export function Stat({ label, value, unit, detail, tone = "plain", className = "" }: StatProps) {
   return (
-    <div className="rounded-xl border border-line/50 bg-raised/60 px-4 py-3.5">
+    <div className={`rounded-xl border border-line/50 bg-raised/60 px-4 py-3.5 ${className}`}>
       <p className="text-[11px] font-medium tracking-[0.08em] text-ink-faint uppercase">
         {label}
       </p>

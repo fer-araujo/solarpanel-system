@@ -12,6 +12,7 @@ import { Card } from "@/ui/primitives/Card";
  */
 
 const CONFIDENCE_LABEL: Record<string, string> = {
+  none: "esperando datos",
   provisional: "provisional · 1 bimestre",
   fair: "razonable · 3+ bimestres",
   good: "sólido · 6+ bimestres",
