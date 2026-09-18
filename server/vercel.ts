@@ -8,7 +8,11 @@ import { loadEnv } from "./env";
  * the static client itself.
  *
  * Built once per instance and reused across warm invocations.
+ *
+ * Always production here, so auth fails closed without depending on an
+ * environment variable. Setting NODE_ENV in the Vercel dashboard instead would
+ * also make the install skip devDependencies and break the build.
  */
-const app = createServer(loadEnv());
+const app = createServer(loadEnv({ ...process.env, NODE_ENV: "production" }));
 
 export default getRequestListener(app.fetch);

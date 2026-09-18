@@ -149,7 +149,7 @@ pnpm dev               # SPA on :5173, proxies /api
 | `AUTH_ALLOWED_EMAILS` | | Comma-separated emails allowed in; empty allows every user of the project |
 | `UPSTASH_REDIS_REST_URL` | prod | Upstash REST URL |
 | `UPSTASH_REDIS_REST_TOKEN` | prod | Upstash REST token |
-| `NODE_ENV` | | `production` on the deployed app |
+| `NODE_ENV` | | Leave unset on Vercel: the function forces production itself |
 
 Locally, without the Supabase variables, the login is disabled. **In production the app refuses every
 request until they are configured.**
