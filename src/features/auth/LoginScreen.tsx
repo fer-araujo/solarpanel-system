@@ -44,7 +44,9 @@ function SunEmblem({ busy }: { busy: boolean }) {
           );
         })}
       </motion.svg>
-      <div className="absolute inset-[30%] rounded-full bg-gradient-to-br from-solar-lift to-solar shadow-[0_0_30px_rgba(16,185,129,0.55)]" />
+      <div className="absolute inset-[30%] flex items-center justify-center rounded-xl border border-solar/25 bg-solar/10">
+        <span className="h-2.5 w-2.5 rounded-full bg-solar" />
+      </div>
     </div>
   );
 }
@@ -179,7 +181,7 @@ export function LoginScreen() {
               disabled={login.isPending}
               whileHover={reduced ? {} : { y: -1 }}
               whileTap={reduced ? {} : { scale: 0.98 }}
-              className="flex w-full items-center justify-center gap-2 rounded-xl bg-solar px-4 py-3 text-[14px] font-medium text-void shadow-[0_8px_30px_-8px_rgba(16,185,129,0.6)] transition-colors hover:bg-solar-lift disabled:opacity-70"
+              className="flex w-full items-center justify-center gap-2 rounded-xl border border-solar/40 bg-solar/10 px-4 py-3 text-[14px] font-medium text-solar transition-colors hover:bg-solar/20 disabled:opacity-60"
             >
               {login.isPending ? (
                 <>
