@@ -52,7 +52,7 @@ function SunEmblem({ busy }: { busy: boolean }) {
 export function LoginScreen() {
   const login = useLogin();
   const reduced = useReducedMotion();
-  const [user, setUser] = useState("");
+  const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -60,14 +60,14 @@ export function LoginScreen() {
 
   function onSubmit(event: React.FormEvent) {
     event.preventDefault();
-    if (!user.trim() || !password) {
-      setError("Escribe usuario y contraseña.");
+    if (!email.trim() || !password) {
+      setError("Escribe tu correo y contraseña.");
       setShakeKey((k) => k + 1);
       return;
     }
     setError(null);
     login.mutate(
-      { user: user.trim(), password },
+      { email: email.trim(), password },
       {
         onError: (e) => {
           setError(e instanceof ApiError ? e.message : "No se pudo conectar con el servidor.");
@@ -112,16 +112,18 @@ export function LoginScreen() {
 
           <form onSubmit={onSubmit} className="mt-7 space-y-4" noValidate>
             <div>
-              <label htmlFor="login-user" className="text-[11px] font-medium tracking-[0.08em] text-ink-faint uppercase">
-                Usuario
+              <label htmlFor="login-email" className="text-[11px] font-medium tracking-[0.08em] text-ink-faint uppercase">
+                Correo
               </label>
               <input
-                id="login-user"
+                id="login-email"
+                type="email"
+                inputMode="email"
                 autoFocus
-                autoComplete="username"
-                value={user}
+                autoComplete="email"
+                value={email}
                 onChange={(e) => {
-                  setUser(e.target.value);
+                  setEmail(e.target.value);
                   setError(null);
                 }}
                 className={inputClass}

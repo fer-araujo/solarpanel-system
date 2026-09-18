@@ -17,19 +17,6 @@
       "source_location": "L34"
     },
     {
-      "id": "server_solax_http_client_solaxhttpclient",
-      "label": "SolaxHttpClient",
-      "_callable": true,
-      "_callable_class": true,
-      "_origin": "ast",
-      "community": 10,
-      "community_name": "SolaxEndpoints",
-      "file_type": "code",
-      "norm_label": "solaxhttpclient",
-      "source_file": "server/solax/http-client.ts",
-      "source_location": "L44"
-    },
-    {
       "id": "src_ui_charts_calendarheatmap_cell",
       "label": "Cell",
       "_callable": true,
@@ -56,6 +43,32 @@
       "source_location": "L10"
     },
     {
+      "id": "src_api_auth_authconfig",
+      "label": "AuthConfig",
+      "_callable": true,
+      "_callable_class": true,
+      "_origin": "ast",
+      "community": 12,
+      "community_name": "AuthGate.tsx",
+      "file_type": "code",
+      "norm_label": "authconfig",
+      "source_file": "src/api/auth.ts",
+      "source_location": "L11"
+    },
+    {
+      "id": "src_api_auth_authconfigerror",
+      "label": "AuthConfigError",
+      "_callable": true,
+      "_callable_class": true,
+      "_origin": "ast",
+      "community": 12,
+      "community_name": "AuthGate.tsx",
+      "file_type": "code",
+      "norm_label": "authconfigerror",
+      "source_file": "src/api/auth.ts",
+      "source_location": "L20"
+    },
+    {
       "id": "src_api_client_apierror",
       "label": "ApiError",
       "_callable": true,
@@ -66,20 +79,7 @@
       "file_type": "code",
       "norm_label": "apierror",
       "source_file": "src/api/client.ts",
-      "source_location": "L23"
-    },
-    {
-      "id": "src_api_queries_weather",
-      "label": "Weather",
-      "_callable": true,
-      "_callable_class": true,
-      "_origin": "ast",
-      "community": 13,
-      "community_name": "queries.ts",
-      "file_type": "code",
-      "norm_label": "weather",
-      "source_file": "src/api/queries.ts",
-      "source_location": "L233"
+      "source_location": "L24"
     },
     {
       "id": "src_features_analysis_energyanalysis_mode",
@@ -88,7 +88,7 @@
       "_callable_class": true,
       "_origin": "ast",
       "community": 13,
-      "community_name": "queries.ts",
+      "community_name": "EnergyAnalysis.tsx",
       "file_type": "code",
       "norm_label": "mode",
       "source_file": "src/features/analysis/EnergyAnalysis.tsx",
@@ -173,30 +173,17 @@
       "source_location": "L95"
     },
     {
-      "id": "core_solax_dto_envelope_envelope",
-      "label": "Envelope",
+      "id": "core_energy_services_environment_environmentalbenefits",
+      "label": "environmentalBenefits",
       "_callable": true,
       "_callable_class": true,
       "_origin": "ast",
-      "community": 18,
-      "community_name": "envelope.ts",
+      "community": 15,
+      "community_name": "BillHistory.tsx",
       "file_type": "code",
-      "norm_label": "envelope",
-      "source_file": "core/solax/dto/envelope.ts",
-      "source_location": "L45"
-    },
-    {
-      "id": "core_solax_dto_envelope_solaxcodevalue",
-      "label": "SolaxCodeValue",
-      "_callable": true,
-      "_callable_class": true,
-      "_origin": "ast",
-      "community": 18,
-      "community_name": "envelope.ts",
-      "file_type": "code",
-      "norm_label": "solaxcodevalue",
-      "source_file": "core/solax/dto/envelope.ts",
-      "source_location": "L35"
+      "norm_label": "environmentalbenefits",
+      "source_file": "core/energy/services/environment.ts",
+      "source_location": "L20"
     },
     {
       "id": "core_solax_dto_envelope_solaxerror",
@@ -205,63 +192,11 @@
       "_callable_class": true,
       "_origin": "ast",
       "community": 18,
-      "community_name": "envelope.ts",
+      "community_name": "TokenStore",
       "file_type": "code",
       "norm_label": "solaxerror",
       "source_file": "core/solax/dto/envelope.ts",
       "source_location": "L70"
-    },
-    {
-      "id": "core_solax_dto_envelope_tokenresult",
-      "label": "TokenResult",
-      "_callable": true,
-      "_callable_class": true,
-      "_origin": "ast",
-      "community": 18,
-      "community_name": "envelope.ts",
-      "file_type": "code",
-      "norm_label": "tokenresult",
-      "source_file": "core/solax/dto/envelope.ts",
-      "source_location": "L57"
-    },
-    {
-      "id": "server_solax_http_client_requestoptions",
-      "label": "RequestOptions",
-      "_callable": true,
-      "_callable_class": true,
-      "_origin": "ast",
-      "community": 18,
-      "community_name": "envelope.ts",
-      "file_type": "code",
-      "norm_label": "requestoptions",
-      "source_file": "server/solax/http-client.ts",
-      "source_location": "L33"
-    },
-    {
-      "id": "server_solax_http_client_solaxhttpclientoptions",
-      "label": "SolaxHttpClientOptions",
-      "_callable": true,
-      "_callable_class": true,
-      "_origin": "ast",
-      "community": 18,
-      "community_name": "envelope.ts",
-      "file_type": "code",
-      "norm_label": "solaxhttpclientoptions",
-      "source_file": "server/solax/http-client.ts",
-      "source_location": "L24"
-    },
-    {
-      "id": "server_solax_token_store_cachedtoken",
-      "label": "CachedToken",
-      "_callable": true,
-      "_callable_class": true,
-      "_origin": "ast",
-      "community": 18,
-      "community_name": "envelope.ts",
-      "file_type": "code",
-      "norm_label": "cachedtoken",
-      "source_file": "server/solax/token-store.ts",
-      "source_location": "L44"
     },
     {
       "id": "server_solax_token_store_tokenstore",
@@ -270,24 +205,37 @@
       "_callable_class": true,
       "_origin": "ast",
       "community": 18,
-      "community_name": "envelope.ts",
+      "community_name": "TokenStore",
       "file_type": "code",
       "norm_label": "tokenstore",
       "source_file": "server/solax/token-store.ts",
       "source_location": "L58"
     },
     {
-      "id": "server_solax_token_store_tokenstoreoptions",
-      "label": "TokenStoreOptions",
+      "id": "server_auth_authuser",
+      "label": "AuthUser",
       "_callable": true,
       "_callable_class": true,
       "_origin": "ast",
-      "community": 18,
-      "community_name": "envelope.ts",
+      "community": 19,
+      "community_name": "env.ts",
       "file_type": "code",
-      "norm_label": "tokenstoreoptions",
-      "source_file": "server/solax/token-store.ts",
-      "source_location": "L27"
+      "norm_label": "authuser",
+      "source_file": "server/auth.ts",
+      "source_location": "L17"
+    },
+    {
+      "id": "server_auth_tokenverifier",
+      "label": "TokenVerifier",
+      "_callable": true,
+      "_callable_class": true,
+      "_origin": "ast",
+      "community": 19,
+      "community_name": "env.ts",
+      "file_type": "code",
+      "norm_label": "tokenverifier",
+      "source_file": "server/auth.ts",
+      "source_location": "L22"
     },
     {
       "id": "server_app_appdeps",
@@ -296,7 +244,7 @@
       "_callable_class": true,
       "_origin": "ast",
       "community": 20,
-      "community_name": "auth.test.ts",
+      "community_name": "SolaxHttpClient",
       "file_type": "code",
       "norm_label": "appdeps",
       "source_file": "server/app.ts",
@@ -309,11 +257,24 @@
       "_callable_class": true,
       "_origin": "ast",
       "community": 20,
-      "community_name": "auth.test.ts",
+      "community_name": "SolaxHttpClient",
       "file_type": "code",
       "norm_label": "env",
       "source_file": "server/env.ts",
-      "source_location": "L87"
+      "source_location": "L76"
+    },
+    {
+      "id": "server_solax_http_client_solaxhttpclient",
+      "label": "SolaxHttpClient",
+      "_callable": true,
+      "_callable_class": true,
+      "_origin": "ast",
+      "community": 20,
+      "community_name": "SolaxHttpClient",
+      "file_type": "code",
+      "norm_label": "solaxhttpclient",
+      "source_file": "server/solax/http-client.ts",
+      "source_location": "L44"
     },
     {
       "id": "core_billing_model_meter_reading_meterreading",
@@ -511,32 +472,6 @@
       "source_location": "L94"
     },
     {
-      "id": "core_energy_services_sun_times_solarposition",
-      "label": "solarPosition",
-      "_callable": true,
-      "_callable_class": true,
-      "_origin": "ast",
-      "community": 21,
-      "community_name": "client.ts",
-      "file_type": "code",
-      "norm_label": "solarposition",
-      "source_file": "core/energy/services/sun-times.ts",
-      "source_location": "L127"
-    },
-    {
-      "id": "core_energy_services_sun_times_suntimes",
-      "label": "sunTimes",
-      "_callable": true,
-      "_callable_class": true,
-      "_origin": "ast",
-      "community": 21,
-      "community_name": "client.ts",
-      "file_type": "code",
-      "norm_label": "suntimes",
-      "source_file": "core/energy/services/sun-times.ts",
-      "source_location": "L82"
-    },
-    {
       "id": "core_solax_dto_device_alarmdto",
       "label": "AlarmDto",
       "_callable": true,
@@ -560,7 +495,7 @@
       "file_type": "code",
       "norm_label": "billingsummaryresponse",
       "source_file": "src/api/client.ts",
-      "source_location": "L146"
+      "source_location": "L152"
     },
     {
       "id": "src_api_client_healthresponse",
@@ -573,7 +508,7 @@
       "file_type": "code",
       "norm_label": "healthresponse",
       "source_file": "src/api/client.ts",
-      "source_location": "L89"
+      "source_location": "L95"
     },
     {
       "id": "src_api_client_meresponse",
@@ -586,7 +521,7 @@
       "file_type": "code",
       "norm_label": "meresponse",
       "source_file": "src/api/client.ts",
-      "source_location": "L178"
+      "source_location": "L184"
     },
     {
       "id": "src_api_client_plantrealtimeresponse",
@@ -599,7 +534,7 @@
       "file_type": "code",
       "norm_label": "plantrealtimeresponse",
       "source_file": "src/api/client.ts",
-      "source_location": "L171"
+      "source_location": "L177"
     },
     {
       "id": "src_api_client_readingsresponse",
@@ -612,7 +547,7 @@
       "file_type": "code",
       "norm_label": "readingsresponse",
       "source_file": "src/api/client.ts",
-      "source_location": "L163"
+      "source_location": "L169"
     },
     {
       "id": "src_api_client_snapshotresponse",
@@ -625,7 +560,7 @@
       "file_type": "code",
       "norm_label": "snapshotresponse",
       "source_file": "src/api/client.ts",
-      "source_location": "L104"
+      "source_location": "L110"
     },
     {
       "id": "src_api_client_statsresponse",
@@ -638,7 +573,7 @@
       "file_type": "code",
       "norm_label": "statsresponse",
       "source_file": "src/api/client.ts",
-      "source_location": "L138"
+      "source_location": "L144"
     },
     {
       "id": "src_api_client_todayresponse",
@@ -651,7 +586,7 @@
       "file_type": "code",
       "norm_label": "todayresponse",
       "source_file": "src/api/client.ts",
-      "source_location": "L118"
+      "source_location": "L124"
     },
     {
       "id": "src_features_inverters_inverterfleet_inverterfleetprops",
@@ -719,17 +654,82 @@
       "source_location": "L13"
     },
     {
+      "id": "src_api_queries_weather",
+      "label": "Weather",
+      "_callable": true,
+      "_callable_class": true,
+      "_origin": "ast",
+      "community": 22,
+      "community_name": "queries.ts",
+      "file_type": "code",
+      "norm_label": "weather",
+      "source_file": "src/api/queries.ts",
+      "source_location": "L240"
+    },
+    {
       "id": "src_features_readings_readingsform_draft",
       "label": "Draft",
       "_callable": true,
       "_callable_class": true,
       "_origin": "ast",
       "community": 22,
-      "community_name": "ReadingsForm.tsx",
+      "community_name": "queries.ts",
       "file_type": "code",
       "norm_label": "draft",
       "source_file": "src/features/readings/ReadingsForm.tsx",
       "source_location": "L23"
+    },
+    {
+      "id": "core_solax_dto_envelope_envelope",
+      "label": "Envelope",
+      "_callable": true,
+      "_callable_class": true,
+      "_origin": "ast",
+      "community": 23,
+      "community_name": "envelope.ts",
+      "file_type": "code",
+      "norm_label": "envelope",
+      "source_file": "core/solax/dto/envelope.ts",
+      "source_location": "L45"
+    },
+    {
+      "id": "core_solax_dto_envelope_solaxcodevalue",
+      "label": "SolaxCodeValue",
+      "_callable": true,
+      "_callable_class": true,
+      "_origin": "ast",
+      "community": 23,
+      "community_name": "envelope.ts",
+      "file_type": "code",
+      "norm_label": "solaxcodevalue",
+      "source_file": "core/solax/dto/envelope.ts",
+      "source_location": "L35"
+    },
+    {
+      "id": "core_solax_dto_envelope_tokenresult",
+      "label": "TokenResult",
+      "_callable": true,
+      "_callable_class": true,
+      "_origin": "ast",
+      "community": 23,
+      "community_name": "envelope.ts",
+      "file_type": "code",
+      "norm_label": "tokenresult",
+      "source_file": "core/solax/dto/envelope.ts",
+      "source_location": "L57"
+    },
+    {
+      "id": "server_solax_token_store_cachedtoken",
+      "label": "CachedToken",
+      "_callable": true,
+      "_callable_class": true,
+      "_origin": "ast",
+      "community": 23,
+      "community_name": "envelope.ts",
+      "file_type": "code",
+      "norm_label": "cachedtoken",
+      "source_file": "server/solax/token-store.ts",
+      "source_location": "L44"
     },
     {
       "id": "src_features_sun_usesunwindow_sunwindow",
@@ -771,17 +771,30 @@
       "source_location": "L34"
     },
     {
-      "id": "core_energy_services_environment_environmentalbenefits",
-      "label": "environmentalBenefits",
+      "id": "core_energy_services_sun_times_solarposition",
+      "label": "solarPosition",
       "_callable": true,
       "_callable_class": true,
       "_origin": "ast",
       "community": 27,
-      "community_name": "ImpactCard.tsx",
+      "community_name": "useSunWindow.ts",
       "file_type": "code",
-      "norm_label": "environmentalbenefits",
-      "source_file": "core/energy/services/environment.ts",
-      "source_location": "L20"
+      "norm_label": "solarposition",
+      "source_file": "core/energy/services/sun-times.ts",
+      "source_location": "L127"
+    },
+    {
+      "id": "core_energy_services_sun_times_suntimes",
+      "label": "sunTimes",
+      "_callable": true,
+      "_callable_class": true,
+      "_origin": "ast",
+      "community": 27,
+      "community_name": "useSunWindow.ts",
+      "file_type": "code",
+      "norm_label": "suntimes",
+      "source_file": "core/energy/services/sun-times.ts",
+      "source_location": "L82"
     },
     {
       "id": "server_billing_readings_store_kvreadingsstore",
@@ -790,11 +803,24 @@
       "_callable_class": true,
       "_origin": "ast",
       "community": 28,
-      "community_name": "ReadingsRepository",
+      "community_name": "readings-store.ts",
       "file_type": "code",
       "norm_label": "kvreadingsstore",
       "source_file": "server/billing/readings-store.ts",
       "source_location": "L166"
+    },
+    {
+      "id": "server_billing_readings_store_readingsfile",
+      "label": "ReadingsFile",
+      "_callable": true,
+      "_callable_class": true,
+      "_origin": "ast",
+      "community": 28,
+      "community_name": "readings-store.ts",
+      "file_type": "code",
+      "norm_label": "readingsfile",
+      "source_file": "server/billing/readings-store.ts",
+      "source_location": "L53"
     },
     {
       "id": "server_billing_readings_store_readingsrepository",
@@ -803,11 +829,37 @@
       "_callable_class": true,
       "_origin": "ast",
       "community": 28,
-      "community_name": "ReadingsRepository",
+      "community_name": "readings-store.ts",
       "file_type": "code",
       "norm_label": "readingsrepository",
       "source_file": "server/billing/readings-store.ts",
       "source_location": "L71"
+    },
+    {
+      "id": "server_solax_http_client_requestoptions",
+      "label": "RequestOptions",
+      "_callable": true,
+      "_callable_class": true,
+      "_origin": "ast",
+      "community": 30,
+      "community_name": "http-client.ts",
+      "file_type": "code",
+      "norm_label": "requestoptions",
+      "source_file": "server/solax/http-client.ts",
+      "source_location": "L33"
+    },
+    {
+      "id": "server_solax_http_client_solaxhttpclientoptions",
+      "label": "SolaxHttpClientOptions",
+      "_callable": true,
+      "_callable_class": true,
+      "_origin": "ast",
+      "community": 30,
+      "community_name": "http-client.ts",
+      "file_type": "code",
+      "norm_label": "solaxhttpclientoptions",
+      "source_file": "server/solax/http-client.ts",
+      "source_location": "L24"
     },
     {
       "id": "server_solax_rate_limiter_ratelimiter",
@@ -816,7 +868,7 @@
       "_callable_class": true,
       "_origin": "ast",
       "community": 30,
-      "community_name": "RateLimiter",
+      "community_name": "http-client.ts",
       "file_type": "code",
       "norm_label": "ratelimiter",
       "source_file": "server/solax/rate-limiter.ts",
@@ -829,7 +881,7 @@
       "_callable_class": true,
       "_origin": "ast",
       "community": 30,
-      "community_name": "RateLimiter",
+      "community_name": "http-client.ts",
       "file_type": "code",
       "norm_label": "ratelimiteroptions",
       "source_file": "server/solax/rate-limiter.ts",
@@ -842,11 +894,37 @@
       "_callable_class": true,
       "_origin": "ast",
       "community": 30,
-      "community_name": "RateLimiter",
+      "community_name": "http-client.ts",
       "file_type": "code",
       "norm_label": "ratelimitexceedederror",
       "source_file": "server/solax/rate-limiter.ts",
       "source_location": "L21"
+    },
+    {
+      "id": "server_solax_cache_cachedresult",
+      "label": "CachedResult",
+      "_callable": true,
+      "_callable_class": true,
+      "_origin": "ast",
+      "community": 31,
+      "community_name": "TtlCache",
+      "file_type": "code",
+      "norm_label": "cachedresult",
+      "source_file": "server/solax/cache.ts",
+      "source_location": "L22"
+    },
+    {
+      "id": "server_solax_cache_cacheentry",
+      "label": "CacheEntry",
+      "_callable": true,
+      "_callable_class": true,
+      "_origin": "ast",
+      "community": 31,
+      "community_name": "TtlCache",
+      "file_type": "code",
+      "norm_label": "cacheentry",
+      "source_file": "server/solax/cache.ts",
+      "source_location": "L16"
     },
     {
       "id": "server_solax_cache_ttlcache",
@@ -860,6 +938,45 @@
       "norm_label": "ttlcache",
       "source_file": "server/solax/cache.ts",
       "source_location": "L41"
+    },
+    {
+      "id": "server_solax_cache_ttlcacheoptions",
+      "label": "TtlCacheOptions",
+      "_callable": true,
+      "_callable_class": true,
+      "_origin": "ast",
+      "community": 31,
+      "community_name": "TtlCache",
+      "file_type": "code",
+      "norm_label": "ttlcacheoptions",
+      "source_file": "server/solax/cache.ts",
+      "source_location": "L29"
+    },
+    {
+      "id": "server_solax_token_store_tokenstoreoptions",
+      "label": "TokenStoreOptions",
+      "_callable": true,
+      "_callable_class": true,
+      "_origin": "ast",
+      "community": 31,
+      "community_name": "TtlCache",
+      "file_type": "code",
+      "norm_label": "tokenstoreoptions",
+      "source_file": "server/solax/token-store.ts",
+      "source_location": "L27"
+    },
+    {
+      "id": "server_storage_kv_keyvaluestore",
+      "label": "KeyValueStore",
+      "_callable": true,
+      "_callable_class": true,
+      "_origin": "ast",
+      "community": 31,
+      "community_name": "TtlCache",
+      "file_type": "code",
+      "norm_label": "keyvaluestore",
+      "source_file": "server/storage/kv.ts",
+      "source_location": "L11"
     },
     {
       "id": "src_ui_charts_radialgauge_radialgaugeprops",
@@ -1070,26 +1187,13 @@
       "source_location": "L19"
     },
     {
-      "id": "server_billing_readings_store_readingsfile",
-      "label": "ReadingsFile",
-      "_callable": true,
-      "_callable_class": true,
-      "_origin": "ast",
-      "community": 5,
-      "community_name": "readings-store.ts",
-      "file_type": "code",
-      "norm_label": "readingsfile",
-      "source_file": "server/billing/readings-store.ts",
-      "source_location": "L53"
-    },
-    {
       "id": "server_billing_readings_store_readingsstore",
       "label": "ReadingsStore",
       "_callable": true,
       "_callable_class": true,
       "_origin": "ast",
       "community": 5,
-      "community_name": "readings-store.ts",
+      "community_name": "plumbing.test.ts",
       "file_type": "code",
       "norm_label": "readingsstore",
       "source_file": "server/billing/readings-store.ts",
@@ -1132,7 +1236,7 @@
       "file_type": "code",
       "norm_label": "plantstatentry",
       "source_file": "src/api/client.ts",
-      "source_location": "L126"
+      "source_location": "L132"
     },
     {
       "id": "src_ui_charts_productioncurve_band",
@@ -1161,65 +1265,13 @@
       "source_location": "L28"
     },
     {
-      "id": "server_solax_cache_cachedresult",
-      "label": "CachedResult",
-      "_callable": true,
-      "_callable_class": true,
-      "_origin": "ast",
-      "community": 7,
-      "community_name": "KeyValueStore",
-      "file_type": "code",
-      "norm_label": "cachedresult",
-      "source_file": "server/solax/cache.ts",
-      "source_location": "L22"
-    },
-    {
-      "id": "server_solax_cache_cacheentry",
-      "label": "CacheEntry",
-      "_callable": true,
-      "_callable_class": true,
-      "_origin": "ast",
-      "community": 7,
-      "community_name": "KeyValueStore",
-      "file_type": "code",
-      "norm_label": "cacheentry",
-      "source_file": "server/solax/cache.ts",
-      "source_location": "L16"
-    },
-    {
-      "id": "server_solax_cache_ttlcacheoptions",
-      "label": "TtlCacheOptions",
-      "_callable": true,
-      "_callable_class": true,
-      "_origin": "ast",
-      "community": 7,
-      "community_name": "KeyValueStore",
-      "file_type": "code",
-      "norm_label": "ttlcacheoptions",
-      "source_file": "server/solax/cache.ts",
-      "source_location": "L29"
-    },
-    {
-      "id": "server_storage_kv_keyvaluestore",
-      "label": "KeyValueStore",
-      "_callable": true,
-      "_callable_class": true,
-      "_origin": "ast",
-      "community": 7,
-      "community_name": "KeyValueStore",
-      "file_type": "code",
-      "norm_label": "keyvaluestore",
-      "source_file": "server/storage/kv.ts",
-      "source_location": "L11"
-    },
-    {
       "id": "server_storage_kv_upstashstore",
       "label": "UpstashStore",
       "_callable": true,
       "_callable_class": true,
       "_origin": "ast",
       "community": 7,
-      "community_name": "KeyValueStore",
+      "community_name": "create-server.ts",
       "file_type": "code",
       "norm_label": "upstashstore",
       "source_file": "server/storage/kv.ts",
@@ -1380,18 +1432,6 @@
       "source_location": "L238"
     },
     {
-      "id": "server_solax_endpoints_solaxendpoints_constructor",
-      "label": ".constructor()",
-      "_callable": true,
-      "_origin": "ast",
-      "community": 10,
-      "community_name": "SolaxEndpoints",
-      "file_type": "code",
-      "norm_label": ".constructor()",
-      "source_file": "server/solax/endpoints.ts",
-      "source_location": "L35"
-    },
-    {
       "id": "server_solax_endpoints_solaxendpoints_getbatteryrealtime",
       "label": ".getBatteryRealtime()",
       "_callable": true,
@@ -1462,18 +1502,6 @@
       "norm_label": ".getplantrealtime()",
       "source_file": "server/solax/endpoints.ts",
       "source_location": "L48"
-    },
-    {
-      "id": "server_solax_endpoints_solaxendpoints_getplantstats",
-      "label": ".getPlantStats()",
-      "_callable": true,
-      "_origin": "ast",
-      "community": 10,
-      "community_name": "SolaxEndpoints",
-      "file_type": "code",
-      "norm_label": ".getplantstats()",
-      "source_file": "server/solax/endpoints.ts",
-      "source_location": "L208"
     },
     {
       "id": "server_solax_endpoints_solaxendpoints_listalarms",
@@ -1572,42 +1600,6 @@
       "source_location": "L167"
     },
     {
-      "id": "server_solax_http_client_solaxhttpclient_post",
-      "label": ".post()",
-      "_callable": true,
-      "_origin": "ast",
-      "community": 10,
-      "community_name": "SolaxEndpoints",
-      "file_type": "code",
-      "norm_label": ".post()",
-      "source_file": "server/solax/http-client.ts",
-      "source_location": "L171"
-    },
-    {
-      "id": "server_solax_http_client_solaxhttpclient_request",
-      "label": ".request()",
-      "_callable": true,
-      "_origin": "ast",
-      "community": 10,
-      "community_name": "SolaxEndpoints",
-      "file_type": "code",
-      "norm_label": ".request()",
-      "source_file": "server/solax/http-client.ts",
-      "source_location": "L59"
-    },
-    {
-      "id": "server_solax_http_client_solaxhttpclient_send",
-      "label": ".send()",
-      "_callable": true,
-      "_origin": "ast",
-      "community": 10,
-      "community_name": "SolaxEndpoints",
-      "file_type": "code",
-      "norm_label": ".send()",
-      "source_file": "server/solax/http-client.ts",
-      "source_location": "L72"
-    },
-    {
       "id": "src_ui_charts_calendarheatmap_calendarheatmap",
       "label": "CalendarHeatmap()",
       "_callable": true,
@@ -1632,6 +1624,30 @@
       "source_location": "L28"
     },
     {
+      "id": "src_api_auth_accesstoken",
+      "label": "accessToken()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 12,
+      "community_name": "AuthGate.tsx",
+      "file_type": "code",
+      "norm_label": "accesstoken()",
+      "source_file": "src/api/auth.ts",
+      "source_location": "L44"
+    },
+    {
+      "id": "src_api_auth_getsupabase",
+      "label": "getSupabase()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 12,
+      "community_name": "AuthGate.tsx",
+      "file_type": "code",
+      "norm_label": "getsupabase()",
+      "source_file": "src/api/auth.ts",
+      "source_location": "L22"
+    },
+    {
       "id": "src_api_client_apierror_constructor",
       "label": ".constructor()",
       "_callable": true,
@@ -1641,7 +1657,7 @@
       "file_type": "code",
       "norm_label": ".constructor()",
       "source_file": "src/api/client.ts",
-      "source_location": "L29"
+      "source_location": "L30"
     },
     {
       "id": "src_api_client_apierror_isbudgetrefusal",
@@ -1653,7 +1669,7 @@
       "file_type": "code",
       "norm_label": ".isbudgetrefusal()",
       "source_file": "src/api/client.ts",
-      "source_location": "L45"
+      "source_location": "L46"
     },
     {
       "id": "src_api_client_request",
@@ -1665,7 +1681,19 @@
       "file_type": "code",
       "norm_label": "request()",
       "source_file": "src/api/client.ts",
-      "source_location": "L50"
+      "source_location": "L51"
+    },
+    {
+      "id": "src_api_client_unauthorized",
+      "label": "unauthorized()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 12,
+      "community_name": "AuthGate.tsx",
+      "file_type": "code",
+      "norm_label": "unauthorized()",
+      "source_file": "src/api/client.ts",
+      "source_location": "L190"
     },
     {
       "id": "src_api_queries_createqueryclient",
@@ -1677,19 +1705,7 @@
       "file_type": "code",
       "norm_label": "createqueryclient()",
       "source_file": "src/api/queries.ts",
-      "source_location": "L32"
-    },
-    {
-      "id": "src_api_queries_uselogin",
-      "label": "useLogin()",
-      "_callable": true,
-      "_origin": "ast",
-      "community": 12,
-      "community_name": "AuthGate.tsx",
-      "file_type": "code",
-      "norm_label": "uselogin()",
-      "source_file": "src/api/queries.ts",
-      "source_location": "L76"
+      "source_location": "L33"
     },
     {
       "id": "src_api_queries_useme",
@@ -1701,7 +1717,7 @@
       "file_type": "code",
       "norm_label": "useme()",
       "source_file": "src/api/queries.ts",
-      "source_location": "L67"
+      "source_location": "L74"
     },
     {
       "id": "src_features_auth_authgate_authgate",
@@ -1713,7 +1729,7 @@
       "file_type": "code",
       "norm_label": "authgate()",
       "source_file": "src/features/auth/AuthGate.tsx",
-      "source_location": "L37"
+      "source_location": "L39"
     },
     {
       "id": "src_features_auth_authgate_serverproblem",
@@ -1725,7 +1741,7 @@
       "file_type": "code",
       "norm_label": "serverproblem()",
       "source_file": "src/features/auth/AuthGate.tsx",
-      "source_location": "L26"
+      "source_location": "L28"
     },
     {
       "id": "src_features_auth_authgate_splash",
@@ -1737,55 +1753,7 @@
       "file_type": "code",
       "norm_label": "splash()",
       "source_file": "src/features/auth/AuthGate.tsx",
-      "source_location": "L14"
-    },
-    {
-      "id": "src_features_auth_loginscreen_loginscreen",
-      "label": "LoginScreen()",
-      "_callable": true,
-      "_origin": "ast",
-      "community": 12,
-      "community_name": "AuthGate.tsx",
-      "file_type": "code",
-      "norm_label": "loginscreen()",
-      "source_file": "src/features/auth/LoginScreen.tsx",
-      "source_location": "L52"
-    },
-    {
-      "id": "src_features_auth_loginscreen_loginscreen_onsubmit",
-      "label": "onSubmit()",
-      "_callable": true,
-      "_origin": "ast",
-      "community": 12,
-      "community_name": "AuthGate.tsx",
-      "file_type": "code",
-      "norm_label": "onsubmit()",
-      "source_file": "src/features/auth/LoginScreen.tsx",
-      "source_location": "L61"
-    },
-    {
-      "id": "src_features_auth_loginscreen_sunemblem",
-      "label": "SunEmblem()",
-      "_callable": true,
-      "_origin": "ast",
-      "community": 12,
-      "community_name": "AuthGate.tsx",
-      "file_type": "code",
-      "norm_label": "sunemblem()",
-      "source_file": "src/features/auth/LoginScreen.tsx",
-      "source_location": "L13"
-    },
-    {
-      "id": "src_ui_primitives_skeleton_spinner",
-      "label": "Spinner()",
-      "_callable": true,
-      "_origin": "ast",
-      "community": 12,
-      "community_name": "AuthGate.tsx",
-      "file_type": "code",
-      "norm_label": "spinner()",
-      "source_file": "src/ui/primitives/Skeleton.tsx",
-      "source_location": "L10"
+      "source_location": "L16"
     },
     {
       "id": "src_api_queries_useday",
@@ -1793,11 +1761,11 @@
       "_callable": true,
       "_origin": "ast",
       "community": 13,
-      "community_name": "queries.ts",
+      "community_name": "EnergyAnalysis.tsx",
       "file_type": "code",
       "norm_label": "useday()",
       "source_file": "src/api/queries.ts",
-      "source_location": "L207"
+      "source_location": "L214"
     },
     {
       "id": "src_api_queries_usestatsmonth",
@@ -1805,11 +1773,11 @@
       "_callable": true,
       "_origin": "ast",
       "community": 13,
-      "community_name": "queries.ts",
+      "community_name": "EnergyAnalysis.tsx",
       "file_type": "code",
       "norm_label": "usestatsmonth()",
       "source_file": "src/api/queries.ts",
-      "source_location": "L216"
+      "source_location": "L223"
     },
     {
       "id": "src_api_queries_usestatsyear",
@@ -1817,11 +1785,11 @@
       "_callable": true,
       "_origin": "ast",
       "community": 13,
-      "community_name": "queries.ts",
+      "community_name": "EnergyAnalysis.tsx",
       "file_type": "code",
       "norm_label": "usestatsyear()",
       "source_file": "src/api/queries.ts",
-      "source_location": "L149"
+      "source_location": "L156"
     },
     {
       "id": "src_features_analysis_energyanalysis_energyanalysis",
@@ -1829,7 +1797,7 @@
       "_callable": true,
       "_origin": "ast",
       "community": 13,
-      "community_name": "queries.ts",
+      "community_name": "EnergyAnalysis.tsx",
       "file_type": "code",
       "norm_label": "energyanalysis()",
       "source_file": "src/features/analysis/EnergyAnalysis.tsx",
@@ -1841,7 +1809,7 @@
       "_callable": true,
       "_origin": "ast",
       "community": 13,
-      "community_name": "queries.ts",
+      "community_name": "EnergyAnalysis.tsx",
       "file_type": "code",
       "norm_label": "iso()",
       "source_file": "src/features/analysis/EnergyAnalysis.tsx",
@@ -1853,7 +1821,7 @@
       "_callable": true,
       "_origin": "ast",
       "community": 13,
-      "community_name": "queries.ts",
+      "community_name": "EnergyAnalysis.tsx",
       "file_type": "code",
       "norm_label": "pad()",
       "source_file": "src/features/analysis/EnergyAnalysis.tsx",
@@ -1865,7 +1833,7 @@
       "_callable": true,
       "_origin": "ast",
       "community": 13,
-      "community_name": "queries.ts",
+      "community_name": "EnergyAnalysis.tsx",
       "file_type": "code",
       "norm_label": "shift()",
       "source_file": "src/features/analysis/EnergyAnalysis.tsx",
@@ -1877,7 +1845,7 @@
       "_callable": true,
       "_origin": "ast",
       "community": 13,
-      "community_name": "queries.ts",
+      "community_name": "EnergyAnalysis.tsx",
       "file_type": "code",
       "norm_label": "total()",
       "source_file": "src/features/analysis/EnergyAnalysis.tsx",
@@ -1968,6 +1936,18 @@
       "source_location": "L63"
     },
     {
+      "id": "core_billing_services_savings_estimatedailysavings",
+      "label": "estimateDailySavings()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 15,
+      "community_name": "BillHistory.tsx",
+      "file_type": "code",
+      "norm_label": "estimatedailysavings()",
+      "source_file": "core/billing/services/savings.ts",
+      "source_location": "L131"
+    },
+    {
       "id": "core_billing_services_savings_expectedbimonthlysolarkwh",
       "label": "expectedBimonthlySolarKwh()",
       "_callable": true,
@@ -2014,6 +1994,30 @@
       "norm_label": "valuepersolarkwh()",
       "source_file": "core/billing/services/savings.ts",
       "source_location": "L25"
+    },
+    {
+      "id": "src_api_queries_usebillingsummary",
+      "label": "useBillingSummary()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 15,
+      "community_name": "BillHistory.tsx",
+      "file_type": "code",
+      "norm_label": "usebillingsummary()",
+      "source_file": "src/api/queries.ts",
+      "source_location": "L164"
+    },
+    {
+      "id": "src_api_queries_useplantrealtime",
+      "label": "usePlantRealtime()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 15,
+      "community_name": "BillHistory.tsx",
+      "file_type": "code",
+      "norm_label": "useplantrealtime()",
+      "source_file": "src/api/queries.ts",
+      "source_location": "L232"
     },
     {
       "id": "src_features_bolsa_billhistory_addmonths",
@@ -2064,12 +2068,24 @@
       "source_location": "L39"
     },
     {
+      "id": "src_features_impact_impactcard_impactcard",
+      "label": "ImpactCard()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 15,
+      "community_name": "BillHistory.tsx",
+      "file_type": "code",
+      "norm_label": "impactcard()",
+      "source_file": "src/features/impact/ImpactCard.tsx",
+      "source_location": "L23"
+    },
+    {
       "id": "core_solax_dto_envelope_solaxerror_constructor",
       "label": ".constructor()",
       "_callable": true,
       "_origin": "ast",
       "community": 18,
-      "community_name": "envelope.ts",
+      "community_name": "TokenStore",
       "file_type": "code",
       "norm_label": ".constructor()",
       "source_file": "core/solax/dto/envelope.ts",
@@ -2081,7 +2097,7 @@
       "_callable": true,
       "_origin": "ast",
       "community": 18,
-      "community_name": "envelope.ts",
+      "community_name": "TokenStore",
       "file_type": "code",
       "norm_label": ".isauthproblem()",
       "source_file": "core/solax/dto/envelope.ts",
@@ -2093,7 +2109,7 @@
       "_callable": true,
       "_origin": "ast",
       "community": 18,
-      "community_name": "envelope.ts",
+      "community_name": "TokenStore",
       "file_type": "code",
       "norm_label": ".isquotaexhausted()",
       "source_file": "core/solax/dto/envelope.ts",
@@ -2105,7 +2121,7 @@
       "_callable": true,
       "_origin": "ast",
       "community": 18,
-      "community_name": "envelope.ts",
+      "community_name": "TokenStore",
       "file_type": "code",
       "norm_label": ".isratelimit()",
       "source_file": "core/solax/dto/envelope.ts",
@@ -2117,11 +2133,23 @@
       "_callable": true,
       "_origin": "ast",
       "community": 18,
-      "community_name": "envelope.ts",
+      "community_name": "TokenStore",
       "file_type": "code",
       "norm_label": "unwrapenvelope()",
       "source_file": "core/solax/dto/envelope.ts",
       "source_location": "L130"
+    },
+    {
+      "id": "server_solax_http_client_solaxhttpclient_send",
+      "label": ".send()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 18,
+      "community_name": "TokenStore",
+      "file_type": "code",
+      "norm_label": ".send()",
+      "source_file": "server/solax/http-client.ts",
+      "source_location": "L72"
     },
     {
       "id": "server_solax_token_store_tokenstore_constructor",
@@ -2129,7 +2157,7 @@
       "_callable": true,
       "_origin": "ast",
       "community": 18,
-      "community_name": "envelope.ts",
+      "community_name": "TokenStore",
       "file_type": "code",
       "norm_label": ".constructor()",
       "source_file": "server/solax/token-store.ts",
@@ -2141,7 +2169,7 @@
       "_callable": true,
       "_origin": "ast",
       "community": 18,
-      "community_name": "envelope.ts",
+      "community_name": "TokenStore",
       "file_type": "code",
       "norm_label": ".fetchtoken()",
       "source_file": "server/solax/token-store.ts",
@@ -2153,7 +2181,7 @@
       "_callable": true,
       "_origin": "ast",
       "community": 18,
-      "community_name": "envelope.ts",
+      "community_name": "TokenStore",
       "file_type": "code",
       "norm_label": ".get()",
       "source_file": "server/solax/token-store.ts",
@@ -2165,7 +2193,7 @@
       "_callable": true,
       "_origin": "ast",
       "community": 18,
-      "community_name": "envelope.ts",
+      "community_name": "TokenStore",
       "file_type": "code",
       "norm_label": ".invalidate()",
       "source_file": "server/solax/token-store.ts",
@@ -2177,7 +2205,7 @@
       "_callable": true,
       "_origin": "ast",
       "community": 18,
-      "community_name": "envelope.ts",
+      "community_name": "TokenStore",
       "file_type": "code",
       "norm_label": ".resolvetoken()",
       "source_file": "server/solax/token-store.ts",
@@ -2189,35 +2217,35 @@
       "_callable": true,
       "_origin": "ast",
       "community": 18,
-      "community_name": "envelope.ts",
+      "community_name": "TokenStore",
       "file_type": "code",
       "norm_label": ".snapshot()",
       "source_file": "server/solax/token-store.ts",
       "source_location": "L170"
     },
     {
-      "id": "server_app_apierrorhandler",
-      "label": "apiErrorHandler()",
+      "id": "server_auth_registerauth",
+      "label": "registerAuth()",
       "_callable": true,
       "_origin": "ast",
       "community": 19,
-      "community_name": "create-server.ts",
+      "community_name": "env.ts",
       "file_type": "code",
-      "norm_label": "apierrorhandler()",
-      "source_file": "server/app.ts",
-      "source_location": "L729"
+      "norm_label": "registerauth()",
+      "source_file": "server/auth.ts",
+      "source_location": "L55"
     },
     {
-      "id": "server_create_server_createserver",
-      "label": "createServer()",
+      "id": "server_auth_supabaseverifier",
+      "label": "supabaseVerifier()",
       "_callable": true,
       "_origin": "ast",
       "community": 19,
-      "community_name": "create-server.ts",
+      "community_name": "env.ts",
       "file_type": "code",
-      "norm_label": "createserver()",
-      "source_file": "server/create-server.ts",
-      "source_location": "L25"
+      "norm_label": "supabaseverifier()",
+      "source_file": "server/auth.ts",
+      "source_location": "L28"
     },
     {
       "id": "server_env_describeenv",
@@ -2225,11 +2253,11 @@
       "_callable": true,
       "_origin": "ast",
       "community": 19,
-      "community_name": "create-server.ts",
+      "community_name": "env.ts",
       "file_type": "code",
       "norm_label": "describeenv()",
       "source_file": "server/env.ts",
-      "source_location": "L131"
+      "source_location": "L120"
     },
     {
       "id": "server_env_loaddotenv",
@@ -2237,11 +2265,11 @@
       "_callable": true,
       "_origin": "ast",
       "community": 19,
-      "community_name": "create-server.ts",
+      "community_name": "env.ts",
       "file_type": "code",
       "norm_label": "loaddotenv()",
       "source_file": "server/env.ts",
-      "source_location": "L100"
+      "source_location": "L89"
     },
     {
       "id": "server_env_loadenv",
@@ -2249,83 +2277,107 @@
       "_callable": true,
       "_origin": "ast",
       "community": 19,
-      "community_name": "create-server.ts",
+      "community_name": "env.ts",
       "file_type": "code",
       "norm_label": "loadenv()",
       "source_file": "server/env.ts",
-      "source_location": "L113"
-    },
-    {
-      "id": "server_auth_matches",
-      "label": "matches()",
-      "_callable": true,
-      "_origin": "ast",
-      "community": 20,
-      "community_name": "auth.test.ts",
-      "file_type": "code",
-      "norm_label": "matches()",
-      "source_file": "server/auth.ts",
-      "source_location": "L29"
-    },
-    {
-      "id": "server_auth_parsesession",
-      "label": "parseSession()",
-      "_callable": true,
-      "_origin": "ast",
-      "community": 20,
-      "community_name": "auth.test.ts",
-      "file_type": "code",
-      "norm_label": "parsesession()",
-      "source_file": "server/auth.ts",
-      "source_location": "L35"
-    },
-    {
-      "id": "server_auth_registerauth",
-      "label": "registerAuth()",
-      "_callable": true,
-      "_origin": "ast",
-      "community": 20,
-      "community_name": "auth.test.ts",
-      "file_type": "code",
-      "norm_label": "registerauth()",
-      "source_file": "server/auth.ts",
-      "source_location": "L43"
-    },
-    {
-      "id": "server_auth_registerauth_currentuser",
-      "label": "currentUser()",
-      "_callable": true,
-      "_origin": "ast",
-      "community": 20,
-      "community_name": "auth.test.ts",
-      "file_type": "code",
-      "norm_label": "currentuser()",
-      "source_file": "server/auth.ts",
-      "source_location": "L53"
+      "source_location": "L102"
     },
     {
       "id": "tests_server_auth_test_appwith",
       "label": "appWith()",
       "_callable": true,
       "_origin": "ast",
-      "community": 20,
-      "community_name": "auth.test.ts",
+      "community": 19,
+      "community_name": "env.ts",
       "file_type": "code",
       "norm_label": "appwith()",
+      "source_file": "tests/server/auth.test.ts",
+      "source_location": "L22"
+    },
+    {
+      "id": "tests_server_auth_test_bearer",
+      "label": "bearer()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 19,
+      "community_name": "env.ts",
+      "file_type": "code",
+      "norm_label": "bearer()",
+      "source_file": "tests/server/auth.test.ts",
+      "source_location": "L29"
+    },
+    {
+      "id": "tests_server_auth_test_verifier",
+      "label": "verifier()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 19,
+      "community_name": "env.ts",
+      "file_type": "code",
+      "norm_label": "verifier()",
       "source_file": "tests/server/auth.test.ts",
       "source_location": "L19"
     },
     {
-      "id": "tests_server_auth_test_login",
-      "label": "login()",
+      "id": "server_solax_endpoints_solaxendpoints_constructor",
+      "label": ".constructor()",
       "_callable": true,
       "_origin": "ast",
       "community": 20,
-      "community_name": "auth.test.ts",
+      "community_name": "SolaxHttpClient",
       "file_type": "code",
-      "norm_label": "login()",
-      "source_file": "tests/server/auth.test.ts",
-      "source_location": "L26"
+      "norm_label": ".constructor()",
+      "source_file": "server/solax/endpoints.ts",
+      "source_location": "L35"
+    },
+    {
+      "id": "server_solax_endpoints_solaxendpoints_getplantstats",
+      "label": ".getPlantStats()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 20,
+      "community_name": "SolaxHttpClient",
+      "file_type": "code",
+      "norm_label": ".getplantstats()",
+      "source_file": "server/solax/endpoints.ts",
+      "source_location": "L208"
+    },
+    {
+      "id": "server_solax_http_client_solaxhttpclient_constructor",
+      "label": ".constructor()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 20,
+      "community_name": "SolaxHttpClient",
+      "file_type": "code",
+      "norm_label": ".constructor()",
+      "source_file": "server/solax/http-client.ts",
+      "source_location": "L51"
+    },
+    {
+      "id": "server_solax_http_client_solaxhttpclient_post",
+      "label": ".post()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 20,
+      "community_name": "SolaxHttpClient",
+      "file_type": "code",
+      "norm_label": ".post()",
+      "source_file": "server/solax/http-client.ts",
+      "source_location": "L171"
+    },
+    {
+      "id": "server_solax_http_client_solaxhttpclient_request",
+      "label": ".request()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 20,
+      "community_name": "SolaxHttpClient",
+      "file_type": "code",
+      "norm_label": ".request()",
+      "source_file": "server/solax/http-client.ts",
+      "source_location": "L59"
     },
     {
       "id": "core_billing_model_meter_reading_assertreadingsusable",
@@ -2412,42 +2464,6 @@
       "source_location": "L120"
     },
     {
-      "id": "core_energy_services_sun_times_dayofyear",
-      "label": "dayOfYear()",
-      "_callable": true,
-      "_origin": "ast",
-      "community": 21,
-      "community_name": "client.ts",
-      "file_type": "code",
-      "norm_label": "dayofyear()",
-      "source_file": "core/energy/services/sun-times.ts",
-      "source_location": "L45"
-    },
-    {
-      "id": "core_energy_services_sun_times_formatminute",
-      "label": "formatMinute()",
-      "_callable": true,
-      "_origin": "ast",
-      "community": 21,
-      "community_name": "client.ts",
-      "file_type": "code",
-      "norm_label": "formatminute()",
-      "source_file": "core/energy/services/sun-times.ts",
-      "source_location": "L149"
-    },
-    {
-      "id": "core_energy_services_sun_times_solarterms",
-      "label": "solarTerms()",
-      "_callable": true,
-      "_origin": "ast",
-      "community": 21,
-      "community_name": "client.ts",
-      "file_type": "code",
-      "norm_label": "solarterms()",
-      "source_file": "core/energy/services/sun-times.ts",
-      "source_location": "L55"
-    },
-    {
       "id": "src_api_client_revivesnapshot",
       "label": "reviveSnapshot()",
       "_callable": true,
@@ -2457,7 +2473,7 @@
       "file_type": "code",
       "norm_label": "revivesnapshot()",
       "source_file": "src/api/client.ts",
-      "source_location": "L85"
+      "source_location": "L91"
     },
     {
       "id": "src_features_inverters_inverterfleet_inverterfleet",
@@ -2470,18 +2486,6 @@
       "norm_label": "inverterfleet()",
       "source_file": "src/features/inverters/InverterFleet.tsx",
       "source_location": "L18"
-    },
-    {
-      "id": "src_features_sun_usesunwindow_usesunwindow",
-      "label": "useSunWindow()",
-      "_callable": true,
-      "_origin": "ast",
-      "community": 21,
-      "community_name": "client.ts",
-      "file_type": "code",
-      "norm_label": "usesunwindow()",
-      "source_file": "src/features/sun/useSunWindow.ts",
-      "source_location": "L27"
     },
     {
       "id": "src_ui_charts_energyflow_energyflow",
@@ -2544,28 +2548,16 @@
       "source_location": "L11"
     },
     {
-      "id": "tests_energy_sun_times_test_minutesof",
-      "label": "minutesOf()",
-      "_callable": true,
-      "_origin": "ast",
-      "community": 21,
-      "community_name": "client.ts",
-      "file_type": "code",
-      "norm_label": "minutesof()",
-      "source_file": "tests/energy/sun-times.test.ts",
-      "source_location": "L15"
-    },
-    {
       "id": "src_api_queries_usedeletereading",
       "label": "useDeleteReading()",
       "_callable": true,
       "_origin": "ast",
       "community": 22,
-      "community_name": "ReadingsForm.tsx",
+      "community_name": "queries.ts",
       "file_type": "code",
       "norm_label": "usedeletereading()",
       "source_file": "src/api/queries.ts",
-      "source_location": "L196"
+      "source_location": "L203"
     },
     {
       "id": "src_api_queries_usereadings",
@@ -2573,11 +2565,11 @@
       "_callable": true,
       "_origin": "ast",
       "community": 22,
-      "community_name": "ReadingsForm.tsx",
+      "community_name": "queries.ts",
       "file_type": "code",
       "norm_label": "usereadings()",
       "source_file": "src/api/queries.ts",
-      "source_location": "L166"
+      "source_location": "L173"
     },
     {
       "id": "src_api_queries_usereadingsmutation",
@@ -2585,11 +2577,11 @@
       "_callable": true,
       "_origin": "ast",
       "community": 22,
-      "community_name": "ReadingsForm.tsx",
+      "community_name": "queries.ts",
       "file_type": "code",
       "norm_label": "usereadingsmutation()",
       "source_file": "src/api/queries.ts",
-      "source_location": "L179"
+      "source_location": "L186"
     },
     {
       "id": "src_api_queries_usesavemeter",
@@ -2597,11 +2589,11 @@
       "_callable": true,
       "_origin": "ast",
       "community": 22,
-      "community_name": "ReadingsForm.tsx",
+      "community_name": "queries.ts",
       "file_type": "code",
       "norm_label": "usesavemeter()",
       "source_file": "src/api/queries.ts",
-      "source_location": "L200"
+      "source_location": "L207"
     },
     {
       "id": "src_api_queries_usesavereading",
@@ -2609,11 +2601,11 @@
       "_callable": true,
       "_origin": "ast",
       "community": 22,
-      "community_name": "ReadingsForm.tsx",
+      "community_name": "queries.ts",
       "file_type": "code",
       "norm_label": "usesavereading()",
       "source_file": "src/api/queries.ts",
-      "source_location": "L192"
+      "source_location": "L199"
     },
     {
       "id": "src_features_readings_readingsform_readingsform",
@@ -2621,7 +2613,7 @@
       "_callable": true,
       "_origin": "ast",
       "community": 22,
-      "community_name": "ReadingsForm.tsx",
+      "community_name": "queries.ts",
       "file_type": "code",
       "norm_label": "readingsform()",
       "source_file": "src/features/readings/ReadingsForm.tsx",
@@ -2633,7 +2625,7 @@
       "_callable": true,
       "_origin": "ast",
       "community": 22,
-      "community_name": "ReadingsForm.tsx",
+      "community_name": "queries.ts",
       "file_type": "code",
       "norm_label": "onsubmit()",
       "source_file": "src/features/readings/ReadingsForm.tsx",
@@ -2645,7 +2637,7 @@
       "_callable": true,
       "_origin": "ast",
       "community": 22,
-      "community_name": "ReadingsForm.tsx",
+      "community_name": "queries.ts",
       "file_type": "code",
       "norm_label": "validate()",
       "source_file": "src/features/readings/ReadingsForm.tsx",
@@ -2657,7 +2649,7 @@
       "_callable": true,
       "_origin": "ast",
       "community": 22,
-      "community_name": "ReadingsForm.tsx",
+      "community_name": "queries.ts",
       "file_type": "code",
       "norm_label": "today()",
       "source_file": "src/features/readings/ReadingsForm.tsx",
@@ -2673,7 +2665,7 @@
       "file_type": "code",
       "norm_label": "useweather()",
       "source_file": "src/api/queries.ts",
-      "source_location": "L251"
+      "source_location": "L258"
     },
     {
       "id": "src_features_weather_weathercard_describe",
@@ -2734,6 +2726,54 @@
       "norm_label": "bone()",
       "source_file": "src/ui/primitives/Skeleton.tsx",
       "source_location": "L6"
+    },
+    {
+      "id": "src_api_queries_uselogin",
+      "label": "useLogin()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 25,
+      "community_name": "Skeleton.tsx",
+      "file_type": "code",
+      "norm_label": "uselogin()",
+      "source_file": "src/api/queries.ts",
+      "source_location": "L83"
+    },
+    {
+      "id": "src_features_auth_loginscreen_loginscreen",
+      "label": "LoginScreen()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 25,
+      "community_name": "Skeleton.tsx",
+      "file_type": "code",
+      "norm_label": "loginscreen()",
+      "source_file": "src/features/auth/LoginScreen.tsx",
+      "source_location": "L52"
+    },
+    {
+      "id": "src_features_auth_loginscreen_loginscreen_onsubmit",
+      "label": "onSubmit()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 25,
+      "community_name": "Skeleton.tsx",
+      "file_type": "code",
+      "norm_label": "onsubmit()",
+      "source_file": "src/features/auth/LoginScreen.tsx",
+      "source_location": "L61"
+    },
+    {
+      "id": "src_features_auth_loginscreen_sunemblem",
+      "label": "SunEmblem()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 25,
+      "community_name": "Skeleton.tsx",
+      "file_type": "code",
+      "norm_label": "sunemblem()",
+      "source_file": "src/features/auth/LoginScreen.tsx",
+      "source_location": "L13"
     },
     {
       "id": "src_features_bolsa_bolsapanel_balancesummary",
@@ -2832,6 +2872,18 @@
       "source_location": "L73"
     },
     {
+      "id": "src_ui_primitives_skeleton_spinner",
+      "label": "Spinner()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 25,
+      "community_name": "Skeleton.tsx",
+      "file_type": "code",
+      "norm_label": "spinner()",
+      "source_file": "src/ui/primitives/Skeleton.tsx",
+      "source_location": "L10"
+    },
+    {
       "id": "src_ui_primitives_skeleton_statskeleton",
       "label": "StatSkeleton()",
       "_callable": true,
@@ -2844,52 +2896,100 @@
       "source_location": "L63"
     },
     {
-      "id": "core_billing_services_savings_estimatedailysavings",
-      "label": "estimateDailySavings()",
+      "id": "core_energy_services_sun_times_dayofyear",
+      "label": "dayOfYear()",
       "_callable": true,
       "_origin": "ast",
       "community": 27,
-      "community_name": "ImpactCard.tsx",
+      "community_name": "useSunWindow.ts",
       "file_type": "code",
-      "norm_label": "estimatedailysavings()",
-      "source_file": "core/billing/services/savings.ts",
-      "source_location": "L131"
+      "norm_label": "dayofyear()",
+      "source_file": "core/energy/services/sun-times.ts",
+      "source_location": "L45"
     },
     {
-      "id": "src_api_queries_usebillingsummary",
-      "label": "useBillingSummary()",
+      "id": "core_energy_services_sun_times_formatminute",
+      "label": "formatMinute()",
       "_callable": true,
       "_origin": "ast",
       "community": 27,
-      "community_name": "ImpactCard.tsx",
+      "community_name": "useSunWindow.ts",
       "file_type": "code",
-      "norm_label": "usebillingsummary()",
-      "source_file": "src/api/queries.ts",
-      "source_location": "L157"
+      "norm_label": "formatminute()",
+      "source_file": "core/energy/services/sun-times.ts",
+      "source_location": "L149"
     },
     {
-      "id": "src_api_queries_useplantrealtime",
-      "label": "usePlantRealtime()",
+      "id": "core_energy_services_sun_times_solarterms",
+      "label": "solarTerms()",
       "_callable": true,
       "_origin": "ast",
       "community": 27,
-      "community_name": "ImpactCard.tsx",
+      "community_name": "useSunWindow.ts",
       "file_type": "code",
-      "norm_label": "useplantrealtime()",
-      "source_file": "src/api/queries.ts",
-      "source_location": "L225"
+      "norm_label": "solarterms()",
+      "source_file": "core/energy/services/sun-times.ts",
+      "source_location": "L55"
     },
     {
-      "id": "src_features_impact_impactcard_impactcard",
-      "label": "ImpactCard()",
+      "id": "src_features_sun_usesunwindow_usesunwindow",
+      "label": "useSunWindow()",
       "_callable": true,
       "_origin": "ast",
       "community": 27,
-      "community_name": "ImpactCard.tsx",
+      "community_name": "useSunWindow.ts",
       "file_type": "code",
-      "norm_label": "impactcard()",
-      "source_file": "src/features/impact/ImpactCard.tsx",
-      "source_location": "L23"
+      "norm_label": "usesunwindow()",
+      "source_file": "src/features/sun/useSunWindow.ts",
+      "source_location": "L27"
+    },
+    {
+      "id": "tests_energy_sun_times_test_minutesof",
+      "label": "minutesOf()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 27,
+      "community_name": "useSunWindow.ts",
+      "file_type": "code",
+      "norm_label": "minutesof()",
+      "source_file": "tests/energy/sun-times.test.ts",
+      "source_location": "L15"
+    },
+    {
+      "id": "server_billing_readings_store_emptyfile",
+      "label": "emptyFile()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 28,
+      "community_name": "readings-store.ts",
+      "file_type": "code",
+      "norm_label": "emptyfile()",
+      "source_file": "server/billing/readings-store.ts",
+      "source_location": "L63"
+    },
+    {
+      "id": "server_billing_readings_store_isnotfound",
+      "label": "isNotFound()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 28,
+      "community_name": "readings-store.ts",
+      "file_type": "code",
+      "norm_label": "isnotfound()",
+      "source_file": "server/billing/readings-store.ts",
+      "source_location": "L186"
+    },
+    {
+      "id": "server_billing_readings_store_kvreadingsstore_constructor",
+      "label": ".constructor()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 28,
+      "community_name": "readings-store.ts",
+      "file_type": "code",
+      "norm_label": ".constructor()",
+      "source_file": "server/billing/readings-store.ts",
+      "source_location": "L169"
     },
     {
       "id": "server_billing_readings_store_kvreadingsstore_describe",
@@ -2897,7 +2997,7 @@
       "_callable": true,
       "_origin": "ast",
       "community": 28,
-      "community_name": "ReadingsRepository",
+      "community_name": "readings-store.ts",
       "file_type": "code",
       "norm_label": ".describe()",
       "source_file": "server/billing/readings-store.ts",
@@ -2909,7 +3009,7 @@
       "_callable": true,
       "_origin": "ast",
       "community": 28,
-      "community_name": "ReadingsRepository",
+      "community_name": "readings-store.ts",
       "file_type": "code",
       "norm_label": ".readraw()",
       "source_file": "server/billing/readings-store.ts",
@@ -2921,7 +3021,7 @@
       "_callable": true,
       "_origin": "ast",
       "community": 28,
-      "community_name": "ReadingsRepository",
+      "community_name": "readings-store.ts",
       "file_type": "code",
       "norm_label": ".writeraw()",
       "source_file": "server/billing/readings-store.ts",
@@ -2933,7 +3033,7 @@
       "_callable": true,
       "_origin": "ast",
       "community": 28,
-      "community_name": "ReadingsRepository",
+      "community_name": "readings-store.ts",
       "file_type": "code",
       "norm_label": ".load()",
       "source_file": "server/billing/readings-store.ts",
@@ -2945,7 +3045,7 @@
       "_callable": true,
       "_origin": "ast",
       "community": 28,
-      "community_name": "ReadingsRepository",
+      "community_name": "readings-store.ts",
       "file_type": "code",
       "norm_label": ".remove()",
       "source_file": "server/billing/readings-store.ts",
@@ -2957,7 +3057,7 @@
       "_callable": true,
       "_origin": "ast",
       "community": 28,
-      "community_name": "ReadingsRepository",
+      "community_name": "readings-store.ts",
       "file_type": "code",
       "norm_label": ".save()",
       "source_file": "server/billing/readings-store.ts",
@@ -2969,7 +3069,7 @@
       "_callable": true,
       "_origin": "ast",
       "community": 28,
-      "community_name": "ReadingsRepository",
+      "community_name": "readings-store.ts",
       "file_type": "code",
       "norm_label": ".setcarryover()",
       "source_file": "server/billing/readings-store.ts",
@@ -2981,7 +3081,7 @@
       "_callable": true,
       "_origin": "ast",
       "community": 28,
-      "community_name": "ReadingsRepository",
+      "community_name": "readings-store.ts",
       "file_type": "code",
       "norm_label": ".updatemeter()",
       "source_file": "server/billing/readings-store.ts",
@@ -2993,23 +3093,35 @@
       "_callable": true,
       "_origin": "ast",
       "community": 28,
-      "community_name": "ReadingsRepository",
+      "community_name": "readings-store.ts",
       "file_type": "code",
       "norm_label": ".upsert()",
       "source_file": "server/billing/readings-store.ts",
       "source_location": "L104"
     },
     {
-      "id": "server_solax_http_client_solaxhttpclient_constructor",
-      "label": ".constructor()",
+      "id": "server_billing_readings_store_readingsstore_readraw",
+      "label": ".readRaw()",
       "_callable": true,
       "_origin": "ast",
-      "community": 30,
-      "community_name": "RateLimiter",
+      "community": 28,
+      "community_name": "readings-store.ts",
       "file_type": "code",
-      "norm_label": ".constructor()",
-      "source_file": "server/solax/http-client.ts",
-      "source_location": "L51"
+      "norm_label": ".readraw()",
+      "source_file": "server/billing/readings-store.ts",
+      "source_location": "L147"
+    },
+    {
+      "id": "server_storage_kv_keyvaluestore_get",
+      "label": ".get()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 28,
+      "community_name": "readings-store.ts",
+      "file_type": "code",
+      "norm_label": ".get()",
+      "source_file": "server/storage/kv.ts",
+      "source_location": "L12"
     },
     {
       "id": "server_solax_rate_limiter_ratelimiter_constructor",
@@ -3017,7 +3129,7 @@
       "_callable": true,
       "_origin": "ast",
       "community": 30,
-      "community_name": "RateLimiter",
+      "community_name": "http-client.ts",
       "file_type": "code",
       "norm_label": ".constructor()",
       "source_file": "server/solax/rate-limiter.ts",
@@ -3029,7 +3141,7 @@
       "_callable": true,
       "_origin": "ast",
       "community": 30,
-      "community_name": "RateLimiter",
+      "community_name": "http-client.ts",
       "file_type": "code",
       "norm_label": ".markquotaexhausted()",
       "source_file": "server/solax/rate-limiter.ts",
@@ -3041,7 +3153,7 @@
       "_callable": true,
       "_origin": "ast",
       "community": 30,
-      "community_name": "RateLimiter",
+      "community_name": "http-client.ts",
       "file_type": "code",
       "norm_label": ".penalise()",
       "source_file": "server/solax/rate-limiter.ts",
@@ -3053,7 +3165,7 @@
       "_callable": true,
       "_origin": "ast",
       "community": 30,
-      "community_name": "RateLimiter",
+      "community_name": "http-client.ts",
       "file_type": "code",
       "norm_label": ".snapshot()",
       "source_file": "server/solax/rate-limiter.ts",
@@ -3065,7 +3177,7 @@
       "_callable": true,
       "_origin": "ast",
       "community": 30,
-      "community_name": "RateLimiter",
+      "community_name": "http-client.ts",
       "file_type": "code",
       "norm_label": ".take()",
       "source_file": "server/solax/rate-limiter.ts",
@@ -3077,7 +3189,7 @@
       "_callable": true,
       "_origin": "ast",
       "community": 30,
-      "community_name": "RateLimiter",
+      "community_name": "http-client.ts",
       "file_type": "code",
       "norm_label": ".constructor()",
       "source_file": "server/solax/rate-limiter.ts",
@@ -3154,6 +3266,18 @@
       "norm_label": ".size()",
       "source_file": "server/solax/cache.ts",
       "source_location": "L138"
+    },
+    {
+      "id": "server_storage_kv_keyvaluestore_set",
+      "label": ".set()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 31,
+      "community_name": "TtlCache",
+      "file_type": "code",
+      "norm_label": ".set()",
+      "source_file": "server/storage/kv.ts",
+      "source_location": "L13"
     },
     {
       "id": "src_ui_charts_radialgauge_arcpath",
@@ -3528,36 +3652,12 @@
       "source_location": "L31"
     },
     {
-      "id": "server_billing_readings_store_emptyfile",
-      "label": "emptyFile()",
-      "_callable": true,
-      "_origin": "ast",
-      "community": 5,
-      "community_name": "readings-store.ts",
-      "file_type": "code",
-      "norm_label": "emptyfile()",
-      "source_file": "server/billing/readings-store.ts",
-      "source_location": "L63"
-    },
-    {
-      "id": "server_billing_readings_store_isnotfound",
-      "label": "isNotFound()",
-      "_callable": true,
-      "_origin": "ast",
-      "community": 5,
-      "community_name": "readings-store.ts",
-      "file_type": "code",
-      "norm_label": "isnotfound()",
-      "source_file": "server/billing/readings-store.ts",
-      "source_location": "L186"
-    },
-    {
       "id": "server_billing_readings_store_readingsstore_constructor",
       "label": ".constructor()",
       "_callable": true,
       "_origin": "ast",
       "community": 5,
-      "community_name": "readings-store.ts",
+      "community_name": "plumbing.test.ts",
       "file_type": "code",
       "norm_label": ".constructor()",
       "source_file": "server/billing/readings-store.ts",
@@ -3569,23 +3669,11 @@
       "_callable": true,
       "_origin": "ast",
       "community": 5,
-      "community_name": "readings-store.ts",
+      "community_name": "plumbing.test.ts",
       "file_type": "code",
       "norm_label": ".describe()",
       "source_file": "server/billing/readings-store.ts",
       "source_location": "L143"
-    },
-    {
-      "id": "server_billing_readings_store_readingsstore_readraw",
-      "label": ".readRaw()",
-      "_callable": true,
-      "_origin": "ast",
-      "community": 5,
-      "community_name": "readings-store.ts",
-      "file_type": "code",
-      "norm_label": ".readraw()",
-      "source_file": "server/billing/readings-store.ts",
-      "source_location": "L147"
     },
     {
       "id": "server_billing_readings_store_readingsstore_writeraw",
@@ -3593,7 +3681,7 @@
       "_callable": true,
       "_origin": "ast",
       "community": 5,
-      "community_name": "readings-store.ts",
+      "community_name": "plumbing.test.ts",
       "file_type": "code",
       "norm_label": ".writeraw()",
       "source_file": "server/billing/readings-store.ts",
@@ -3605,7 +3693,7 @@
       "_callable": true,
       "_origin": "ast",
       "community": 5,
-      "community_name": "readings-store.ts",
+      "community_name": "plumbing.test.ts",
       "file_type": "code",
       "norm_label": "clock()",
       "source_file": "tests/server/plumbing.test.ts",
@@ -3617,7 +3705,7 @@
       "_callable": true,
       "_origin": "ast",
       "community": 5,
-      "community_name": "readings-store.ts",
+      "community_name": "plumbing.test.ts",
       "file_type": "code",
       "norm_label": "freshstore()",
       "source_file": "tests/server/plumbing.test.ts",
@@ -3629,7 +3717,7 @@
       "_callable": true,
       "_origin": "ast",
       "community": 5,
-      "community_name": "readings-store.ts",
+      "community_name": "plumbing.test.ts",
       "file_type": "code",
       "norm_label": "tokenresponse()",
       "source_file": "tests/server/plumbing.test.ts",
@@ -3756,16 +3844,28 @@
       "source_location": "L25"
     },
     {
-      "id": "server_billing_readings_store_kvreadingsstore_constructor",
-      "label": ".constructor()",
+      "id": "server_app_apierrorhandler",
+      "label": "apiErrorHandler()",
       "_callable": true,
       "_origin": "ast",
       "community": 7,
-      "community_name": "KeyValueStore",
+      "community_name": "create-server.ts",
       "file_type": "code",
-      "norm_label": ".constructor()",
-      "source_file": "server/billing/readings-store.ts",
-      "source_location": "L169"
+      "norm_label": "apierrorhandler()",
+      "source_file": "server/app.ts",
+      "source_location": "L729"
+    },
+    {
+      "id": "server_create_server_createserver",
+      "label": "createServer()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 7,
+      "community_name": "create-server.ts",
+      "file_type": "code",
+      "norm_label": "createserver()",
+      "source_file": "server/create-server.ts",
+      "source_location": "L25"
     },
     {
       "id": "server_storage_kv_createupstashstore",
@@ -3773,35 +3873,11 @@
       "_callable": true,
       "_origin": "ast",
       "community": 7,
-      "community_name": "KeyValueStore",
+      "community_name": "create-server.ts",
       "file_type": "code",
       "norm_label": "createupstashstore()",
       "source_file": "server/storage/kv.ts",
       "source_location": "L35"
-    },
-    {
-      "id": "server_storage_kv_keyvaluestore_get",
-      "label": ".get()",
-      "_callable": true,
-      "_origin": "ast",
-      "community": 7,
-      "community_name": "KeyValueStore",
-      "file_type": "code",
-      "norm_label": ".get()",
-      "source_file": "server/storage/kv.ts",
-      "source_location": "L12"
-    },
-    {
-      "id": "server_storage_kv_keyvaluestore_set",
-      "label": ".set()",
-      "_callable": true,
-      "_origin": "ast",
-      "community": 7,
-      "community_name": "KeyValueStore",
-      "file_type": "code",
-      "norm_label": ".set()",
-      "source_file": "server/storage/kv.ts",
-      "source_location": "L13"
     },
     {
       "id": "server_storage_kv_upstashstore_constructor",
@@ -3809,7 +3885,7 @@
       "_callable": true,
       "_origin": "ast",
       "community": 7,
-      "community_name": "KeyValueStore",
+      "community_name": "create-server.ts",
       "file_type": "code",
       "norm_label": ".constructor()",
       "source_file": "server/storage/kv.ts",
@@ -3821,7 +3897,7 @@
       "_callable": true,
       "_origin": "ast",
       "community": 7,
-      "community_name": "KeyValueStore",
+      "community_name": "create-server.ts",
       "file_type": "code",
       "norm_label": ".get()",
       "source_file": "server/storage/kv.ts",
@@ -3833,7 +3909,7 @@
       "_callable": true,
       "_origin": "ast",
       "community": 7,
-      "community_name": "KeyValueStore",
+      "community_name": "create-server.ts",
       "file_type": "code",
       "norm_label": ".set()",
       "source_file": "server/storage/kv.ts",
@@ -4089,7 +4165,7 @@
       "file_type": "code",
       "norm_label": "usehealth()",
       "source_file": "src/api/queries.ts",
-      "source_location": "L294"
+      "source_location": "L301"
     },
     {
       "id": "src_api_queries_uselogout",
@@ -4101,7 +4177,7 @@
       "file_type": "code",
       "norm_label": "uselogout()",
       "source_file": "src/api/queries.ts",
-      "source_location": "L85"
+      "source_location": "L92"
     },
     {
       "id": "src_api_queries_usesnapshot",
@@ -4113,7 +4189,7 @@
       "file_type": "code",
       "norm_label": "usesnapshot()",
       "source_file": "src/api/queries.ts",
-      "source_location": "L122"
+      "source_location": "L129"
     },
     {
       "id": "src_api_queries_usetoday",
@@ -4125,7 +4201,7 @@
       "file_type": "code",
       "norm_label": "usetoday()",
       "source_file": "src/api/queries.ts",
-      "source_location": "L139"
+      "source_location": "L146"
     },
     {
       "id": "src_api_queries_usetopology",
@@ -4137,7 +4213,7 @@
       "file_type": "code",
       "norm_label": "usetopology()",
       "source_file": "src/api/queries.ts",
-      "source_location": "L108"
+      "source_location": "L115"
     },
     {
       "id": "src_app_app_app",
@@ -4212,6 +4288,17 @@
       "source_location": "L150"
     },
     {
+      "id": "package",
+      "label": "package.json",
+      "_origin": "ast",
+      "community": 0,
+      "community_name": "devDependencies",
+      "file_type": "code",
+      "norm_label": "package.json",
+      "source_file": "package.json",
+      "source_location": "L1"
+    },
+    {
       "id": "package_devdependencies",
       "label": "devDependencies",
       "_origin": "ast",
@@ -4220,7 +4307,7 @@
       "file_type": "code",
       "norm_label": "devdependencies",
       "source_file": "package.json",
-      "source_location": "L32"
+      "source_location": "L33"
     },
     {
       "id": "package_devdependencies_esbuild",
@@ -4231,7 +4318,7 @@
       "file_type": "code",
       "norm_label": "esbuild",
       "source_file": "package.json",
-      "source_location": "L41"
+      "source_location": "L42"
     },
     {
       "id": "package_devdependencies_tailwindcss",
@@ -4242,7 +4329,7 @@
       "file_type": "code",
       "norm_label": "tailwindcss",
       "source_file": "package.json",
-      "source_location": "L42"
+      "source_location": "L43"
     },
     {
       "id": "package_devdependencies_tailwindcss_vite",
@@ -4253,7 +4340,7 @@
       "file_type": "code",
       "norm_label": "@tailwindcss/vite",
       "source_file": "package.json",
-      "source_location": "L33"
+      "source_location": "L34"
     },
     {
       "id": "package_devdependencies_types_d3_array",
@@ -4264,7 +4351,7 @@
       "file_type": "code",
       "norm_label": "@types/d3-array",
       "source_file": "package.json",
-      "source_location": "L34"
+      "source_location": "L35"
     },
     {
       "id": "package_devdependencies_types_d3_scale",
@@ -4275,7 +4362,7 @@
       "file_type": "code",
       "norm_label": "@types/d3-scale",
       "source_file": "package.json",
-      "source_location": "L35"
+      "source_location": "L36"
     },
     {
       "id": "package_devdependencies_types_d3_shape",
@@ -4286,7 +4373,7 @@
       "file_type": "code",
       "norm_label": "@types/d3-shape",
       "source_file": "package.json",
-      "source_location": "L36"
+      "source_location": "L37"
     },
     {
       "id": "package_devdependencies_types_node",
@@ -4297,7 +4384,7 @@
       "file_type": "code",
       "norm_label": "@types/node",
       "source_file": "package.json",
-      "source_location": "L37"
+      "source_location": "L38"
     },
     {
       "id": "package_devdependencies_types_react",
@@ -4308,7 +4395,7 @@
       "file_type": "code",
       "norm_label": "@types/react",
       "source_file": "package.json",
-      "source_location": "L38"
+      "source_location": "L39"
     },
     {
       "id": "package_devdependencies_types_react_dom",
@@ -4319,7 +4406,7 @@
       "file_type": "code",
       "norm_label": "@types/react-dom",
       "source_file": "package.json",
-      "source_location": "L39"
+      "source_location": "L40"
     },
     {
       "id": "package_devdependencies_typescript",
@@ -4330,7 +4417,7 @@
       "file_type": "code",
       "norm_label": "typescript",
       "source_file": "package.json",
-      "source_location": "L43"
+      "source_location": "L44"
     },
     {
       "id": "package_devdependencies_vite",
@@ -4341,7 +4428,7 @@
       "file_type": "code",
       "norm_label": "vite",
       "source_file": "package.json",
-      "source_location": "L44"
+      "source_location": "L45"
     },
     {
       "id": "package_devdependencies_vitejs_plugin_react",
@@ -4352,7 +4439,7 @@
       "file_type": "code",
       "norm_label": "@vitejs/plugin-react",
       "source_file": "package.json",
-      "source_location": "L40"
+      "source_location": "L41"
     },
     {
       "id": "package_devdependencies_vitest",
@@ -4363,7 +4450,183 @@
       "file_type": "code",
       "norm_label": "vitest",
       "source_file": "package.json",
-      "source_location": "L45"
+      "source_location": "L46"
+    },
+    {
+      "id": "package_name",
+      "label": "name",
+      "_origin": "ast",
+      "community": 0,
+      "community_name": "devDependencies",
+      "file_type": "code",
+      "norm_label": "name",
+      "source_file": "package.json",
+      "source_location": "L2"
+    },
+    {
+      "id": "package_packagemanager",
+      "label": "packageManager",
+      "_origin": "ast",
+      "community": 0,
+      "community_name": "devDependencies",
+      "file_type": "code",
+      "norm_label": "packagemanager",
+      "source_file": "package.json",
+      "source_location": "L48"
+    },
+    {
+      "id": "package_private",
+      "label": "private",
+      "_origin": "ast",
+      "community": 0,
+      "community_name": "devDependencies",
+      "file_type": "code",
+      "norm_label": "private",
+      "source_file": "package.json",
+      "source_location": "L3"
+    },
+    {
+      "id": "package_scripts",
+      "label": "scripts",
+      "_origin": "ast",
+      "community": 0,
+      "community_name": "devDependencies",
+      "file_type": "code",
+      "norm_label": "scripts",
+      "source_file": "package.json",
+      "source_location": "L6"
+    },
+    {
+      "id": "package_scripts_build",
+      "label": "build",
+      "_origin": "ast",
+      "community": 0,
+      "community_name": "devDependencies",
+      "file_type": "code",
+      "norm_label": "build",
+      "source_file": "package.json",
+      "source_location": "L8"
+    },
+    {
+      "id": "package_scripts_build_vercel",
+      "label": "build:vercel",
+      "_origin": "ast",
+      "community": 0,
+      "community_name": "devDependencies",
+      "file_type": "code",
+      "norm_label": "build:vercel",
+      "source_file": "package.json",
+      "source_location": "L15"
+    },
+    {
+      "id": "package_scripts_dev",
+      "label": "dev",
+      "_origin": "ast",
+      "community": 0,
+      "community_name": "devDependencies",
+      "file_type": "code",
+      "norm_label": "dev",
+      "source_file": "package.json",
+      "source_location": "L7"
+    },
+    {
+      "id": "package_scripts_dev_server",
+      "label": "dev:server",
+      "_origin": "ast",
+      "community": 0,
+      "community_name": "devDependencies",
+      "file_type": "code",
+      "norm_label": "dev:server",
+      "source_file": "package.json",
+      "source_location": "L13"
+    },
+    {
+      "id": "package_scripts_preview",
+      "label": "preview",
+      "_origin": "ast",
+      "community": 0,
+      "community_name": "devDependencies",
+      "file_type": "code",
+      "norm_label": "preview",
+      "source_file": "package.json",
+      "source_location": "L9"
+    },
+    {
+      "id": "package_scripts_seed_upstash",
+      "label": "seed:upstash",
+      "_origin": "ast",
+      "community": 0,
+      "community_name": "devDependencies",
+      "file_type": "code",
+      "norm_label": "seed:upstash",
+      "source_file": "package.json",
+      "source_location": "L16"
+    },
+    {
+      "id": "package_scripts_start",
+      "label": "start",
+      "_origin": "ast",
+      "community": 0,
+      "community_name": "devDependencies",
+      "file_type": "code",
+      "norm_label": "start",
+      "source_file": "package.json",
+      "source_location": "L14"
+    },
+    {
+      "id": "package_scripts_test",
+      "label": "test",
+      "_origin": "ast",
+      "community": 0,
+      "community_name": "devDependencies",
+      "file_type": "code",
+      "norm_label": "test",
+      "source_file": "package.json",
+      "source_location": "L11"
+    },
+    {
+      "id": "package_scripts_test_watch",
+      "label": "test:watch",
+      "_origin": "ast",
+      "community": 0,
+      "community_name": "devDependencies",
+      "file_type": "code",
+      "norm_label": "test:watch",
+      "source_file": "package.json",
+      "source_location": "L12"
+    },
+    {
+      "id": "package_scripts_typecheck",
+      "label": "typecheck",
+      "_origin": "ast",
+      "community": 0,
+      "community_name": "devDependencies",
+      "file_type": "code",
+      "norm_label": "typecheck",
+      "source_file": "package.json",
+      "source_location": "L10"
+    },
+    {
+      "id": "package_type",
+      "label": "type",
+      "_origin": "ast",
+      "community": 0,
+      "community_name": "devDependencies",
+      "file_type": "code",
+      "norm_label": "type",
+      "source_file": "package.json",
+      "source_location": "L5"
+    },
+    {
+      "id": "package_version",
+      "label": "version",
+      "_origin": "ast",
+      "community": 0,
+      "community_name": "devDependencies",
+      "file_type": "code",
+      "norm_label": "version",
+      "source_file": "package.json",
+      "source_location": "L4"
     },
     {
       "id": "esbuild",
@@ -4374,7 +4637,7 @@
       "file_type": "concept",
       "norm_label": "esbuild",
       "source_file": "package.json",
-      "source_location": "L41"
+      "source_location": "L42"
     },
     {
       "id": "tailwindcss",
@@ -4385,7 +4648,7 @@
       "file_type": "concept",
       "norm_label": "tailwindcss",
       "source_file": "package.json",
-      "source_location": "L42"
+      "source_location": "L43"
     },
     {
       "id": "tailwindcss_vite",
@@ -4396,7 +4659,7 @@
       "file_type": "concept",
       "norm_label": "@tailwindcss/vite",
       "source_file": "package.json",
-      "source_location": "L33"
+      "source_location": "L34"
     },
     {
       "id": "types_d3_array",
@@ -4407,7 +4670,7 @@
       "file_type": "concept",
       "norm_label": "@types/d3-array",
       "source_file": "package.json",
-      "source_location": "L34"
+      "source_location": "L35"
     },
     {
       "id": "types_d3_scale",
@@ -4418,7 +4681,7 @@
       "file_type": "concept",
       "norm_label": "@types/d3-scale",
       "source_file": "package.json",
-      "source_location": "L35"
+      "source_location": "L36"
     },
     {
       "id": "types_d3_shape",
@@ -4429,7 +4692,7 @@
       "file_type": "concept",
       "norm_label": "@types/d3-shape",
       "source_file": "package.json",
-      "source_location": "L36"
+      "source_location": "L37"
     },
     {
       "id": "types_node",
@@ -4440,7 +4703,7 @@
       "file_type": "concept",
       "norm_label": "@types/node",
       "source_file": "package.json",
-      "source_location": "L37"
+      "source_location": "L38"
     },
     {
       "id": "types_react",
@@ -4451,7 +4714,7 @@
       "file_type": "concept",
       "norm_label": "@types/react",
       "source_file": "package.json",
-      "source_location": "L38"
+      "source_location": "L39"
     },
     {
       "id": "types_react_dom",
@@ -4462,7 +4725,7 @@
       "file_type": "concept",
       "norm_label": "@types/react-dom",
       "source_file": "package.json",
-      "source_location": "L39"
+      "source_location": "L40"
     },
     {
       "id": "typescript",
@@ -4473,7 +4736,7 @@
       "file_type": "concept",
       "norm_label": "typescript",
       "source_file": "package.json",
-      "source_location": "L43"
+      "source_location": "L44"
     },
     {
       "id": "vite",
@@ -4484,7 +4747,7 @@
       "file_type": "concept",
       "norm_label": "vite",
       "source_file": "package.json",
-      "source_location": "L44"
+      "source_location": "L45"
     },
     {
       "id": "vitejs_plugin_react",
@@ -4495,7 +4758,7 @@
       "file_type": "concept",
       "norm_label": "@vitejs/plugin-react",
       "source_file": "package.json",
-      "source_location": "L40"
+      "source_location": "L41"
     },
     {
       "id": "vitest",
@@ -4506,7 +4769,7 @@
       "file_type": "concept",
       "norm_label": "vitest",
       "source_file": "package.json",
-      "source_location": "L45"
+      "source_location": "L46"
     },
     {
       "id": "tsconfig_app",
@@ -4828,6 +5091,28 @@
       "source_location": "L18"
     },
     {
+      "id": "src_api_auth",
+      "label": "api/auth.ts",
+      "_origin": "ast",
+      "community": 12,
+      "community_name": "AuthGate.tsx",
+      "file_type": "code",
+      "norm_label": "api/auth.ts",
+      "source_file": "src/api/auth.ts",
+      "source_location": "L1"
+    },
+    {
+      "id": "src_api_queries_authkey",
+      "label": "authKey",
+      "_origin": "ast",
+      "community": 12,
+      "community_name": "AuthGate.tsx",
+      "file_type": "code",
+      "norm_label": "authkey",
+      "source_file": "src/api/queries.ts",
+      "source_location": "L71"
+    },
+    {
       "id": "src_features_auth_authgate",
       "label": "AuthGate.tsx",
       "_origin": "ast",
@@ -4836,17 +5121,6 @@
       "file_type": "code",
       "norm_label": "authgate.tsx",
       "source_file": "src/features/auth/AuthGate.tsx",
-      "source_location": "L1"
-    },
-    {
-      "id": "src_features_auth_loginscreen",
-      "label": "LoginScreen.tsx",
-      "_origin": "ast",
-      "community": 12,
-      "community_name": "AuthGate.tsx",
-      "file_type": "code",
-      "norm_label": "loginscreen.tsx",
-      "source_file": "src/features/auth/LoginScreen.tsx",
       "source_location": "L1"
     },
     {
@@ -4876,51 +5150,29 @@
       "label": "api",
       "_origin": "ast",
       "community": 13,
-      "community_name": "queries.ts",
+      "community_name": "EnergyAnalysis.tsx",
       "file_type": "code",
       "norm_label": "api",
       "source_file": "src/api/client.ts",
-      "source_location": "L184"
-    },
-    {
-      "id": "src_api_queries",
-      "label": "queries.ts",
-      "_origin": "ast",
-      "community": 13,
-      "community_name": "queries.ts",
-      "file_type": "code",
-      "norm_label": "queries.ts",
-      "source_file": "src/api/queries.ts",
-      "source_location": "L1"
-    },
-    {
-      "id": "src_api_queries_authkey",
-      "label": "authKey",
-      "_origin": "ast",
-      "community": 13,
-      "community_name": "queries.ts",
-      "file_type": "code",
-      "norm_label": "authkey",
-      "source_file": "src/api/queries.ts",
-      "source_location": "L64"
+      "source_location": "L192"
     },
     {
       "id": "src_api_queries_querykeys",
       "label": "queryKeys",
       "_origin": "ast",
       "community": 13,
-      "community_name": "queries.ts",
+      "community_name": "EnergyAnalysis.tsx",
       "file_type": "code",
       "norm_label": "querykeys",
       "source_file": "src/api/queries.ts",
-      "source_location": "L97"
+      "source_location": "L104"
     },
     {
       "id": "src_features_analysis_energyanalysis",
       "label": "EnergyAnalysis.tsx",
       "_origin": "ast",
       "community": 13,
-      "community_name": "queries.ts",
+      "community_name": "EnergyAnalysis.tsx",
       "file_type": "code",
       "norm_label": "energyanalysis.tsx",
       "source_file": "src/features/analysis/EnergyAnalysis.tsx",
@@ -4931,7 +5183,7 @@
       "label": "MODES",
       "_origin": "ast",
       "community": 13,
-      "community_name": "queries.ts",
+      "community_name": "EnergyAnalysis.tsx",
       "file_type": "code",
       "norm_label": "modes",
       "source_file": "src/features/analysis/EnergyAnalysis.tsx",
@@ -5114,6 +5366,50 @@
       "source_location": "L90"
     },
     {
+      "id": "core_energy_services_environment",
+      "label": "environment.ts",
+      "_origin": "ast",
+      "community": 15,
+      "community_name": "BillHistory.tsx",
+      "file_type": "code",
+      "norm_label": "environment.ts",
+      "source_file": "core/energy/services/environment.ts",
+      "source_location": "L1"
+    },
+    {
+      "id": "core_energy_services_environment_co2_kg_per_kwh",
+      "label": "CO2_KG_PER_KWH",
+      "_origin": "ast",
+      "community": 15,
+      "community_name": "BillHistory.tsx",
+      "file_type": "code",
+      "norm_label": "co2_kg_per_kwh",
+      "source_file": "core/energy/services/environment.ts",
+      "source_location": "L9"
+    },
+    {
+      "id": "core_energy_services_environment_co2_kg_per_tree_year",
+      "label": "CO2_KG_PER_TREE_YEAR",
+      "_origin": "ast",
+      "community": 15,
+      "community_name": "BillHistory.tsx",
+      "file_type": "code",
+      "norm_label": "co2_kg_per_tree_year",
+      "source_file": "core/energy/services/environment.ts",
+      "source_location": "L11"
+    },
+    {
+      "id": "core_energy_services_environment_coal_kg_per_kwh",
+      "label": "COAL_KG_PER_KWH",
+      "_origin": "ast",
+      "community": 15,
+      "community_name": "BillHistory.tsx",
+      "file_type": "code",
+      "norm_label": "coal_kg_per_kwh",
+      "source_file": "core/energy/services/environment.ts",
+      "source_location": "L10"
+    },
+    {
       "id": "src_features_bolsa_billhistory",
       "label": "BillHistory.tsx",
       "_origin": "ast",
@@ -5156,6 +5452,28 @@
       "norm_label": "months",
       "source_file": "src/features/bolsa/BillHistory.tsx",
       "source_location": "L28"
+    },
+    {
+      "id": "src_features_impact_impactcard",
+      "label": "ImpactCard.tsx",
+      "_origin": "ast",
+      "community": 15,
+      "community_name": "BillHistory.tsx",
+      "file_type": "code",
+      "norm_label": "impactcard.tsx",
+      "source_file": "src/features/impact/ImpactCard.tsx",
+      "source_location": "L1"
+    },
+    {
+      "id": "src_features_impact_impactcard_money",
+      "label": "money",
+      "_origin": "ast",
+      "community": 15,
+      "community_name": "BillHistory.tsx",
+      "file_type": "code",
+      "norm_label": "money",
+      "source_file": "src/features/impact/ImpactCard.tsx",
+      "source_location": "L17"
     },
     {
       "id": "tests_billing_savings_test",
@@ -5259,7 +5577,7 @@
       "node_kind": "heading",
       "norm_label": "deploy: vercel + upstash (free tier)",
       "source_file": "README.md",
-      "source_location": "L168"
+      "source_location": "L169"
     },
     {
       "id": "readme_environment_variables",
@@ -5319,7 +5637,7 @@
       "node_kind": "heading",
       "norm_label": "license",
       "source_file": "README.md",
-      "source_location": "L196"
+      "source_location": "L198"
     },
     {
       "id": "readme_solar",
@@ -5367,7 +5685,7 @@
       "node_kind": "heading",
       "norm_label": "testing",
       "source_file": "README.md",
-      "source_location": "L184"
+      "source_location": "L186"
     },
     {
       "id": "readme_today",
@@ -5382,124 +5700,14 @@
       "source_location": "L25"
     },
     {
-      "id": "core_solax_dto_envelope",
-      "label": "envelope.ts",
-      "_origin": "ast",
-      "community": 18,
-      "community_name": "envelope.ts",
-      "file_type": "code",
-      "norm_label": "envelope.ts",
-      "source_file": "core/solax/dto/envelope.ts",
-      "source_location": "L1"
-    },
-    {
-      "id": "core_solax_dto_envelope_envelopeschema",
-      "label": "envelopeSchema",
-      "_origin": "ast",
-      "community": 18,
-      "community_name": "envelope.ts",
-      "file_type": "code",
-      "norm_label": "envelopeschema",
-      "source_file": "core/solax/dto/envelope.ts",
-      "source_location": "L37"
-    },
-    {
-      "id": "core_solax_dto_envelope_human_messages",
-      "label": "HUMAN_MESSAGES",
-      "_origin": "ast",
-      "community": 18,
-      "community_name": "envelope.ts",
-      "file_type": "code",
-      "norm_label": "human_messages",
-      "source_file": "core/solax/dto/envelope.ts",
-      "source_location": "L105"
-    },
-    {
-      "id": "core_solax_dto_envelope_retryable",
-      "label": "RETRYABLE",
-      "_origin": "ast",
-      "community": 18,
-      "community_name": "envelope.ts",
-      "file_type": "code",
-      "norm_label": "retryable",
-      "source_file": "core/solax/dto/envelope.ts",
-      "source_location": "L120"
-    },
-    {
-      "id": "core_solax_dto_envelope_solax_ok_auth",
-      "label": "SOLAX_OK_AUTH",
-      "_origin": "ast",
-      "community": 18,
-      "community_name": "envelope.ts",
-      "file_type": "code",
-      "norm_label": "solax_ok_auth",
-      "source_file": "core/solax/dto/envelope.ts",
-      "source_location": "L15"
-    },
-    {
-      "id": "core_solax_dto_envelope_solax_ok_business",
-      "label": "SOLAX_OK_BUSINESS",
-      "_origin": "ast",
-      "community": 18,
-      "community_name": "envelope.ts",
-      "file_type": "code",
-      "norm_label": "solax_ok_business",
-      "source_file": "core/solax/dto/envelope.ts",
-      "source_location": "L14"
-    },
-    {
-      "id": "core_solax_dto_envelope_solaxcode",
-      "label": "SolaxCode",
-      "_origin": "ast",
-      "community": 18,
-      "community_name": "envelope.ts",
-      "file_type": "code",
-      "norm_label": "solaxcode",
-      "source_file": "core/solax/dto/envelope.ts",
-      "source_location": "L18"
-    },
-    {
-      "id": "core_solax_dto_envelope_tokenresultschema",
-      "label": "tokenResultSchema",
-      "_origin": "ast",
-      "community": 18,
-      "community_name": "envelope.ts",
-      "file_type": "code",
-      "norm_label": "tokenresultschema",
-      "source_file": "core/solax/dto/envelope.ts",
-      "source_location": "L47"
-    },
-    {
-      "id": "server_solax_http_client",
-      "label": "http-client.ts",
-      "_origin": "ast",
-      "community": 18,
-      "community_name": "envelope.ts",
-      "file_type": "code",
-      "norm_label": "http-client.ts",
-      "source_file": "server/solax/http-client.ts",
-      "source_location": "L1"
-    },
-    {
-      "id": "server_solax_token_store",
-      "label": "token-store.ts",
-      "_origin": "ast",
-      "community": 18,
-      "community_name": "envelope.ts",
-      "file_type": "code",
-      "norm_label": "token-store.ts",
-      "source_file": "server/solax/token-store.ts",
-      "source_location": "L1"
-    },
-    {
-      "id": "server_create_server",
-      "label": "create-server.ts",
+      "id": "server_auth",
+      "label": "server/auth.ts",
       "_origin": "ast",
       "community": 19,
-      "community_name": "create-server.ts",
+      "community_name": "env.ts",
       "file_type": "code",
-      "norm_label": "create-server.ts",
-      "source_file": "server/create-server.ts",
+      "norm_label": "server/auth.ts",
+      "source_file": "server/auth.ts",
       "source_location": "L1"
     },
     {
@@ -5507,7 +5715,7 @@
       "label": "env.ts",
       "_origin": "ast",
       "community": 19,
-      "community_name": "create-server.ts",
+      "community_name": "env.ts",
       "file_type": "code",
       "norm_label": "env.ts",
       "source_file": "server/env.ts",
@@ -5518,7 +5726,7 @@
       "label": "schema",
       "_origin": "ast",
       "community": 19,
-      "community_name": "create-server.ts",
+      "community_name": "env.ts",
       "file_type": "code",
       "norm_label": "schema",
       "source_file": "server/env.ts",
@@ -5529,7 +5737,7 @@
       "label": "index.ts",
       "_origin": "ast",
       "community": 19,
-      "community_name": "create-server.ts",
+      "community_name": "env.ts",
       "file_type": "code",
       "norm_label": "index.ts",
       "source_file": "server/index.ts",
@@ -5540,7 +5748,7 @@
       "label": "app",
       "_origin": "ast",
       "community": 19,
-      "community_name": "create-server.ts",
+      "community_name": "env.ts",
       "file_type": "code",
       "norm_label": "app",
       "source_file": "server/index.ts",
@@ -5551,7 +5759,7 @@
       "label": "dotEnvFound",
       "_origin": "ast",
       "community": 19,
-      "community_name": "create-server.ts",
+      "community_name": "env.ts",
       "file_type": "code",
       "norm_label": "dotenvfound",
       "source_file": "server/index.ts",
@@ -5562,44 +5770,44 @@
       "label": "env",
       "_origin": "ast",
       "community": 19,
-      "community_name": "create-server.ts",
+      "community_name": "env.ts",
       "file_type": "code",
       "norm_label": "env",
       "source_file": "server/index.ts",
       "source_location": "L13"
     },
     {
-      "id": "server_vercel",
-      "label": "vercel.ts",
+      "id": "tests_server_auth_test",
+      "label": "auth.test.ts",
       "_origin": "ast",
       "community": 19,
-      "community_name": "create-server.ts",
+      "community_name": "env.ts",
       "file_type": "code",
-      "norm_label": "vercel.ts",
-      "source_file": "server/vercel.ts",
+      "norm_label": "auth.test.ts",
+      "source_file": "tests/server/auth.test.ts",
       "source_location": "L1"
     },
     {
-      "id": "server_vercel_app",
-      "label": "app",
+      "id": "tests_server_auth_test_base",
+      "label": "BASE",
       "_origin": "ast",
       "community": 19,
-      "community_name": "create-server.ts",
+      "community_name": "env.ts",
       "file_type": "code",
-      "norm_label": "app",
-      "source_file": "server/vercel.ts",
-      "source_location": "L12"
+      "norm_label": "base",
+      "source_file": "tests/server/auth.test.ts",
+      "source_location": "L6"
     },
     {
-      "id": "package",
-      "label": "package.json",
+      "id": "tests_server_auth_test_supabase",
+      "label": "SUPABASE",
       "_origin": "ast",
-      "community": 2,
-      "community_name": "dependencies",
+      "community": 19,
+      "community_name": "env.ts",
       "file_type": "code",
-      "norm_label": "package.json",
-      "source_file": "package.json",
-      "source_location": "L1"
+      "norm_label": "supabase",
+      "source_file": "tests/server/auth.test.ts",
+      "source_location": "L13"
     },
     {
       "id": "package_dependencies",
@@ -5621,7 +5829,7 @@
       "file_type": "code",
       "norm_label": "d3-array",
       "source_file": "package.json",
-      "source_location": "L22"
+      "source_location": "L23"
     },
     {
       "id": "package_dependencies_d3_scale",
@@ -5632,7 +5840,7 @@
       "file_type": "code",
       "norm_label": "d3-scale",
       "source_file": "package.json",
-      "source_location": "L23"
+      "source_location": "L24"
     },
     {
       "id": "package_dependencies_d3_shape",
@@ -5643,7 +5851,7 @@
       "file_type": "code",
       "norm_label": "d3-shape",
       "source_file": "package.json",
-      "source_location": "L24"
+      "source_location": "L25"
     },
     {
       "id": "package_dependencies_hono",
@@ -5654,7 +5862,7 @@
       "file_type": "code",
       "norm_label": "hono",
       "source_file": "package.json",
-      "source_location": "L25"
+      "source_location": "L26"
     },
     {
       "id": "package_dependencies_hono_node_server",
@@ -5676,7 +5884,7 @@
       "file_type": "code",
       "norm_label": "motion",
       "source_file": "package.json",
-      "source_location": "L26"
+      "source_location": "L27"
     },
     {
       "id": "package_dependencies_react",
@@ -5687,7 +5895,7 @@
       "file_type": "code",
       "norm_label": "react",
       "source_file": "package.json",
-      "source_location": "L27"
+      "source_location": "L28"
     },
     {
       "id": "package_dependencies_react_dom",
@@ -5698,7 +5906,18 @@
       "file_type": "code",
       "norm_label": "react-dom",
       "source_file": "package.json",
-      "source_location": "L28"
+      "source_location": "L29"
+    },
+    {
+      "id": "package_dependencies_supabase_supabase_js",
+      "label": "@supabase/supabase-js",
+      "_origin": "ast",
+      "community": 2,
+      "community_name": "dependencies",
+      "file_type": "code",
+      "norm_label": "@supabase/supabase-js",
+      "source_file": "package.json",
+      "source_location": "L20"
     },
     {
       "id": "package_dependencies_tanstack_react_query",
@@ -5709,7 +5928,7 @@
       "file_type": "code",
       "norm_label": "@tanstack/react-query",
       "source_file": "package.json",
-      "source_location": "L20"
+      "source_location": "L21"
     },
     {
       "id": "package_dependencies_tsx",
@@ -5720,7 +5939,7 @@
       "file_type": "code",
       "norm_label": "tsx",
       "source_file": "package.json",
-      "source_location": "L29"
+      "source_location": "L30"
     },
     {
       "id": "package_dependencies_upstash_redis",
@@ -5731,7 +5950,7 @@
       "file_type": "code",
       "norm_label": "@upstash/redis",
       "source_file": "package.json",
-      "source_location": "L21"
+      "source_location": "L22"
     },
     {
       "id": "package_dependencies_zod",
@@ -5742,183 +5961,7 @@
       "file_type": "code",
       "norm_label": "zod",
       "source_file": "package.json",
-      "source_location": "L30"
-    },
-    {
-      "id": "package_name",
-      "label": "name",
-      "_origin": "ast",
-      "community": 2,
-      "community_name": "dependencies",
-      "file_type": "code",
-      "norm_label": "name",
-      "source_file": "package.json",
-      "source_location": "L2"
-    },
-    {
-      "id": "package_packagemanager",
-      "label": "packageManager",
-      "_origin": "ast",
-      "community": 2,
-      "community_name": "dependencies",
-      "file_type": "code",
-      "norm_label": "packagemanager",
-      "source_file": "package.json",
-      "source_location": "L47"
-    },
-    {
-      "id": "package_private",
-      "label": "private",
-      "_origin": "ast",
-      "community": 2,
-      "community_name": "dependencies",
-      "file_type": "code",
-      "norm_label": "private",
-      "source_file": "package.json",
-      "source_location": "L3"
-    },
-    {
-      "id": "package_scripts",
-      "label": "scripts",
-      "_origin": "ast",
-      "community": 2,
-      "community_name": "dependencies",
-      "file_type": "code",
-      "norm_label": "scripts",
-      "source_file": "package.json",
-      "source_location": "L6"
-    },
-    {
-      "id": "package_scripts_build",
-      "label": "build",
-      "_origin": "ast",
-      "community": 2,
-      "community_name": "dependencies",
-      "file_type": "code",
-      "norm_label": "build",
-      "source_file": "package.json",
-      "source_location": "L8"
-    },
-    {
-      "id": "package_scripts_build_vercel",
-      "label": "build:vercel",
-      "_origin": "ast",
-      "community": 2,
-      "community_name": "dependencies",
-      "file_type": "code",
-      "norm_label": "build:vercel",
-      "source_file": "package.json",
-      "source_location": "L15"
-    },
-    {
-      "id": "package_scripts_dev",
-      "label": "dev",
-      "_origin": "ast",
-      "community": 2,
-      "community_name": "dependencies",
-      "file_type": "code",
-      "norm_label": "dev",
-      "source_file": "package.json",
-      "source_location": "L7"
-    },
-    {
-      "id": "package_scripts_dev_server",
-      "label": "dev:server",
-      "_origin": "ast",
-      "community": 2,
-      "community_name": "dependencies",
-      "file_type": "code",
-      "norm_label": "dev:server",
-      "source_file": "package.json",
-      "source_location": "L13"
-    },
-    {
-      "id": "package_scripts_preview",
-      "label": "preview",
-      "_origin": "ast",
-      "community": 2,
-      "community_name": "dependencies",
-      "file_type": "code",
-      "norm_label": "preview",
-      "source_file": "package.json",
-      "source_location": "L9"
-    },
-    {
-      "id": "package_scripts_seed_upstash",
-      "label": "seed:upstash",
-      "_origin": "ast",
-      "community": 2,
-      "community_name": "dependencies",
-      "file_type": "code",
-      "norm_label": "seed:upstash",
-      "source_file": "package.json",
-      "source_location": "L16"
-    },
-    {
-      "id": "package_scripts_start",
-      "label": "start",
-      "_origin": "ast",
-      "community": 2,
-      "community_name": "dependencies",
-      "file_type": "code",
-      "norm_label": "start",
-      "source_file": "package.json",
-      "source_location": "L14"
-    },
-    {
-      "id": "package_scripts_test",
-      "label": "test",
-      "_origin": "ast",
-      "community": 2,
-      "community_name": "dependencies",
-      "file_type": "code",
-      "norm_label": "test",
-      "source_file": "package.json",
-      "source_location": "L11"
-    },
-    {
-      "id": "package_scripts_test_watch",
-      "label": "test:watch",
-      "_origin": "ast",
-      "community": 2,
-      "community_name": "dependencies",
-      "file_type": "code",
-      "norm_label": "test:watch",
-      "source_file": "package.json",
-      "source_location": "L12"
-    },
-    {
-      "id": "package_scripts_typecheck",
-      "label": "typecheck",
-      "_origin": "ast",
-      "community": 2,
-      "community_name": "dependencies",
-      "file_type": "code",
-      "norm_label": "typecheck",
-      "source_file": "package.json",
-      "source_location": "L10"
-    },
-    {
-      "id": "package_type",
-      "label": "type",
-      "_origin": "ast",
-      "community": 2,
-      "community_name": "dependencies",
-      "file_type": "code",
-      "norm_label": "type",
-      "source_file": "package.json",
-      "source_location": "L5"
-    },
-    {
-      "id": "package_version",
-      "label": "version",
-      "_origin": "ast",
-      "community": 2,
-      "community_name": "dependencies",
-      "file_type": "code",
-      "norm_label": "version",
-      "source_file": "package.json",
-      "source_location": "L4"
+      "source_location": "L31"
     },
     {
       "id": "d3_array",
@@ -5929,7 +5972,7 @@
       "file_type": "concept",
       "norm_label": "d3-array",
       "source_file": "package.json",
-      "source_location": "L22"
+      "source_location": "L23"
     },
     {
       "id": "d3_scale",
@@ -5940,7 +5983,7 @@
       "file_type": "concept",
       "norm_label": "d3-scale",
       "source_file": "package.json",
-      "source_location": "L23"
+      "source_location": "L24"
     },
     {
       "id": "d3_shape",
@@ -5951,7 +5994,7 @@
       "file_type": "concept",
       "norm_label": "d3-shape",
       "source_file": "package.json",
-      "source_location": "L24"
+      "source_location": "L25"
     },
     {
       "id": "hono",
@@ -5962,7 +6005,7 @@
       "file_type": "concept",
       "norm_label": "hono",
       "source_file": "package.json",
-      "source_location": "L25"
+      "source_location": "L26"
     },
     {
       "id": "hono_node_server",
@@ -5984,7 +6027,7 @@
       "file_type": "concept",
       "norm_label": "motion",
       "source_file": "package.json",
-      "source_location": "L26"
+      "source_location": "L27"
     },
     {
       "id": "react",
@@ -5995,7 +6038,7 @@
       "file_type": "concept",
       "norm_label": "react",
       "source_file": "package.json",
-      "source_location": "L27"
+      "source_location": "L28"
     },
     {
       "id": "react_dom",
@@ -6006,7 +6049,18 @@
       "file_type": "concept",
       "norm_label": "react-dom",
       "source_file": "package.json",
-      "source_location": "L28"
+      "source_location": "L29"
+    },
+    {
+      "id": "supabase_supabase_js",
+      "label": "@supabase/supabase-js",
+      "_origin": "ast",
+      "community": 2,
+      "community_name": "dependencies",
+      "file_type": "concept",
+      "norm_label": "@supabase/supabase-js",
+      "source_file": "package.json",
+      "source_location": "L20"
     },
     {
       "id": "tanstack_react_query",
@@ -6017,7 +6071,7 @@
       "file_type": "concept",
       "norm_label": "@tanstack/react-query",
       "source_file": "package.json",
-      "source_location": "L20"
+      "source_location": "L21"
     },
     {
       "id": "tsx",
@@ -6028,7 +6082,7 @@
       "file_type": "concept",
       "norm_label": "tsx",
       "source_file": "package.json",
-      "source_location": "L29"
+      "source_location": "L30"
     },
     {
       "id": "upstash_redis",
@@ -6039,7 +6093,7 @@
       "file_type": "concept",
       "norm_label": "@upstash/redis",
       "source_file": "package.json",
-      "source_location": "L21"
+      "source_location": "L22"
     },
     {
       "id": "zod",
@@ -6050,62 +6104,7 @@
       "file_type": "concept",
       "norm_label": "zod",
       "source_file": "package.json",
-      "source_location": "L30"
-    },
-    {
-      "id": "server_auth",
-      "label": "auth.ts",
-      "_origin": "ast",
-      "community": 20,
-      "community_name": "auth.test.ts",
-      "file_type": "code",
-      "norm_label": "auth.ts",
-      "source_file": "server/auth.ts",
-      "source_location": "L1"
-    },
-    {
-      "id": "server_auth_loginschema",
-      "label": "loginSchema",
-      "_origin": "ast",
-      "community": 20,
-      "community_name": "auth.test.ts",
-      "file_type": "code",
-      "norm_label": "loginschema",
-      "source_file": "server/auth.ts",
-      "source_location": "L23"
-    },
-    {
-      "id": "tests_server_auth_test",
-      "label": "auth.test.ts",
-      "_origin": "ast",
-      "community": 20,
-      "community_name": "auth.test.ts",
-      "file_type": "code",
-      "norm_label": "auth.test.ts",
-      "source_file": "tests/server/auth.test.ts",
-      "source_location": "L1"
-    },
-    {
-      "id": "tests_server_auth_test_base",
-      "label": "BASE",
-      "_origin": "ast",
-      "community": 20,
-      "community_name": "auth.test.ts",
-      "file_type": "code",
-      "norm_label": "base",
-      "source_file": "tests/server/auth.test.ts",
-      "source_location": "L6"
-    },
-    {
-      "id": "tests_server_auth_test_creds",
-      "label": "CREDS",
-      "_origin": "ast",
-      "community": 20,
-      "community_name": "auth.test.ts",
-      "file_type": "code",
-      "norm_label": "creds",
-      "source_file": "tests/server/auth.test.ts",
-      "source_location": "L13"
+      "source_location": "L31"
     },
     {
       "id": "core_billing_model_meter_reading",
@@ -6152,17 +6151,6 @@
       "source_location": "L1"
     },
     {
-      "id": "core_energy_services_sun_times",
-      "label": "sun-times.ts",
-      "_origin": "ast",
-      "community": 21,
-      "community_name": "client.ts",
-      "file_type": "code",
-      "norm_label": "sun-times.ts",
-      "source_file": "core/energy/services/sun-times.ts",
-      "source_location": "L1"
-    },
-    {
       "id": "src_api_client",
       "label": "client.ts",
       "_origin": "ast",
@@ -6182,17 +6170,6 @@
       "file_type": "code",
       "norm_label": "inverterfleet.tsx",
       "source_file": "src/features/inverters/InverterFleet.tsx",
-      "source_location": "L1"
-    },
-    {
-      "id": "src_features_sun_usesunwindow",
-      "label": "useSunWindow.ts",
-      "_origin": "ast",
-      "community": 21,
-      "community_name": "client.ts",
-      "file_type": "code",
-      "norm_label": "usesunwindow.ts",
-      "source_file": "src/features/sun/useSunWindow.ts",
       "source_location": "L1"
     },
     {
@@ -6262,33 +6239,22 @@
       "source_location": "L18"
     },
     {
-      "id": "tests_energy_sun_times_test",
-      "label": "sun-times.test.ts",
+      "id": "src_api_queries",
+      "label": "queries.ts",
       "_origin": "ast",
-      "community": 21,
-      "community_name": "client.ts",
+      "community": 22,
+      "community_name": "queries.ts",
       "file_type": "code",
-      "norm_label": "sun-times.test.ts",
-      "source_file": "tests/energy/sun-times.test.ts",
+      "norm_label": "queries.ts",
+      "source_file": "src/api/queries.ts",
       "source_location": "L1"
-    },
-    {
-      "id": "tests_energy_sun_times_test_plant",
-      "label": "PLANT",
-      "_origin": "ast",
-      "community": 21,
-      "community_name": "client.ts",
-      "file_type": "code",
-      "norm_label": "plant",
-      "source_file": "tests/energy/sun-times.test.ts",
-      "source_location": "L13"
     },
     {
       "id": "src_features_readings_readingsform",
       "label": "ReadingsForm.tsx",
       "_origin": "ast",
       "community": 22,
-      "community_name": "ReadingsForm.tsx",
+      "community_name": "queries.ts",
       "file_type": "code",
       "norm_label": "readingsform.tsx",
       "source_file": "src/features/readings/ReadingsForm.tsx",
@@ -6299,83 +6265,110 @@
       "label": "EMPTY",
       "_origin": "ast",
       "community": 22,
-      "community_name": "ReadingsForm.tsx",
+      "community_name": "queries.ts",
       "file_type": "code",
       "norm_label": "empty",
       "source_file": "src/features/readings/ReadingsForm.tsx",
       "source_location": "L29"
     },
     {
-      "id": "atl_skill_registry",
-      "label": "skill-registry.md",
+      "id": "core_solax_dto_envelope",
+      "label": "envelope.ts",
       "_origin": "ast",
       "community": 23,
-      "community_name": "Skill Registry \u2014 solarpanel-system",
-      "file_type": "document",
-      "node_kind": "page",
-      "norm_label": "skill-registry.md",
-      "source_file": ".atl/skill-registry.md",
+      "community_name": "envelope.ts",
+      "file_type": "code",
+      "norm_label": "envelope.ts",
+      "source_file": "core/solax/dto/envelope.ts",
       "source_location": "L1"
     },
     {
-      "id": "atl_skill_registry_contract",
-      "label": "Contract",
+      "id": "core_solax_dto_envelope_envelopeschema",
+      "label": "envelopeSchema",
       "_origin": "ast",
       "community": 23,
-      "community_name": "Skill Registry \u2014 solarpanel-system",
-      "file_type": "document",
-      "node_kind": "heading",
-      "norm_label": "contract",
-      "source_file": ".atl/skill-registry.md",
+      "community_name": "envelope.ts",
+      "file_type": "code",
+      "norm_label": "envelopeschema",
+      "source_file": "core/solax/dto/envelope.ts",
+      "source_location": "L37"
+    },
+    {
+      "id": "core_solax_dto_envelope_human_messages",
+      "label": "HUMAN_MESSAGES",
+      "_origin": "ast",
+      "community": 23,
+      "community_name": "envelope.ts",
+      "file_type": "code",
+      "norm_label": "human_messages",
+      "source_file": "core/solax/dto/envelope.ts",
+      "source_location": "L105"
+    },
+    {
+      "id": "core_solax_dto_envelope_retryable",
+      "label": "RETRYABLE",
+      "_origin": "ast",
+      "community": 23,
+      "community_name": "envelope.ts",
+      "file_type": "code",
+      "norm_label": "retryable",
+      "source_file": "core/solax/dto/envelope.ts",
+      "source_location": "L120"
+    },
+    {
+      "id": "core_solax_dto_envelope_solax_ok_auth",
+      "label": "SOLAX_OK_AUTH",
+      "_origin": "ast",
+      "community": 23,
+      "community_name": "envelope.ts",
+      "file_type": "code",
+      "norm_label": "solax_ok_auth",
+      "source_file": "core/solax/dto/envelope.ts",
       "source_location": "L15"
     },
     {
-      "id": "atl_skill_registry_loading_protocol",
-      "label": "Loading protocol",
+      "id": "core_solax_dto_envelope_solax_ok_business",
+      "label": "SOLAX_OK_BUSINESS",
       "_origin": "ast",
       "community": 23,
-      "community_name": "Skill Registry \u2014 solarpanel-system",
-      "file_type": "document",
-      "node_kind": "heading",
-      "norm_label": "loading protocol",
-      "source_file": ".atl/skill-registry.md",
-      "source_location": "L50"
+      "community_name": "envelope.ts",
+      "file_type": "code",
+      "norm_label": "solax_ok_business",
+      "source_file": "core/solax/dto/envelope.ts",
+      "source_location": "L14"
     },
     {
-      "id": "atl_skill_registry_skill_registry_solarpanel_system",
-      "label": "Skill Registry \u2014 solarpanel-system",
+      "id": "core_solax_dto_envelope_solaxcode",
+      "label": "SolaxCode",
       "_origin": "ast",
       "community": 23,
-      "community_name": "Skill Registry \u2014 solarpanel-system",
-      "file_type": "document",
-      "node_kind": "heading",
-      "norm_label": "skill registry \u2014 solarpanel-system",
-      "source_file": ".atl/skill-registry.md",
+      "community_name": "envelope.ts",
+      "file_type": "code",
+      "norm_label": "solaxcode",
+      "source_file": "core/solax/dto/envelope.ts",
+      "source_location": "L18"
+    },
+    {
+      "id": "core_solax_dto_envelope_tokenresultschema",
+      "label": "tokenResultSchema",
+      "_origin": "ast",
+      "community": 23,
+      "community_name": "envelope.ts",
+      "file_type": "code",
+      "norm_label": "tokenresultschema",
+      "source_file": "core/solax/dto/envelope.ts",
+      "source_location": "L47"
+    },
+    {
+      "id": "server_solax_token_store",
+      "label": "token-store.ts",
+      "_origin": "ast",
+      "community": 23,
+      "community_name": "envelope.ts",
+      "file_type": "code",
+      "norm_label": "token-store.ts",
+      "source_file": "server/solax/token-store.ts",
       "source_location": "L1"
-    },
-    {
-      "id": "atl_skill_registry_skills",
-      "label": "Skills",
-      "_origin": "ast",
-      "community": 23,
-      "community_name": "Skill Registry \u2014 solarpanel-system",
-      "file_type": "document",
-      "node_kind": "heading",
-      "norm_label": "skills",
-      "source_file": ".atl/skill-registry.md",
-      "source_location": "L21"
-    },
-    {
-      "id": "atl_skill_registry_sources_scanned",
-      "label": "Sources scanned",
-      "_origin": "ast",
-      "community": 23,
-      "community_name": "Skill Registry \u2014 solarpanel-system",
-      "file_type": "document",
-      "node_kind": "heading",
-      "norm_label": "sources scanned",
-      "source_file": ".atl/skill-registry.md",
-      "source_location": "L7"
     },
     {
       "id": "src_features_weather_weathercard",
@@ -6409,6 +6402,17 @@
       "norm_label": "tone",
       "source_file": "src/ui/primitives/Card.tsx",
       "source_location": "L43"
+    },
+    {
+      "id": "src_features_auth_loginscreen",
+      "label": "LoginScreen.tsx",
+      "_origin": "ast",
+      "community": 25,
+      "community_name": "Skeleton.tsx",
+      "file_type": "code",
+      "norm_label": "loginscreen.tsx",
+      "source_file": "src/features/auth/LoginScreen.tsx",
+      "source_location": "L1"
     },
     {
       "id": "src_features_bolsa_bolsapanel",
@@ -6468,70 +6472,92 @@
       "source_location": "L1"
     },
     {
-      "id": "core_energy_services_environment",
-      "label": "environment.ts",
+      "id": "core_energy_services_sun_times",
+      "label": "sun-times.ts",
       "_origin": "ast",
       "community": 27,
-      "community_name": "ImpactCard.tsx",
+      "community_name": "useSunWindow.ts",
       "file_type": "code",
-      "norm_label": "environment.ts",
-      "source_file": "core/energy/services/environment.ts",
+      "norm_label": "sun-times.ts",
+      "source_file": "core/energy/services/sun-times.ts",
       "source_location": "L1"
     },
     {
-      "id": "core_energy_services_environment_co2_kg_per_kwh",
-      "label": "CO2_KG_PER_KWH",
+      "id": "src_features_sun_usesunwindow",
+      "label": "useSunWindow.ts",
       "_origin": "ast",
       "community": 27,
-      "community_name": "ImpactCard.tsx",
+      "community_name": "useSunWindow.ts",
       "file_type": "code",
-      "norm_label": "co2_kg_per_kwh",
-      "source_file": "core/energy/services/environment.ts",
-      "source_location": "L9"
-    },
-    {
-      "id": "core_energy_services_environment_co2_kg_per_tree_year",
-      "label": "CO2_KG_PER_TREE_YEAR",
-      "_origin": "ast",
-      "community": 27,
-      "community_name": "ImpactCard.tsx",
-      "file_type": "code",
-      "norm_label": "co2_kg_per_tree_year",
-      "source_file": "core/energy/services/environment.ts",
-      "source_location": "L11"
-    },
-    {
-      "id": "core_energy_services_environment_coal_kg_per_kwh",
-      "label": "COAL_KG_PER_KWH",
-      "_origin": "ast",
-      "community": 27,
-      "community_name": "ImpactCard.tsx",
-      "file_type": "code",
-      "norm_label": "coal_kg_per_kwh",
-      "source_file": "core/energy/services/environment.ts",
-      "source_location": "L10"
-    },
-    {
-      "id": "src_features_impact_impactcard",
-      "label": "ImpactCard.tsx",
-      "_origin": "ast",
-      "community": 27,
-      "community_name": "ImpactCard.tsx",
-      "file_type": "code",
-      "norm_label": "impactcard.tsx",
-      "source_file": "src/features/impact/ImpactCard.tsx",
+      "norm_label": "usesunwindow.ts",
+      "source_file": "src/features/sun/useSunWindow.ts",
       "source_location": "L1"
     },
     {
-      "id": "src_features_impact_impactcard_money",
-      "label": "money",
+      "id": "tests_energy_sun_times_test",
+      "label": "sun-times.test.ts",
       "_origin": "ast",
       "community": 27,
-      "community_name": "ImpactCard.tsx",
+      "community_name": "useSunWindow.ts",
       "file_type": "code",
-      "norm_label": "money",
-      "source_file": "src/features/impact/ImpactCard.tsx",
-      "source_location": "L17"
+      "norm_label": "sun-times.test.ts",
+      "source_file": "tests/energy/sun-times.test.ts",
+      "source_location": "L1"
+    },
+    {
+      "id": "tests_energy_sun_times_test_plant",
+      "label": "PLANT",
+      "_origin": "ast",
+      "community": 27,
+      "community_name": "useSunWindow.ts",
+      "file_type": "code",
+      "norm_label": "plant",
+      "source_file": "tests/energy/sun-times.test.ts",
+      "source_location": "L13"
+    },
+    {
+      "id": "server_billing_readings_store",
+      "label": "readings-store.ts",
+      "_origin": "ast",
+      "community": 28,
+      "community_name": "readings-store.ts",
+      "file_type": "code",
+      "norm_label": "readings-store.ts",
+      "source_file": "server/billing/readings-store.ts",
+      "source_location": "L1"
+    },
+    {
+      "id": "server_billing_readings_store_fileschema",
+      "label": "fileSchema",
+      "_origin": "ast",
+      "community": 28,
+      "community_name": "readings-store.ts",
+      "file_type": "code",
+      "norm_label": "fileschema",
+      "source_file": "server/billing/readings-store.ts",
+      "source_location": "L43"
+    },
+    {
+      "id": "server_billing_readings_store_historyschema",
+      "label": "historySchema",
+      "_origin": "ast",
+      "community": 28,
+      "community_name": "readings-store.ts",
+      "file_type": "code",
+      "norm_label": "historyschema",
+      "source_file": "server/billing/readings-store.ts",
+      "source_location": "L37"
+    },
+    {
+      "id": "server_billing_readings_store_readingschema",
+      "label": "readingSchema",
+      "_origin": "ast",
+      "community": 28,
+      "community_name": "readings-store.ts",
+      "file_type": "code",
+      "norm_label": "readingschema",
+      "source_file": "server/billing/readings-store.ts",
+      "source_location": "L22"
     },
     {
       "id": "vitest_config",
@@ -6831,14 +6857,36 @@
       "source_location": "L19"
     },
     {
+      "id": "server_solax_http_client",
+      "label": "http-client.ts",
+      "_origin": "ast",
+      "community": 30,
+      "community_name": "http-client.ts",
+      "file_type": "code",
+      "norm_label": "http-client.ts",
+      "source_file": "server/solax/http-client.ts",
+      "source_location": "L1"
+    },
+    {
       "id": "server_solax_rate_limiter",
       "label": "rate-limiter.ts",
       "_origin": "ast",
       "community": 30,
-      "community_name": "RateLimiter",
+      "community_name": "http-client.ts",
       "file_type": "code",
       "norm_label": "rate-limiter.ts",
       "source_file": "server/solax/rate-limiter.ts",
+      "source_location": "L1"
+    },
+    {
+      "id": "server_solax_cache",
+      "label": "cache.ts",
+      "_origin": "ast",
+      "community": 31,
+      "community_name": "TtlCache",
+      "file_type": "code",
+      "norm_label": "cache.ts",
+      "source_file": "server/solax/cache.ts",
       "source_location": "L1"
     },
     {
@@ -7249,55 +7297,11 @@
       "source_location": "L1"
     },
     {
-      "id": "server_billing_readings_store",
-      "label": "readings-store.ts",
-      "_origin": "ast",
-      "community": 5,
-      "community_name": "readings-store.ts",
-      "file_type": "code",
-      "norm_label": "readings-store.ts",
-      "source_file": "server/billing/readings-store.ts",
-      "source_location": "L1"
-    },
-    {
-      "id": "server_billing_readings_store_fileschema",
-      "label": "fileSchema",
-      "_origin": "ast",
-      "community": 5,
-      "community_name": "readings-store.ts",
-      "file_type": "code",
-      "norm_label": "fileschema",
-      "source_file": "server/billing/readings-store.ts",
-      "source_location": "L43"
-    },
-    {
-      "id": "server_billing_readings_store_historyschema",
-      "label": "historySchema",
-      "_origin": "ast",
-      "community": 5,
-      "community_name": "readings-store.ts",
-      "file_type": "code",
-      "norm_label": "historyschema",
-      "source_file": "server/billing/readings-store.ts",
-      "source_location": "L37"
-    },
-    {
-      "id": "server_billing_readings_store_readingschema",
-      "label": "readingSchema",
-      "_origin": "ast",
-      "community": 5,
-      "community_name": "readings-store.ts",
-      "file_type": "code",
-      "norm_label": "readingschema",
-      "source_file": "server/billing/readings-store.ts",
-      "source_location": "L22"
-    },
-    {
       "id": "tests_server_plumbing_test",
       "label": "plumbing.test.ts",
       "_origin": "ast",
       "community": 5,
-      "community_name": "readings-store.ts",
+      "community_name": "plumbing.test.ts",
       "file_type": "code",
       "norm_label": "plumbing.test.ts",
       "source_file": "tests/server/plumbing.test.ts",
@@ -7403,14 +7407,14 @@
       "source_location": "L1"
     },
     {
-      "id": "server_solax_cache",
-      "label": "cache.ts",
+      "id": "server_create_server",
+      "label": "create-server.ts",
       "_origin": "ast",
       "community": 7,
-      "community_name": "KeyValueStore",
+      "community_name": "create-server.ts",
       "file_type": "code",
-      "norm_label": "cache.ts",
-      "source_file": "server/solax/cache.ts",
+      "norm_label": "create-server.ts",
+      "source_file": "server/create-server.ts",
       "source_location": "L1"
     },
     {
@@ -7418,11 +7422,33 @@
       "label": "kv.ts",
       "_origin": "ast",
       "community": 7,
-      "community_name": "KeyValueStore",
+      "community_name": "create-server.ts",
       "file_type": "code",
       "norm_label": "kv.ts",
       "source_file": "server/storage/kv.ts",
       "source_location": "L1"
+    },
+    {
+      "id": "server_vercel",
+      "label": "vercel.ts",
+      "_origin": "ast",
+      "community": 7,
+      "community_name": "create-server.ts",
+      "file_type": "code",
+      "norm_label": "vercel.ts",
+      "source_file": "server/vercel.ts",
+      "source_location": "L1"
+    },
+    {
+      "id": "server_vercel_app",
+      "label": "app",
+      "_origin": "ast",
+      "community": 7,
+      "community_name": "create-server.ts",
+      "file_type": "code",
+      "norm_label": "app",
+      "source_file": "server/vercel.ts",
+      "source_location": "L12"
     },
     {
       "id": "core_billing_services_dac_risk",
@@ -8509,26 +8535,14 @@
     },
     {
       "source": "server_auth_registerauth",
-      "target": "server_auth_matches",
+      "target": "server_auth_supabaseverifier",
       "relation": "calls",
       "_origin": "ast",
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "server/auth.ts",
-      "source_location": "L93",
-      "weight": 1.0
-    },
-    {
-      "source": "server_auth_registerauth_currentuser",
-      "target": "server_auth_parsesession",
-      "relation": "calls",
-      "_origin": "ast",
-      "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
-      "context": "call",
-      "source_file": "server/auth.ts",
-      "source_location": "L56",
+      "source_location": "L62",
       "weight": 1.0
     },
     {
@@ -9084,6 +9098,42 @@
       "weight": 1.0
     },
     {
+      "source": "src_api_auth_accesstoken",
+      "target": "src_api_auth_getsupabase",
+      "relation": "calls",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "call",
+      "source_file": "src/api/auth.ts",
+      "source_location": "L45",
+      "weight": 1.0
+    },
+    {
+      "source": "src_api_auth_getsupabase",
+      "target": "src_api_auth_authconfigerror",
+      "relation": "calls",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "call",
+      "source_file": "src/api/auth.ts",
+      "source_location": "L25",
+      "weight": 1.0
+    },
+    {
+      "source": "src_api_client_request",
+      "target": "src_api_auth_accesstoken",
+      "relation": "calls",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "call",
+      "source_file": "src/api/client.ts",
+      "source_location": "L52",
+      "weight": 1.0
+    },
+    {
       "source": "src_api_client_request",
       "target": "src_api_client_apierror",
       "relation": "calls",
@@ -9092,7 +9142,31 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "src/api/client.ts",
-      "source_location": "L64",
+      "source_location": "L70",
+      "weight": 1.0
+    },
+    {
+      "source": "src_api_client_unauthorized",
+      "target": "src_api_client_apierror",
+      "relation": "calls",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "call",
+      "source_file": "src/api/client.ts",
+      "source_location": "L190",
+      "weight": 1.0
+    },
+    {
+      "source": "src_api_queries_createqueryclient",
+      "target": "src_api_auth_getsupabase",
+      "relation": "calls",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "call",
+      "source_file": "src/api/queries.ts",
+      "source_location": "L44",
       "weight": 1.0
     },
     {
@@ -9104,7 +9178,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "src/api/queries.ts",
-      "source_location": "L197",
+      "source_location": "L204",
       "weight": 1.0
     },
     {
@@ -9116,7 +9190,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "src/api/queries.ts",
-      "source_location": "L201",
+      "source_location": "L208",
       "weight": 1.0
     },
     {
@@ -9128,7 +9202,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "src/api/queries.ts",
-      "source_location": "L193",
+      "source_location": "L200",
       "weight": 1.0
     },
     {
@@ -9332,7 +9406,19 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "src/features/auth/AuthGate.tsx",
-      "source_location": "L38",
+      "source_location": "L40",
+      "weight": 1.0
+    },
+    {
+      "source": "src_features_auth_authgate_authgate",
+      "target": "src_api_auth_getsupabase",
+      "relation": "calls",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "call",
+      "source_file": "src/features/auth/AuthGate.tsx",
+      "source_location": "L47",
       "weight": 1.0
     },
     {
@@ -9812,7 +9898,19 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "tests/server/auth.test.ts",
-      "source_location": "L21",
+      "source_location": "L24",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_server_auth_test_appwith",
+      "target": "server_env_loadenv",
+      "relation": "calls",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "call",
+      "source_file": "tests/server/auth.test.ts",
+      "source_location": "L24",
       "weight": 1.0
     },
     {
@@ -9873,18 +9971,6 @@
       "context": "call",
       "source_file": "server/app.ts",
       "source_location": "L573",
-      "weight": 1.0
-    },
-    {
-      "source": "server_auth_registerauth",
-      "target": "server_auth_registerauth_currentuser",
-      "relation": "contains",
-      "_origin": "ast",
-      "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
-      "context": "call",
-      "source_file": "server/auth.ts",
-      "source_location": "L53",
       "weight": 1.0
     },
     {
@@ -10256,7 +10342,7 @@
       "confidence_score": 1.0,
       "context": "field",
       "source_file": "src/api/client.ts",
-      "source_location": "L147",
+      "source_location": "L153",
       "weight": 1.0
     },
     {
@@ -10268,7 +10354,7 @@
       "confidence_score": 1.0,
       "context": "field",
       "source_file": "src/api/client.ts",
-      "source_location": "L148",
+      "source_location": "L154",
       "weight": 1.0
     },
     {
@@ -10280,7 +10366,7 @@
       "confidence_score": 1.0,
       "context": "field",
       "source_file": "src/api/client.ts",
-      "source_location": "L149",
+      "source_location": "L155",
       "weight": 1.0
     },
     {
@@ -10292,7 +10378,7 @@
       "confidence_score": 1.0,
       "context": "field",
       "source_file": "src/api/client.ts",
-      "source_location": "L156",
+      "source_location": "L162",
       "weight": 1.0
     },
     {
@@ -10304,36 +10390,12 @@
       "confidence_score": 1.0,
       "context": "field",
       "source_file": "src/api/client.ts",
-      "source_location": "L167",
+      "source_location": "L173",
       "weight": 1.0
     },
     {
       "source": "src_api_client_snapshotresponse",
       "target": "core_energy_model_power_powersnapshot",
-      "relation": "references",
-      "_origin": "ast",
-      "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
-      "context": "field",
-      "source_file": "src/api/client.ts",
-      "source_location": "L105",
-      "weight": 1.0
-    },
-    {
-      "source": "src_api_client_snapshotresponse",
-      "target": "core_energy_model_power_pvstringreading",
-      "relation": "references",
-      "_origin": "ast",
-      "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
-      "context": "field",
-      "source_file": "src/api/client.ts",
-      "source_location": "L106",
-      "weight": 1.0
-    },
-    {
-      "source": "src_api_client_snapshotresponse",
-      "target": "core_energy_model_power_inverterstate",
       "relation": "references",
       "_origin": "ast",
       "confidence": "EXTRACTED",
@@ -10345,7 +10407,7 @@
     },
     {
       "source": "src_api_client_snapshotresponse",
-      "target": "core_energy_model_power_batterystate",
+      "target": "core_energy_model_power_pvstringreading",
       "relation": "references",
       "_origin": "ast",
       "confidence": "EXTRACTED",
@@ -10357,6 +10419,30 @@
     },
     {
       "source": "src_api_client_snapshotresponse",
+      "target": "core_energy_model_power_inverterstate",
+      "relation": "references",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "field",
+      "source_file": "src/api/client.ts",
+      "source_location": "L117",
+      "weight": 1.0
+    },
+    {
+      "source": "src_api_client_snapshotresponse",
+      "target": "core_energy_model_power_batterystate",
+      "relation": "references",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "field",
+      "source_file": "src/api/client.ts",
+      "source_location": "L118",
+      "weight": 1.0
+    },
+    {
+      "source": "src_api_client_snapshotresponse",
       "target": "core_solax_dto_device_alarmdto",
       "relation": "references",
       "_origin": "ast",
@@ -10364,7 +10450,7 @@
       "confidence_score": 1.0,
       "context": "field",
       "source_file": "src/api/client.ts",
-      "source_location": "L113",
+      "source_location": "L119",
       "weight": 1.0
     },
     {
@@ -10376,7 +10462,7 @@
       "confidence_score": 1.0,
       "context": "field",
       "source_file": "src/api/client.ts",
-      "source_location": "L119",
+      "source_location": "L125",
       "weight": 1.0
     },
     {
@@ -11024,7 +11110,7 @@
       "confidence_score": 1.0,
       "context": "import",
       "source_file": "package.json",
-      "source_location": "L22",
+      "source_location": "L23",
       "weight": 1.0
     },
     {
@@ -11036,7 +11122,7 @@
       "confidence_score": 1.0,
       "context": "import",
       "source_file": "package.json",
-      "source_location": "L23",
+      "source_location": "L24",
       "weight": 1.0
     },
     {
@@ -11048,7 +11134,7 @@
       "confidence_score": 1.0,
       "context": "import",
       "source_file": "package.json",
-      "source_location": "L24",
+      "source_location": "L25",
       "weight": 1.0
     },
     {
@@ -11060,7 +11146,7 @@
       "confidence_score": 1.0,
       "context": "import",
       "source_file": "package.json",
-      "source_location": "L25",
+      "source_location": "L26",
       "weight": 1.0
     },
     {
@@ -11084,7 +11170,7 @@
       "confidence_score": 1.0,
       "context": "import",
       "source_file": "package.json",
-      "source_location": "L26",
+      "source_location": "L27",
       "weight": 1.0
     },
     {
@@ -11096,7 +11182,7 @@
       "confidence_score": 1.0,
       "context": "import",
       "source_file": "package.json",
-      "source_location": "L27",
+      "source_location": "L28",
       "weight": 1.0
     },
     {
@@ -11108,7 +11194,19 @@
       "confidence_score": 1.0,
       "context": "import",
       "source_file": "package.json",
-      "source_location": "L28",
+      "source_location": "L29",
+      "weight": 1.0
+    },
+    {
+      "source": "package_dependencies_supabase_supabase_js",
+      "target": "supabase_supabase_js",
+      "relation": "imports",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "import",
+      "source_file": "package.json",
+      "source_location": "L20",
       "weight": 1.0
     },
     {
@@ -11120,7 +11218,7 @@
       "confidence_score": 1.0,
       "context": "import",
       "source_file": "package.json",
-      "source_location": "L20",
+      "source_location": "L21",
       "weight": 1.0
     },
     {
@@ -11132,7 +11230,7 @@
       "confidence_score": 1.0,
       "context": "import",
       "source_file": "package.json",
-      "source_location": "L29",
+      "source_location": "L30",
       "weight": 1.0
     },
     {
@@ -11144,7 +11242,7 @@
       "confidence_score": 1.0,
       "context": "import",
       "source_file": "package.json",
-      "source_location": "L21",
+      "source_location": "L22",
       "weight": 1.0
     },
     {
@@ -11156,7 +11254,7 @@
       "confidence_score": 1.0,
       "context": "import",
       "source_file": "package.json",
-      "source_location": "L30",
+      "source_location": "L31",
       "weight": 1.0
     },
     {
@@ -11168,7 +11266,7 @@
       "confidence_score": 1.0,
       "context": "import",
       "source_file": "package.json",
-      "source_location": "L41",
+      "source_location": "L42",
       "weight": 1.0
     },
     {
@@ -11180,7 +11278,7 @@
       "confidence_score": 1.0,
       "context": "import",
       "source_file": "package.json",
-      "source_location": "L42",
+      "source_location": "L43",
       "weight": 1.0
     },
     {
@@ -11192,7 +11290,7 @@
       "confidence_score": 1.0,
       "context": "import",
       "source_file": "package.json",
-      "source_location": "L33",
+      "source_location": "L34",
       "weight": 1.0
     },
     {
@@ -11204,7 +11302,7 @@
       "confidence_score": 1.0,
       "context": "import",
       "source_file": "package.json",
-      "source_location": "L34",
+      "source_location": "L35",
       "weight": 1.0
     },
     {
@@ -11216,7 +11314,7 @@
       "confidence_score": 1.0,
       "context": "import",
       "source_file": "package.json",
-      "source_location": "L35",
+      "source_location": "L36",
       "weight": 1.0
     },
     {
@@ -11228,7 +11326,7 @@
       "confidence_score": 1.0,
       "context": "import",
       "source_file": "package.json",
-      "source_location": "L36",
+      "source_location": "L37",
       "weight": 1.0
     },
     {
@@ -11240,7 +11338,7 @@
       "confidence_score": 1.0,
       "context": "import",
       "source_file": "package.json",
-      "source_location": "L37",
+      "source_location": "L38",
       "weight": 1.0
     },
     {
@@ -11252,7 +11350,7 @@
       "confidence_score": 1.0,
       "context": "import",
       "source_file": "package.json",
-      "source_location": "L38",
+      "source_location": "L39",
       "weight": 1.0
     },
     {
@@ -11264,7 +11362,7 @@
       "confidence_score": 1.0,
       "context": "import",
       "source_file": "package.json",
-      "source_location": "L39",
+      "source_location": "L40",
       "weight": 1.0
     },
     {
@@ -11276,7 +11374,7 @@
       "confidence_score": 1.0,
       "context": "import",
       "source_file": "package.json",
-      "source_location": "L43",
+      "source_location": "L44",
       "weight": 1.0
     },
     {
@@ -11288,7 +11386,7 @@
       "confidence_score": 1.0,
       "context": "import",
       "source_file": "package.json",
-      "source_location": "L44",
+      "source_location": "L45",
       "weight": 1.0
     },
     {
@@ -11300,7 +11398,7 @@
       "confidence_score": 1.0,
       "context": "import",
       "source_file": "package.json",
-      "source_location": "L40",
+      "source_location": "L41",
       "weight": 1.0
     },
     {
@@ -11312,7 +11410,7 @@
       "confidence_score": 1.0,
       "context": "import",
       "source_file": "package.json",
-      "source_location": "L45",
+      "source_location": "L46",
       "weight": 1.0
     },
     {
@@ -11696,7 +11794,7 @@
       "confidence_score": 1.0,
       "context": "import",
       "source_file": "server/auth.ts",
-      "source_location": "L5",
+      "source_location": "L3",
       "weight": 1.0
     },
     {
@@ -12361,6 +12459,30 @@
     },
     {
       "source": "src_api_client",
+      "target": "src_api_auth_accesstoken",
+      "relation": "imports",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "import",
+      "source_file": "src/api/client.ts",
+      "source_location": "L13",
+      "weight": 1.0
+    },
+    {
+      "source": "src_api_client",
+      "target": "src_api_auth_getsupabase",
+      "relation": "imports",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "import",
+      "source_file": "src/api/client.ts",
+      "source_location": "L13",
+      "weight": 1.0
+    },
+    {
+      "source": "src_api_client",
       "target": "core_solax_dto_device_alarmdto",
       "relation": "imports",
       "_origin": "ast",
@@ -12397,7 +12519,7 @@
     },
     {
       "source": "src_api_queries",
-      "target": "src_api_client_api",
+      "target": "src_api_auth_getsupabase",
       "relation": "imports",
       "_origin": "ast",
       "confidence": "EXTRACTED",
@@ -12405,6 +12527,18 @@
       "context": "import",
       "source_file": "src/api/queries.ts",
       "source_location": "L10",
+      "weight": 1.0
+    },
+    {
+      "source": "src_api_queries",
+      "target": "src_api_client_api",
+      "relation": "imports",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "import",
+      "source_file": "src/api/queries.ts",
+      "source_location": "L11",
       "weight": 1.0
     },
     {
@@ -12416,7 +12550,7 @@
       "confidence_score": 1.0,
       "context": "import",
       "source_file": "src/api/queries.ts",
-      "source_location": "L10",
+      "source_location": "L11",
       "weight": 1.0
     },
     {
@@ -12428,7 +12562,7 @@
       "confidence_score": 1.0,
       "context": "import",
       "source_file": "src/api/queries.ts",
-      "source_location": "L10",
+      "source_location": "L11",
       "weight": 1.0
     },
     {
@@ -12440,7 +12574,7 @@
       "confidence_score": 1.0,
       "context": "import",
       "source_file": "src/api/queries.ts",
-      "source_location": "L10",
+      "source_location": "L11",
       "weight": 1.0
     },
     {
@@ -12937,7 +13071,7 @@
     },
     {
       "source": "src_features_auth_authgate",
-      "target": "src_api_client_apierror",
+      "target": "src_api_auth_getsupabase",
       "relation": "imports",
       "_origin": "ast",
       "confidence": "EXTRACTED",
@@ -12949,6 +13083,30 @@
     },
     {
       "source": "src_features_auth_authgate",
+      "target": "src_api_client_apierror",
+      "relation": "imports",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "import",
+      "source_file": "src/features/auth/AuthGate.tsx",
+      "source_location": "L5",
+      "weight": 1.0
+    },
+    {
+      "source": "src_features_auth_authgate",
+      "target": "src_api_queries_authkey",
+      "relation": "imports",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "import",
+      "source_file": "src/features/auth/AuthGate.tsx",
+      "source_location": "L6",
+      "weight": 1.0
+    },
+    {
+      "source": "src_features_auth_authgate",
       "target": "src_api_queries_useme",
       "relation": "imports",
       "_origin": "ast",
@@ -12956,7 +13114,7 @@
       "confidence_score": 1.0,
       "context": "import",
       "source_file": "src/features/auth/AuthGate.tsx",
-      "source_location": "L4",
+      "source_location": "L6",
       "weight": 1.0
     },
     {
@@ -12968,7 +13126,7 @@
       "confidence_score": 1.0,
       "context": "import",
       "source_file": "src/features/auth/AuthGate.tsx",
-      "source_location": "L5",
+      "source_location": "L7",
       "weight": 1.0
     },
     {
@@ -13885,14 +14043,14 @@
     },
     {
       "source": "tests_server_auth_test",
-      "target": "server_env_env",
+      "target": "server_auth_tokenverifier",
       "relation": "imports",
       "_origin": "ast",
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "context": "import",
       "source_file": "tests/server/auth.test.ts",
-      "source_location": "L4",
+      "source_location": "L3",
       "weight": 1.0
     },
     {
@@ -14564,7 +14722,7 @@
       "confidence_score": 1.0,
       "context": "import",
       "source_file": "server/auth.ts",
-      "source_location": "L5",
+      "source_location": "L3",
       "type_only": true,
       "weight": 1.0
     },
@@ -14942,6 +15100,18 @@
     },
     {
       "source": "src_api_client",
+      "target": "src_api_auth",
+      "relation": "imports_from",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "import",
+      "source_file": "src/api/client.ts",
+      "source_location": "L13",
+      "weight": 1.0
+    },
+    {
+      "source": "src_api_client",
       "target": "core_solax_dto_device",
       "relation": "imports_from",
       "_origin": "ast",
@@ -14968,7 +15138,7 @@
     },
     {
       "source": "src_api_queries",
-      "target": "src_api_client",
+      "target": "src_api_auth",
       "relation": "imports_from",
       "_origin": "ast",
       "confidence": "EXTRACTED",
@@ -14976,6 +15146,18 @@
       "context": "import",
       "source_file": "src/api/queries.ts",
       "source_location": "L10",
+      "weight": 1.0
+    },
+    {
+      "source": "src_api_queries",
+      "target": "src_api_client",
+      "relation": "imports_from",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "import",
+      "source_file": "src/api/queries.ts",
+      "source_location": "L11",
       "weight": 1.0
     },
     {
@@ -15282,7 +15464,7 @@
     },
     {
       "source": "src_features_auth_authgate",
-      "target": "src_api_client",
+      "target": "src_api_auth",
       "relation": "imports_from",
       "_origin": "ast",
       "confidence": "EXTRACTED",
@@ -15294,6 +15476,18 @@
     },
     {
       "source": "src_features_auth_authgate",
+      "target": "src_api_client",
+      "relation": "imports_from",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "import",
+      "source_file": "src/features/auth/AuthGate.tsx",
+      "source_location": "L5",
+      "weight": 1.0
+    },
+    {
+      "source": "src_features_auth_authgate",
       "target": "src_api_queries",
       "relation": "imports_from",
       "_origin": "ast",
@@ -15301,7 +15495,7 @@
       "confidence_score": 1.0,
       "context": "import",
       "source_file": "src/features/auth/AuthGate.tsx",
-      "source_location": "L4",
+      "source_location": "L6",
       "weight": 1.0
     },
     {
@@ -15313,7 +15507,7 @@
       "confidence_score": 1.0,
       "context": "import",
       "source_file": "src/features/auth/AuthGate.tsx",
-      "source_location": "L5",
+      "source_location": "L7",
       "weight": 1.0
     },
     {
@@ -16116,61 +16310,6 @@
       "context": "type",
       "source_file": "src/ui/charts/CalendarHeatmap.tsx",
       "source_location": "L21",
-      "weight": 1.0
-    },
-    {
-      "source": "atl_skill_registry",
-      "target": "atl_skill_registry_skill_registry_solarpanel_system",
-      "relation": "contains",
-      "_origin": "ast",
-      "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
-      "source_file": ".atl/skill-registry.md",
-      "source_location": "L1",
-      "weight": 1.0
-    },
-    {
-      "source": "atl_skill_registry_skill_registry_solarpanel_system",
-      "target": "atl_skill_registry_contract",
-      "relation": "contains",
-      "_origin": "ast",
-      "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
-      "source_file": ".atl/skill-registry.md",
-      "source_location": "L15",
-      "weight": 1.0
-    },
-    {
-      "source": "atl_skill_registry_skill_registry_solarpanel_system",
-      "target": "atl_skill_registry_skills",
-      "relation": "contains",
-      "_origin": "ast",
-      "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
-      "source_file": ".atl/skill-registry.md",
-      "source_location": "L21",
-      "weight": 1.0
-    },
-    {
-      "source": "atl_skill_registry_skill_registry_solarpanel_system",
-      "target": "atl_skill_registry_loading_protocol",
-      "relation": "contains",
-      "_origin": "ast",
-      "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
-      "source_file": ".atl/skill-registry.md",
-      "source_location": "L50",
-      "weight": 1.0
-    },
-    {
-      "source": "atl_skill_registry_skill_registry_solarpanel_system",
-      "target": "atl_skill_registry_sources_scanned",
-      "relation": "contains",
-      "_origin": "ast",
-      "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
-      "source_file": ".atl/skill-registry.md",
-      "source_location": "L7",
       "weight": 1.0
     },
     {
@@ -17864,7 +18003,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "package.json",
-      "source_location": "L32",
+      "source_location": "L33",
       "weight": 1.0
     },
     {
@@ -17886,7 +18025,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "package.json",
-      "source_location": "L47",
+      "source_location": "L48",
       "weight": 1.0
     },
     {
@@ -17924,7 +18063,7 @@
     },
     {
       "source": "package_dependencies",
-      "target": "package_dependencies_tanstack_react_query",
+      "target": "package_dependencies_supabase_supabase_js",
       "relation": "contains",
       "_origin": "ast",
       "confidence": "EXTRACTED",
@@ -17935,7 +18074,7 @@
     },
     {
       "source": "package_dependencies",
-      "target": "package_dependencies_upstash_redis",
+      "target": "package_dependencies_tanstack_react_query",
       "relation": "contains",
       "_origin": "ast",
       "confidence": "EXTRACTED",
@@ -17946,7 +18085,7 @@
     },
     {
       "source": "package_dependencies",
-      "target": "package_dependencies_d3_array",
+      "target": "package_dependencies_upstash_redis",
       "relation": "contains",
       "_origin": "ast",
       "confidence": "EXTRACTED",
@@ -17957,7 +18096,7 @@
     },
     {
       "source": "package_dependencies",
-      "target": "package_dependencies_d3_scale",
+      "target": "package_dependencies_d3_array",
       "relation": "contains",
       "_origin": "ast",
       "confidence": "EXTRACTED",
@@ -17968,7 +18107,7 @@
     },
     {
       "source": "package_dependencies",
-      "target": "package_dependencies_d3_shape",
+      "target": "package_dependencies_d3_scale",
       "relation": "contains",
       "_origin": "ast",
       "confidence": "EXTRACTED",
@@ -17979,7 +18118,7 @@
     },
     {
       "source": "package_dependencies",
-      "target": "package_dependencies_hono",
+      "target": "package_dependencies_d3_shape",
       "relation": "contains",
       "_origin": "ast",
       "confidence": "EXTRACTED",
@@ -17990,7 +18129,7 @@
     },
     {
       "source": "package_dependencies",
-      "target": "package_dependencies_motion",
+      "target": "package_dependencies_hono",
       "relation": "contains",
       "_origin": "ast",
       "confidence": "EXTRACTED",
@@ -18001,7 +18140,7 @@
     },
     {
       "source": "package_dependencies",
-      "target": "package_dependencies_react",
+      "target": "package_dependencies_motion",
       "relation": "contains",
       "_origin": "ast",
       "confidence": "EXTRACTED",
@@ -18012,7 +18151,7 @@
     },
     {
       "source": "package_dependencies",
-      "target": "package_dependencies_react_dom",
+      "target": "package_dependencies_react",
       "relation": "contains",
       "_origin": "ast",
       "confidence": "EXTRACTED",
@@ -18023,7 +18162,7 @@
     },
     {
       "source": "package_dependencies",
-      "target": "package_dependencies_tsx",
+      "target": "package_dependencies_react_dom",
       "relation": "contains",
       "_origin": "ast",
       "confidence": "EXTRACTED",
@@ -18034,13 +18173,24 @@
     },
     {
       "source": "package_dependencies",
-      "target": "package_dependencies_zod",
+      "target": "package_dependencies_tsx",
       "relation": "contains",
       "_origin": "ast",
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "package.json",
       "source_location": "L30",
+      "weight": 1.0
+    },
+    {
+      "source": "package_dependencies",
+      "target": "package_dependencies_zod",
+      "relation": "contains",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "package.json",
+      "source_location": "L31",
       "weight": 1.0
     },
     {
@@ -18051,7 +18201,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "package.json",
-      "source_location": "L33",
+      "source_location": "L34",
       "weight": 1.0
     },
     {
@@ -18062,7 +18212,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "package.json",
-      "source_location": "L34",
+      "source_location": "L35",
       "weight": 1.0
     },
     {
@@ -18073,7 +18223,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "package.json",
-      "source_location": "L35",
+      "source_location": "L36",
       "weight": 1.0
     },
     {
@@ -18084,7 +18234,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "package.json",
-      "source_location": "L36",
+      "source_location": "L37",
       "weight": 1.0
     },
     {
@@ -18095,7 +18245,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "package.json",
-      "source_location": "L37",
+      "source_location": "L38",
       "weight": 1.0
     },
     {
@@ -18106,7 +18256,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "package.json",
-      "source_location": "L38",
+      "source_location": "L39",
       "weight": 1.0
     },
     {
@@ -18117,7 +18267,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "package.json",
-      "source_location": "L39",
+      "source_location": "L40",
       "weight": 1.0
     },
     {
@@ -18128,7 +18278,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "package.json",
-      "source_location": "L40",
+      "source_location": "L41",
       "weight": 1.0
     },
     {
@@ -18139,7 +18289,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "package.json",
-      "source_location": "L41",
+      "source_location": "L42",
       "weight": 1.0
     },
     {
@@ -18150,7 +18300,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "package.json",
-      "source_location": "L42",
+      "source_location": "L43",
       "weight": 1.0
     },
     {
@@ -18161,7 +18311,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "package.json",
-      "source_location": "L43",
+      "source_location": "L44",
       "weight": 1.0
     },
     {
@@ -18172,7 +18322,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "package.json",
-      "source_location": "L44",
+      "source_location": "L45",
       "weight": 1.0
     },
     {
@@ -18183,7 +18333,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "package.json",
-      "source_location": "L45",
+      "source_location": "L46",
       "weight": 1.0
     },
     {
@@ -18403,7 +18553,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "README.md",
-      "source_location": "L168",
+      "source_location": "L169",
       "weight": 1.0
     },
     {
@@ -18414,7 +18564,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "README.md",
-      "source_location": "L184",
+      "source_location": "L186",
       "weight": 1.0
     },
     {
@@ -18425,7 +18575,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "README.md",
-      "source_location": "L196",
+      "source_location": "L198",
       "weight": 1.0
     },
     {
@@ -18551,35 +18701,35 @@
     },
     {
       "source": "server_auth",
-      "target": "server_auth_loginschema",
+      "target": "server_auth_authuser",
       "relation": "contains",
       "_origin": "ast",
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "server/auth.ts",
-      "source_location": "L23",
+      "source_location": "L17",
       "weight": 1.0
     },
     {
       "source": "server_auth",
-      "target": "server_auth_matches",
+      "target": "server_auth_tokenverifier",
       "relation": "contains",
       "_origin": "ast",
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "server/auth.ts",
-      "source_location": "L29",
+      "source_location": "L22",
       "weight": 1.0
     },
     {
       "source": "server_auth",
-      "target": "server_auth_parsesession",
+      "target": "server_auth_supabaseverifier",
       "relation": "contains",
       "_origin": "ast",
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "server/auth.ts",
-      "source_location": "L35",
+      "source_location": "L28",
       "weight": 1.0
     },
     {
@@ -18590,7 +18740,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "server/auth.ts",
-      "source_location": "L43",
+      "source_location": "L55",
       "weight": 1.0
     },
     {
@@ -18705,24 +18855,13 @@
     },
     {
       "source": "server_env",
-      "target": "server_env_loaddotenv",
-      "relation": "contains",
-      "_origin": "ast",
-      "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
-      "source_file": "server/env.ts",
-      "source_location": "L100",
-      "weight": 1.0
-    },
-    {
-      "source": "server_env",
       "target": "server_env_loadenv",
       "relation": "contains",
       "_origin": "ast",
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "server/env.ts",
-      "source_location": "L113",
+      "source_location": "L102",
       "weight": 1.0
     },
     {
@@ -18733,7 +18872,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "server/env.ts",
-      "source_location": "L131",
+      "source_location": "L120",
       "weight": 1.0
     },
     {
@@ -18755,7 +18894,18 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "server/env.ts",
-      "source_location": "L87",
+      "source_location": "L76",
+      "weight": 1.0
+    },
+    {
+      "source": "server_env",
+      "target": "server_env_loaddotenv",
+      "relation": "contains",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "server/env.ts",
+      "source_location": "L89",
       "weight": 1.0
     },
     {
@@ -19023,6 +19173,50 @@
       "weight": 1.0
     },
     {
+      "source": "src_api_auth",
+      "target": "src_api_auth_authconfig",
+      "relation": "contains",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "src/api/auth.ts",
+      "source_location": "L11",
+      "weight": 1.0
+    },
+    {
+      "source": "src_api_auth",
+      "target": "src_api_auth_authconfigerror",
+      "relation": "contains",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "src/api/auth.ts",
+      "source_location": "L20",
+      "weight": 1.0
+    },
+    {
+      "source": "src_api_auth",
+      "target": "src_api_auth_getsupabase",
+      "relation": "contains",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "src/api/auth.ts",
+      "source_location": "L22",
+      "weight": 1.0
+    },
+    {
+      "source": "src_api_auth",
+      "target": "src_api_auth_accesstoken",
+      "relation": "contains",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "src/api/auth.ts",
+      "source_location": "L44",
+      "weight": 1.0
+    },
+    {
       "source": "src_api_client",
       "target": "src_api_client_snapshotresponse",
       "relation": "contains",
@@ -19030,7 +19224,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "src/api/client.ts",
-      "source_location": "L104",
+      "source_location": "L110",
       "weight": 1.0
     },
     {
@@ -19041,7 +19235,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "src/api/client.ts",
-      "source_location": "L118",
+      "source_location": "L124",
       "weight": 1.0
     },
     {
@@ -19052,7 +19246,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "src/api/client.ts",
-      "source_location": "L126",
+      "source_location": "L132",
       "weight": 1.0
     },
     {
@@ -19063,7 +19257,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "src/api/client.ts",
-      "source_location": "L138",
+      "source_location": "L144",
       "weight": 1.0
     },
     {
@@ -19074,7 +19268,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "src/api/client.ts",
-      "source_location": "L146",
+      "source_location": "L152",
       "weight": 1.0
     },
     {
@@ -19085,7 +19279,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "src/api/client.ts",
-      "source_location": "L163",
+      "source_location": "L169",
       "weight": 1.0
     },
     {
@@ -19096,7 +19290,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "src/api/client.ts",
-      "source_location": "L171",
+      "source_location": "L177",
       "weight": 1.0
     },
     {
@@ -19107,7 +19301,18 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "src/api/client.ts",
-      "source_location": "L178",
+      "source_location": "L184",
+      "weight": 1.0
+    },
+    {
+      "source": "src_api_client",
+      "target": "src_api_client_unauthorized",
+      "relation": "contains",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "src/api/client.ts",
+      "source_location": "L190",
       "weight": 1.0
     },
     {
@@ -19118,7 +19323,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "src/api/client.ts",
-      "source_location": "L184",
+      "source_location": "L192",
       "weight": 1.0
     },
     {
@@ -19129,7 +19334,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "src/api/client.ts",
-      "source_location": "L23",
+      "source_location": "L24",
       "weight": 1.0
     },
     {
@@ -19140,7 +19345,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "src/api/client.ts",
-      "source_location": "L50",
+      "source_location": "L51",
       "weight": 1.0
     },
     {
@@ -19151,7 +19356,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "src/api/client.ts",
-      "source_location": "L85",
+      "source_location": "L91",
       "weight": 1.0
     },
     {
@@ -19162,238 +19367,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "src/api/client.ts",
-      "source_location": "L89",
-      "weight": 1.0
-    },
-    {
-      "source": "src_api_queries",
-      "target": "src_api_queries_usetopology",
-      "relation": "contains",
-      "_origin": "ast",
-      "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
-      "source_file": "src/api/queries.ts",
-      "source_location": "L108",
-      "weight": 1.0
-    },
-    {
-      "source": "src_api_queries",
-      "target": "src_api_queries_usesnapshot",
-      "relation": "contains",
-      "_origin": "ast",
-      "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
-      "source_file": "src/api/queries.ts",
-      "source_location": "L122",
-      "weight": 1.0
-    },
-    {
-      "source": "src_api_queries",
-      "target": "src_api_queries_usetoday",
-      "relation": "contains",
-      "_origin": "ast",
-      "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
-      "source_file": "src/api/queries.ts",
-      "source_location": "L139",
-      "weight": 1.0
-    },
-    {
-      "source": "src_api_queries",
-      "target": "src_api_queries_usestatsyear",
-      "relation": "contains",
-      "_origin": "ast",
-      "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
-      "source_file": "src/api/queries.ts",
-      "source_location": "L149",
-      "weight": 1.0
-    },
-    {
-      "source": "src_api_queries",
-      "target": "src_api_queries_usebillingsummary",
-      "relation": "contains",
-      "_origin": "ast",
-      "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
-      "source_file": "src/api/queries.ts",
-      "source_location": "L157",
-      "weight": 1.0
-    },
-    {
-      "source": "src_api_queries",
-      "target": "src_api_queries_usereadings",
-      "relation": "contains",
-      "_origin": "ast",
-      "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
-      "source_file": "src/api/queries.ts",
-      "source_location": "L166",
-      "weight": 1.0
-    },
-    {
-      "source": "src_api_queries",
-      "target": "src_api_queries_usereadingsmutation",
-      "relation": "contains",
-      "_origin": "ast",
-      "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
-      "source_file": "src/api/queries.ts",
-      "source_location": "L179",
-      "weight": 1.0
-    },
-    {
-      "source": "src_api_queries",
-      "target": "src_api_queries_usesavereading",
-      "relation": "contains",
-      "_origin": "ast",
-      "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
-      "source_file": "src/api/queries.ts",
-      "source_location": "L192",
-      "weight": 1.0
-    },
-    {
-      "source": "src_api_queries",
-      "target": "src_api_queries_usedeletereading",
-      "relation": "contains",
-      "_origin": "ast",
-      "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
-      "source_file": "src/api/queries.ts",
-      "source_location": "L196",
-      "weight": 1.0
-    },
-    {
-      "source": "src_api_queries",
-      "target": "src_api_queries_usesavemeter",
-      "relation": "contains",
-      "_origin": "ast",
-      "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
-      "source_file": "src/api/queries.ts",
-      "source_location": "L200",
-      "weight": 1.0
-    },
-    {
-      "source": "src_api_queries",
-      "target": "src_api_queries_useday",
-      "relation": "contains",
-      "_origin": "ast",
-      "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
-      "source_file": "src/api/queries.ts",
-      "source_location": "L207",
-      "weight": 1.0
-    },
-    {
-      "source": "src_api_queries",
-      "target": "src_api_queries_usestatsmonth",
-      "relation": "contains",
-      "_origin": "ast",
-      "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
-      "source_file": "src/api/queries.ts",
-      "source_location": "L216",
-      "weight": 1.0
-    },
-    {
-      "source": "src_api_queries",
-      "target": "src_api_queries_useplantrealtime",
-      "relation": "contains",
-      "_origin": "ast",
-      "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
-      "source_file": "src/api/queries.ts",
-      "source_location": "L225",
-      "weight": 1.0
-    },
-    {
-      "source": "src_api_queries",
-      "target": "src_api_queries_weather",
-      "relation": "contains",
-      "_origin": "ast",
-      "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
-      "source_file": "src/api/queries.ts",
-      "source_location": "L233",
-      "weight": 1.0
-    },
-    {
-      "source": "src_api_queries",
-      "target": "src_api_queries_useweather",
-      "relation": "contains",
-      "_origin": "ast",
-      "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
-      "source_file": "src/api/queries.ts",
-      "source_location": "L251",
-      "weight": 1.0
-    },
-    {
-      "source": "src_api_queries",
-      "target": "src_api_queries_usehealth",
-      "relation": "contains",
-      "_origin": "ast",
-      "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
-      "source_file": "src/api/queries.ts",
-      "source_location": "L294",
-      "weight": 1.0
-    },
-    {
-      "source": "src_api_queries",
-      "target": "src_api_queries_createqueryclient",
-      "relation": "contains",
-      "_origin": "ast",
-      "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
-      "source_file": "src/api/queries.ts",
-      "source_location": "L32",
-      "weight": 1.0
-    },
-    {
-      "source": "src_api_queries",
-      "target": "src_api_queries_authkey",
-      "relation": "contains",
-      "_origin": "ast",
-      "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
-      "source_file": "src/api/queries.ts",
-      "source_location": "L64",
-      "weight": 1.0
-    },
-    {
-      "source": "src_api_queries",
-      "target": "src_api_queries_useme",
-      "relation": "contains",
-      "_origin": "ast",
-      "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
-      "source_file": "src/api/queries.ts",
-      "source_location": "L67",
-      "weight": 1.0
-    },
-    {
-      "source": "src_api_queries",
-      "target": "src_api_queries_uselogin",
-      "relation": "contains",
-      "_origin": "ast",
-      "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
-      "source_file": "src/api/queries.ts",
-      "source_location": "L76",
-      "weight": 1.0
-    },
-    {
-      "source": "src_api_queries",
-      "target": "src_api_queries_uselogout",
-      "relation": "contains",
-      "_origin": "ast",
-      "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
-      "source_file": "src/api/queries.ts",
-      "source_location": "L85",
+      "source_location": "L95",
       "weight": 1.0
     },
     {
@@ -19404,7 +19378,238 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "src/api/queries.ts",
-      "source_location": "L97",
+      "source_location": "L104",
+      "weight": 1.0
+    },
+    {
+      "source": "src_api_queries",
+      "target": "src_api_queries_usetopology",
+      "relation": "contains",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "src/api/queries.ts",
+      "source_location": "L115",
+      "weight": 1.0
+    },
+    {
+      "source": "src_api_queries",
+      "target": "src_api_queries_usesnapshot",
+      "relation": "contains",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "src/api/queries.ts",
+      "source_location": "L129",
+      "weight": 1.0
+    },
+    {
+      "source": "src_api_queries",
+      "target": "src_api_queries_usetoday",
+      "relation": "contains",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "src/api/queries.ts",
+      "source_location": "L146",
+      "weight": 1.0
+    },
+    {
+      "source": "src_api_queries",
+      "target": "src_api_queries_usestatsyear",
+      "relation": "contains",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "src/api/queries.ts",
+      "source_location": "L156",
+      "weight": 1.0
+    },
+    {
+      "source": "src_api_queries",
+      "target": "src_api_queries_usebillingsummary",
+      "relation": "contains",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "src/api/queries.ts",
+      "source_location": "L164",
+      "weight": 1.0
+    },
+    {
+      "source": "src_api_queries",
+      "target": "src_api_queries_usereadings",
+      "relation": "contains",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "src/api/queries.ts",
+      "source_location": "L173",
+      "weight": 1.0
+    },
+    {
+      "source": "src_api_queries",
+      "target": "src_api_queries_usereadingsmutation",
+      "relation": "contains",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "src/api/queries.ts",
+      "source_location": "L186",
+      "weight": 1.0
+    },
+    {
+      "source": "src_api_queries",
+      "target": "src_api_queries_usesavereading",
+      "relation": "contains",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "src/api/queries.ts",
+      "source_location": "L199",
+      "weight": 1.0
+    },
+    {
+      "source": "src_api_queries",
+      "target": "src_api_queries_usedeletereading",
+      "relation": "contains",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "src/api/queries.ts",
+      "source_location": "L203",
+      "weight": 1.0
+    },
+    {
+      "source": "src_api_queries",
+      "target": "src_api_queries_usesavemeter",
+      "relation": "contains",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "src/api/queries.ts",
+      "source_location": "L207",
+      "weight": 1.0
+    },
+    {
+      "source": "src_api_queries",
+      "target": "src_api_queries_useday",
+      "relation": "contains",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "src/api/queries.ts",
+      "source_location": "L214",
+      "weight": 1.0
+    },
+    {
+      "source": "src_api_queries",
+      "target": "src_api_queries_usestatsmonth",
+      "relation": "contains",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "src/api/queries.ts",
+      "source_location": "L223",
+      "weight": 1.0
+    },
+    {
+      "source": "src_api_queries",
+      "target": "src_api_queries_useplantrealtime",
+      "relation": "contains",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "src/api/queries.ts",
+      "source_location": "L232",
+      "weight": 1.0
+    },
+    {
+      "source": "src_api_queries",
+      "target": "src_api_queries_weather",
+      "relation": "contains",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "src/api/queries.ts",
+      "source_location": "L240",
+      "weight": 1.0
+    },
+    {
+      "source": "src_api_queries",
+      "target": "src_api_queries_useweather",
+      "relation": "contains",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "src/api/queries.ts",
+      "source_location": "L258",
+      "weight": 1.0
+    },
+    {
+      "source": "src_api_queries",
+      "target": "src_api_queries_usehealth",
+      "relation": "contains",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "src/api/queries.ts",
+      "source_location": "L301",
+      "weight": 1.0
+    },
+    {
+      "source": "src_api_queries",
+      "target": "src_api_queries_createqueryclient",
+      "relation": "contains",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "src/api/queries.ts",
+      "source_location": "L33",
+      "weight": 1.0
+    },
+    {
+      "source": "src_api_queries",
+      "target": "src_api_queries_authkey",
+      "relation": "contains",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "src/api/queries.ts",
+      "source_location": "L71",
+      "weight": 1.0
+    },
+    {
+      "source": "src_api_queries",
+      "target": "src_api_queries_useme",
+      "relation": "contains",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "src/api/queries.ts",
+      "source_location": "L74",
+      "weight": 1.0
+    },
+    {
+      "source": "src_api_queries",
+      "target": "src_api_queries_uselogin",
+      "relation": "contains",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "src/api/queries.ts",
+      "source_location": "L83",
+      "weight": 1.0
+    },
+    {
+      "source": "src_api_queries",
+      "target": "src_api_queries_uselogout",
+      "relation": "contains",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "src/api/queries.ts",
+      "source_location": "L92",
       "weight": 1.0
     },
     {
@@ -19580,7 +19785,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "src/features/auth/AuthGate.tsx",
-      "source_location": "L14",
+      "source_location": "L16",
       "weight": 1.0
     },
     {
@@ -19591,7 +19796,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "src/features/auth/AuthGate.tsx",
-      "source_location": "L26",
+      "source_location": "L28",
       "weight": 1.0
     },
     {
@@ -19602,7 +19807,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "src/features/auth/AuthGate.tsx",
-      "source_location": "L37",
+      "source_location": "L39",
       "weight": 1.0
     },
     {
@@ -20564,7 +20769,7 @@
     },
     {
       "source": "tests_server_auth_test",
-      "target": "tests_server_auth_test_creds",
+      "target": "tests_server_auth_test_supabase",
       "relation": "contains",
       "_origin": "ast",
       "confidence": "EXTRACTED",
@@ -20575,7 +20780,7 @@
     },
     {
       "source": "tests_server_auth_test",
-      "target": "tests_server_auth_test_appwith",
+      "target": "tests_server_auth_test_verifier",
       "relation": "contains",
       "_origin": "ast",
       "confidence": "EXTRACTED",
@@ -20586,13 +20791,24 @@
     },
     {
       "source": "tests_server_auth_test",
-      "target": "tests_server_auth_test_login",
+      "target": "tests_server_auth_test_appwith",
       "relation": "contains",
       "_origin": "ast",
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "tests/server/auth.test.ts",
-      "source_location": "L26",
+      "source_location": "L22",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_server_auth_test",
+      "target": "tests_server_auth_test_bearer",
+      "relation": "contains",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "tests/server/auth.test.ts",
+      "source_location": "L29",
       "weight": 1.0
     },
     {
@@ -21868,7 +22084,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "src/api/client.ts",
-      "source_location": "L29",
+      "source_location": "L30",
       "weight": 1.0
     },
     {
@@ -21879,7 +22095,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "src/api/client.ts",
-      "source_location": "L45",
+      "source_location": "L46",
       "weight": 1.0
     },
     {
@@ -22016,5 +22232,5 @@
     }
   ],
   "hyperedges": [],
-  "built_at_commit": "3d32a755eb0ef06037ef12ee817145af0eda40d9"
+  "built_at_commit": "32b89a8a362a3c6b98e5895409e6dfd0c945aa69"
 }

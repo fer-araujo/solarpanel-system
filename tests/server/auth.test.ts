@@ -1,106 +1,86 @@
 import { describe, expect, it } from "vitest";
 import { Hono } from "hono";
-import { registerAuth } from "../../server/auth";
-import { loadEnv, type Env } from "../../server/env";
+import { registerAuth, type TokenVerifier } from "../../server/auth";
+import { loadEnv } from "../../server/env";
 
 const BASE = {
   SOLAX_BASE_URL: "https://openapi-eu.solaxcloud.com",
   SOLAX_CLIENT_ID: "id",
-  SOLAX_CLIENT_SECRET: "secret",
+  SOLAX_CLIENT_SECRET: "fixture",
   SOLAX_BUSINESS_TYPE: "1",
 };
 
-const CREDS = {
-  APP_USER: "fer",
-  APP_PASSWORD: "una-contrasena-larga",
-  APP_SESSION_SECRET: "x".repeat(40),
+const SUPABASE = {
+  SUPABASE_URL: "https://example.supabase.co",
+  SUPABASE_ANON_KEY: "public-anon-key",
 };
 
-function appWith(env: Env) {
+/** Stand-in for Supabase: one known token, everything else is invalid. */
+const verifier: TokenVerifier = async (token) =>
+  token === "valid-token" ? { id: "u1", email: "owner@example.com" } : null;
+
+function appWith(vars: Record<string, string>, verify: TokenVerifier = verifier) {
   const app = new Hono();
-  registerAuth(app, env);
-  app.get("/api/secret", (c) => c.text("datos"));
+  registerAuth(app, loadEnv({ ...BASE, ...vars } as NodeJS.ProcessEnv), verify);
+  app.get("/api/data", (c) => c.text("datos"));
   return app;
 }
 
-async function login(app: Hono, user: string, password: string) {
-  return app.request("/api/auth/login", {
-    method: "POST",
-    headers: { "Content-Type": "application/json", "x-forwarded-for": `ip-${user}-${password}` },
-    body: JSON.stringify({ user, password }),
-  });
-}
+const bearer = (token: string) => ({ headers: { Authorization: `Bearer ${token}` } });
 
 describe("auth", () => {
-  const env = loadEnv({ ...BASE, ...CREDS } as NodeJS.ProcessEnv);
-
-  it("blocks the API without a session", async () => {
-    const res = await appWith(env).request("/api/secret");
-    expect(res.status).toBe(401);
+  it("blocks the API without a token", async () => {
+    expect((await appWith(SUPABASE).request("/api/data")).status).toBe(401);
   });
 
-  it("rejects a wrong password", async () => {
-    const res = await login(appWith(env), "fer", "incorrecta-123456");
-    expect(res.status).toBe(401);
-    expect(res.headers.get("set-cookie")).toBeNull();
+  it("rejects a token Supabase does not recognise", async () => {
+    expect((await appWith(SUPABASE).request("/api/data", bearer("forged"))).status).toBe(401);
   });
 
-  it("issues an httpOnly session cookie that unlocks the API", async () => {
-    const app = appWith(env);
-    const res = await login(app, "fer", CREDS.APP_PASSWORD);
+  it("lets a valid session through", async () => {
+    const res = await appWith(SUPABASE).request("/api/data", bearer("valid-token"));
     expect(res.status).toBe(200);
-    const cookie = res.headers.get("set-cookie") ?? "";
-    expect(cookie).toMatch(/solar_session=/);
-    expect(cookie).toMatch(/HttpOnly/i);
-
-    const session = cookie.split(";")[0] ?? "";
-    const secret = await app.request("/api/secret", { headers: { cookie: session } });
-    expect(secret.status).toBe(200);
-    expect(await secret.text()).toBe("datos");
+    expect(await res.text()).toBe("datos");
   });
 
-  it("rejects a tampered cookie", async () => {
-    const res = await appWith(env).request("/api/secret", {
-      headers: { cookie: "solar_session=fer|9999999999999.forged" },
-    });
-    expect(res.status).toBe(401);
+  it("refuses users outside the allow list", async () => {
+    const app = appWith({ ...SUPABASE, AUTH_ALLOWED_EMAILS: "someone@else.com" });
+    expect((await app.request("/api/data", bearer("valid-token"))).status).toBe(403);
   });
 
-  it("throttles repeated failures from one address", async () => {
-    const app = appWith(env);
-    const attempt = () =>
-      app.request("/api/auth/login", {
-        method: "POST",
-        headers: { "Content-Type": "application/json", "x-forwarded-for": "1.2.3.4" },
-        body: JSON.stringify({ user: "fer", password: "mala-mala-mala" }),
-      });
-    for (let i = 0; i < 5; i++) await attempt();
-    expect((await attempt()).status).toBe(429);
-  }, 15_000);
+  it("accepts allow-listed users regardless of case", async () => {
+    const app = appWith({ ...SUPABASE, AUTH_ALLOWED_EMAILS: " Owner@Example.com , b@c.com" });
+    expect((await app.request("/api/data", bearer("valid-token"))).status).toBe(200);
+  });
 
-  it("fails CLOSED in production when credentials are missing", async () => {
-    const prod = loadEnv({ ...BASE, NODE_ENV: "production" } as NodeJS.ProcessEnv);
-    const res = await appWith(prod).request("/api/secret");
+  it("answers 503, not 401, when Supabase is down", async () => {
+    const down: TokenVerifier = async () => {
+      throw new Error("down");
+    };
+    const res = await appWith(SUPABASE, down).request("/api/data", bearer("valid-token"));
     expect(res.status).toBe(503);
   });
 
+  it("exposes only the public config", async () => {
+    const res = await appWith(SUPABASE).request("/api/auth/config");
+    expect(await res.json()).toEqual({
+      enabled: true,
+      url: SUPABASE.SUPABASE_URL,
+      anonKey: SUPABASE.SUPABASE_ANON_KEY,
+    });
+  });
+
+  it("fails CLOSED in production when Supabase is missing", async () => {
+    const app = new Hono();
+    registerAuth(app, loadEnv({ ...BASE, NODE_ENV: "production" } as NodeJS.ProcessEnv));
+    app.get("/api/data", (c) => c.text("datos"));
+    expect((await app.request("/api/data", bearer("valid-token"))).status).toBe(503);
+  });
+
   it("stays open locally when nothing is configured", async () => {
-    const local = loadEnv({ ...BASE } as NodeJS.ProcessEnv);
-    const res = await appWith(local).request("/api/secret");
-    expect(res.status).toBe(200);
-  });
-});
-
-describe("credential validation", () => {
-  it("rejects a password shorter than 12 characters", () => {
-    expect(() =>
-      loadEnv({ ...BASE, ...CREDS, APP_PASSWORD: "corta" } as NodeJS.ProcessEnv),
-    ).toThrow(/12 characters/);
-  });
-
-  it("requires all three settings together", () => {
-    expect(() =>
-      loadEnv({ ...BASE, APP_USER: "fer" } as NodeJS.ProcessEnv),
-    ).toThrow(/set together/);
+    const app = new Hono();
+    registerAuth(app, loadEnv({ ...BASE } as NodeJS.ProcessEnv));
+    app.get("/api/data", (c) => c.text("datos"));
+    expect((await app.request("/api/data")).status).toBe(200);
   });
 });

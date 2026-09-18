@@ -52,17 +52,15 @@ const schema = z.object({
   SOLAX_MAX_CALLS_PER_DAY: z.coerce.number().int().positive().default(20_000),
 
   /**
-   * Login credentials, chosen by the owner and set only here — never in code.
-   * Optional locally (auth is off), REQUIRED in production: without them the
-   * server fails closed rather than exposing the plant and the CFE readings.
+   * Supabase Auth. Optional locally (auth is off), REQUIRED in production:
+   * without it the server fails closed rather than exposing the plant and the
+   * CFE readings. The anon key is public by design; the server only uses it to
+   * ask Supabase who a token belongs to.
    */
-  APP_USER: z.string().min(3, "APP_USER must be at least 3 characters").optional(),
-  APP_PASSWORD: z.string().min(12, "APP_PASSWORD must be at least 12 characters").optional(),
-  /** Signs the session cookie. Any long random string; rotating it logs everyone out. */
-  APP_SESSION_SECRET: z
-    .string()
-    .min(32, "APP_SESSION_SECRET must be at least 32 characters")
-    .optional(),
+  SUPABASE_URL: z.string().url().optional(),
+  SUPABASE_ANON_KEY: z.string().min(1).optional(),
+  /** Comma-separated emails allowed in. Empty means any user of the Supabase project. */
+  AUTH_ALLOWED_EMAILS: z.string().optional(),
 
   /** Upstash REST credentials. Required on serverless, where memory and disk do not persist. */
   UPSTASH_REDIS_REST_URL: z.string().url().optional(),
@@ -73,16 +71,7 @@ const schema = z.object({
   NODE_ENV: z
     .enum(["development", "production", "test"])
     .default("development"),
-}).refine(
-  (env) => {
-    const set = [env.APP_USER, env.APP_PASSWORD, env.APP_SESSION_SECRET].filter(Boolean).length;
-    return set === 0 || set === 3;
-  },
-  {
-    message: "APP_USER, APP_PASSWORD and APP_SESSION_SECRET must be set together",
-    path: ["APP_USER"],
-  },
-);
+});
 
 export type Env = z.infer<typeof schema>;
 

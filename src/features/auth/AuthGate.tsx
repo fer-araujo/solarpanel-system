@@ -1,7 +1,9 @@
-import type { ReactNode } from "react";
+import { useEffect, type ReactNode } from "react";
+import { useQueryClient } from "@tanstack/react-query";
+import { getSupabase } from "@/api/auth";
 import { AnimatePresence, motion } from "motion/react";
 import { ApiError } from "@/api/client";
-import { useMe } from "@/api/queries";
+import { authKey, useMe } from "@/api/queries";
 import { LoginScreen } from "./LoginScreen";
 
 /**
@@ -36,6 +38,22 @@ function ServerProblem({ message }: { message: string }) {
 
 export function AuthGate({ children }: { children: ReactNode }) {
   const me = useMe();
+  const client = useQueryClient();
+
+  // Sign-out in another tab, or a refresh token that stopped working, ends up
+  // here: re-check the session so the gate follows it.
+  useEffect(() => {
+    let unsubscribe: (() => void) | undefined;
+    void getSupabase()
+      .then((supabase) => {
+        const { data } = supabase?.auth.onAuthStateChange((event) => {
+          if (event === "SIGNED_OUT") void client.invalidateQueries({ queryKey: authKey });
+        }) ?? { data: null };
+        unsubscribe = () => data?.subscription.unsubscribe();
+      })
+      .catch(() => undefined);
+    return () => unsubscribe?.();
+  }, [client]);
 
   let view: { key: string; node: ReactNode };
   if (me.isPending) {

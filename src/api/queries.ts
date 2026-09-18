@@ -7,6 +7,7 @@ import {
   type UseQueryResult,
 } from "@tanstack/react-query";
 import type { MeterReading } from "@core/billing/model/meter-reading";
+import { getSupabase } from "./auth";
 import {
   ApiError,
   api,
@@ -35,8 +36,14 @@ export function createQueryClient(): QueryClient {
     // gate back to the login screen instead of leaving broken panels.
     queryCache: new QueryCache({
       onError: (error, query) => {
-        if (error instanceof ApiError && error.status === 401 && query.queryKey[0] !== "auth") {
+        if (!(error instanceof ApiError) || query.queryKey[0] === "auth") return;
+        if (error.status === 401) {
           void client.invalidateQueries({ queryKey: authKey });
+        } else if (error.status === 403) {
+          // Signed in, but not on the allow list: drop the session.
+          void getSupabase()
+            .then((supabase) => supabase?.auth.signOut())
+            .finally(() => client.invalidateQueries({ queryKey: authKey }));
         }
       },
     }),
@@ -61,7 +68,7 @@ export function createQueryClient(): QueryClient {
   return client;
 }
 
-const authKey = ["auth", "me"] as const;
+export const authKey = ["auth", "me"] as const;
 
 /** Who is logged in. A 401 here is the signal to show the login screen. */
 export function useMe() {
@@ -76,8 +83,8 @@ export function useMe() {
 export function useLogin() {
   const client = useQueryClient();
   return useMutation({
-    mutationFn: ({ user, password }: { user: string; password: string }) =>
-      api.auth.login(user, password),
+    mutationFn: ({ email, password }: { email: string; password: string }) =>
+      api.auth.login(email, password),
     onSuccess: (me) => client.setQueryData(authKey, me),
   });
 }

@@ -57,7 +57,7 @@ flowchart LR
     end
 
     subgraph Server["Hono BFF (Node / Vercel Function)"]
-        AUTH["Auth guard<br/>signed cookie"]
+        AUTH["Auth guard<br/>Supabase token"]
         ROUTES["/api routes<br/>return DOMAIN models"]
         SOLAX["SolaX client<br/>token · rate limit · cache"]
         READ["Readings repository"]
@@ -144,24 +144,25 @@ pnpm dev               # SPA on :5173, proxies /api
 | `SOLAX_BUSINESS_TYPE` | | `1` residential (default) or `4` C&I |
 | `SOLAX_MAX_CALLS_PER_MINUTE` | | Local budget, default `60` |
 | `SOLAX_MAX_CALLS_PER_DAY` | | Local budget, default `20000` |
-| `APP_USER` | prod | Login user (≥ 3 chars) |
-| `APP_PASSWORD` | prod | Login password (≥ 12 chars) |
-| `APP_SESSION_SECRET` | prod | Cookie signing key (≥ 32 chars): `openssl rand -hex 32` |
+| `SUPABASE_URL` | prod | Supabase project URL |
+| `SUPABASE_ANON_KEY` | prod | Supabase anon (publishable) key |
+| `AUTH_ALLOWED_EMAILS` | | Comma-separated emails allowed in; empty allows every user of the project |
 | `UPSTASH_REDIS_REST_URL` | prod | Upstash REST URL |
 | `UPSTASH_REDIS_REST_TOKEN` | prod | Upstash REST token |
 | `NODE_ENV` | | `production` on the deployed app |
 
-The three `APP_*` variables go together: set all or none. Locally, with none set, the login is
-disabled. **In production the app refuses every request until they are configured.**
+Locally, without the Supabase variables, the login is disabled. **In production the app refuses every
+request until they are configured.**
 
 ---
 
 ## Authentication
 
-A single owner, no user database. Credentials live in environment variables and a successful login
-issues an HMAC-signed, `httpOnly`, `SameSite=Lax` cookie valid for 30 days. Comparisons are
-constant-time, failures are delayed and throttled per IP, and rotating `APP_SESSION_SECRET` signs
-everyone out.
+[Supabase Auth](https://supabase.com/docs/guides/auth) with email and password, one account per person.
+The browser signs in with Supabase and sends its access token as a Bearer header; the server confirms
+the token with Supabase on every API call (cached for a minute), so revoking a user takes effect
+within a minute. Disable public sign-ups in Supabase and invite accounts from its dashboard, or restrict
+access with `AUTH_ALLOWED_EMAILS` when the Supabase project is shared with other apps.
 
 ---
 
@@ -174,7 +175,8 @@ everyone out.
    ```
 3. **Vercel**: import the repository. `vercel.json` already sets the install and build commands;
    the build emits the SPA as static files and the API as one Node function via the Build Output API.
-4. Add the environment variables above in *Project → Settings → Environment Variables* and deploy.
+4. **Supabase**: under *Authentication → URL Configuration*, add the Vercel domain.
+5. Add the environment variables above in *Project → Settings → Environment Variables* and deploy.
 
 The Hobby plan has no card on file and pauses the project if a limit is ever reached; it never bills.
 Polling is tuned to stay far below the limits (the connection panel only polls while it is open).
@@ -189,7 +191,7 @@ pnpm test
 ```
 
 The domain is tested against fixtures captured from the real API: load derivation, sign
-conventions, the bolsa's FIFO expiry, tariff blocks and the minimum charge, auth and sessions.
+conventions, the bolsa's FIFO expiry, tariff blocks and the minimum charge, and token-based auth.
 
 ---
 
