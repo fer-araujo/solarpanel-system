@@ -1,7 +1,8 @@
 import { mkdir, readFile, rename, writeFile } from "node:fs/promises";
 import { dirname, join } from "node:path";
 import { z } from "zod";
-import type { MeterReading } from "@core/billing/model/meter-reading";
+import type { MeterReading } from "../../core/billing/model/meter-reading";
+import type { KeyValueStore } from "../storage/kv";
 
 /**
  * Persistence for the CFE meter readings.
@@ -63,33 +64,31 @@ function emptyFile(): ReadingsFile {
   return { version: 1, carryoverKwh: 0, readings: [], history: [] };
 }
 
-export class ReadingsStore {
-  private readonly path: string;
-
-  constructor(dataDir: string) {
-    this.path = join(dataDir, "cfe-readings.json");
-  }
+/**
+ * The reading logic, independent of where the file lives. Locally that is a
+ * JSON file; on Vercel the filesystem is ephemeral, so it is Upstash.
+ */
+export abstract class ReadingsRepository {
+  /** Raw stored document, or null when nothing has been saved yet. */
+  protected abstract readRaw(): Promise<unknown | null>;
+  protected abstract writeRaw(file: ReadingsFile): Promise<void>;
+  protected abstract describe(): string;
 
   async load(): Promise<ReadingsFile> {
-    let raw: string;
-    try {
-      raw = await readFile(this.path, "utf8");
-    } catch (error) {
-      if (isNotFound(error)) return emptyFile();
-      throw error;
-    }
+    const raw = await this.readRaw();
+    if (raw === null) return emptyFile();
 
-    const parsed = fileSchema.safeParse(JSON.parse(raw));
+    const parsed = fileSchema.safeParse(raw);
     if (!parsed.success) {
       throw new Error(
-        `${this.path} is not a valid readings file: ${parsed.error.issues
+        `${this.describe()} is not a valid readings file: ${parsed.error.issues
           .map((issue) => `${issue.path.join(".")}: ${issue.message}`)
           .join("; ")}`,
       );
     }
 
     // Chronological order is what the bolsa calculation depends on, so it is
-    // guaranteed here rather than trusted from the file.
+    // guaranteed here rather than trusted from storage.
     parsed.data.readings.sort((a, b) => a.period.localeCompare(b.period));
     return parsed.data;
   }
@@ -97,11 +96,7 @@ export class ReadingsStore {
   async save(file: ReadingsFile): Promise<ReadingsFile> {
     const validated = fileSchema.parse(file);
     validated.readings.sort((a, b) => a.period.localeCompare(b.period));
-
-    await mkdir(dirname(this.path), { recursive: true });
-    const temp = `${this.path}.${process.pid}.tmp`;
-    await writeFile(temp, `${JSON.stringify(validated, null, 2)}\n`, "utf8");
-    await rename(temp, this.path);
+    await this.writeRaw(validated);
     return validated;
   }
 
@@ -133,6 +128,58 @@ export class ReadingsStore {
 
   async setCarryover(carryoverKwh: number): Promise<ReadingsFile> {
     return this.updateMeter({ carryoverKwh });
+  }
+}
+
+/** Local: a human-readable JSON file, written atomically. */
+export class ReadingsStore extends ReadingsRepository {
+  private readonly path: string;
+
+  constructor(dataDir: string) {
+    super();
+    this.path = join(dataDir, "cfe-readings.json");
+  }
+
+  protected describe(): string {
+    return this.path;
+  }
+
+  protected async readRaw(): Promise<unknown | null> {
+    try {
+      return JSON.parse(await readFile(this.path, "utf8")) as unknown;
+    } catch (error) {
+      if (isNotFound(error)) return null;
+      throw error;
+    }
+  }
+
+  protected async writeRaw(file: ReadingsFile): Promise<void> {
+    await mkdir(dirname(this.path), { recursive: true });
+    // Temp file + rename: an interrupted write never truncates the history.
+    const temp = `${this.path}.${process.pid}.tmp`;
+    await writeFile(temp, `${JSON.stringify(file, null, 2)}\n`, "utf8");
+    await rename(temp, this.path);
+  }
+}
+
+/** Serverless: one Upstash key, since the filesystem does not persist. */
+export class KvReadingsStore extends ReadingsRepository {
+  private static readonly KEY = "cfe-readings";
+
+  constructor(private readonly kv: KeyValueStore) {
+    super();
+  }
+
+  protected describe(): string {
+    return `Upstash key "${KvReadingsStore.KEY}"`;
+  }
+
+  protected readRaw(): Promise<unknown | null> {
+    return this.kv.get<unknown>(KvReadingsStore.KEY);
+  }
+
+  protected async writeRaw(file: ReadingsFile): Promise<void> {
+    await this.kv.set(KvReadingsStore.KEY, file);
   }
 }
 

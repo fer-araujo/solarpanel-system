@@ -11,6 +11,7 @@ import {
 import { useBillingSummary, usePlantRealtime, useReadings, useTopology } from "@/api/queries";
 import { Card } from "@/ui/primitives/Card";
 import { ChartTooltip, TooltipRow } from "@/ui/primitives/ChartTooltip";
+import { ChartSkeleton } from "@/ui/primitives/Skeleton";
 
 /**
  * What CFE actually charged, bill by bill, plus what the panels change.
@@ -46,13 +47,21 @@ function Stat({ title, value, tone, note }: { title: string; value: string; tone
 }
 
 export function BillHistory() {
-  const readings = useReadings().data;
+  const readingsQuery = useReadings();
+  const readings = readingsQuery.data;
   const billing = useBillingSummary().data;
   const history = readings?.history ?? [];
   const plant = usePlantRealtime().data;
   const capacity = useTopology().data?.pvCapacityKwp ?? null;
   const [hover, setHover] = useState<number | null>(null);
 
+  if (readingsQuery.isPending) {
+    return (
+      <Card title="Gasto real en CFE">
+        <ChartSkeleton height="h-[220px]" />
+      </Card>
+    );
+  }
   if (history.length === 0) return null;
 
   const last12 = history.slice(-6);

@@ -52,19 +52,37 @@ const schema = z.object({
   SOLAX_MAX_CALLS_PER_DAY: z.coerce.number().int().positive().default(20_000),
 
   /**
-   * Basic-auth credentials for the whole app. Optional locally, but set them on
-   * any public deploy: without them anyone with the URL can read the plant data
-   * and overwrite the CFE readings.
+   * Login credentials, chosen by the owner and set only here — never in code.
+   * Optional locally (auth is off), REQUIRED in production: without them the
+   * server fails closed rather than exposing the plant and the CFE readings.
    */
-  APP_USER: z.string().min(1).optional(),
-  APP_PASSWORD: z.string().min(1).optional(),
+  APP_USER: z.string().min(3, "APP_USER must be at least 3 characters").optional(),
+  APP_PASSWORD: z.string().min(12, "APP_PASSWORD must be at least 12 characters").optional(),
+  /** Signs the session cookie. Any long random string; rotating it logs everyone out. */
+  APP_SESSION_SECRET: z
+    .string()
+    .min(32, "APP_SESSION_SECRET must be at least 32 characters")
+    .optional(),
+
+  /** Upstash REST credentials. Required on serverless, where memory and disk do not persist. */
+  UPSTASH_REDIS_REST_URL: z.string().url().optional(),
+  UPSTASH_REDIS_REST_TOKEN: z.string().min(1).optional(),
 
   PORT: z.coerce.number().int().positive().default(8787),
 
   NODE_ENV: z
     .enum(["development", "production", "test"])
     .default("development"),
-});
+}).refine(
+  (env) => {
+    const set = [env.APP_USER, env.APP_PASSWORD, env.APP_SESSION_SECRET].filter(Boolean).length;
+    return set === 0 || set === 3;
+  },
+  {
+    message: "APP_USER, APP_PASSWORD and APP_SESSION_SECRET must be set together",
+    path: ["APP_USER"],
+  },
+);
 
 export type Env = z.infer<typeof schema>;
 

@@ -175,7 +175,24 @@ export interface PlantRealtimeResponse {
   stale: boolean;
 }
 
+export interface MeResponse {
+  user: string;
+  /** True locally when no credentials are configured and auth is off. */
+  authDisabled?: boolean;
+}
+
 export const api = {
+  auth: {
+    me: () => request<MeResponse>("/api/auth/me"),
+    login: (user: string, password: string) =>
+      request<MeResponse>("/api/auth/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ user, password }),
+      }),
+    logout: () => request<{ ok: boolean }>("/api/auth/logout", { method: "POST" }),
+  },
+
   health: () => request<HealthResponse>("/api/health"),
 
   topology: () => request<SystemTopology>("/api/topology"),

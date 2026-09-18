@@ -1,5 +1,6 @@
 import { useWeather } from "@/api/queries";
 import { Card } from "@/ui/primitives/Card";
+import { Bone, RowsSkeleton } from "@/ui/primitives/Skeleton";
 import type { SunWindow } from "@/features/sun/useSunWindow";
 
 /**
@@ -50,7 +51,10 @@ export function WeatherCard({
   return (
     <Card title="Clima y producción esperada">
       {!data ? (
-        <p className="animate-pulse py-6 text-center text-[13px] text-ink-faint">Cargando…</p>
+        <div className="space-y-4">
+          <Bone className="h-8 w-32" />
+          <RowsSkeleton rows={3} />
+        </div>
       ) : (
         <div className="space-y-4">
           <div className="flex items-end justify-between gap-4">

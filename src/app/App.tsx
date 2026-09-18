@@ -5,6 +5,8 @@ import { ApiError } from "@/api/client";
 import {
   useBillingSummary,
   useHealth,
+  useLogout,
+  useMe,
   useSnapshot,
   useToday,
   useTopology,
@@ -22,6 +24,14 @@ import { BolsaPanel } from "@/features/bolsa/BolsaPanel";
 import { ReadingsForm } from "@/features/readings/ReadingsForm";
 import { InverterFleet } from "@/features/inverters/InverterFleet";
 import { useSunWindow } from "@/features/sun/useSunWindow";
+import {
+  Bone,
+  FlowSkeleton,
+  GaugeSkeleton,
+  RowsSkeleton,
+  Spinner,
+  StatSkeleton,
+} from "@/ui/primitives/Skeleton";
 
 /**
  * The dashboard composes itself from the DISCOVERED topology. Nothing assumes a
@@ -66,11 +76,29 @@ function Nav({ tab, onChange }: { tab: Tab; onChange: (tab: Tab) => void }) {
   );
 }
 
-function Skeleton({ label }: { label: string }) {
+function LogoutButton() {
+  const me = useMe().data;
+  const logout = useLogout();
+  if (!me || me.authDisabled) return null;
   return (
-    <div className="flex min-h-[120px] items-center justify-center rounded-2xl border border-line/50 bg-surface/60">
-      <span className="animate-pulse text-[13px] text-ink-faint">{label}</span>
-    </div>
+    <button
+      type="button"
+      onClick={() => logout.mutate()}
+      disabled={logout.isPending}
+      aria-label="Cerrar sesión"
+      title="Cerrar sesión"
+      className="flex h-9 w-9 items-center justify-center rounded-lg border border-line/60 bg-surface/80 text-ink-faint transition-colors hover:border-alert/40 hover:text-alert disabled:opacity-60"
+    >
+      {logout.isPending ? (
+        <Spinner />
+      ) : (
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+          <path d="M15 4h3a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2h-3" />
+          <path d="M10 17l-5-5 5-5" />
+          <path d="M5 12h11" />
+        </svg>
+      )}
+    </button>
   );
 }
 
@@ -141,7 +169,7 @@ export function App() {
   const snapshotQuery = useSnapshot();
   const todayQuery = useToday(5);
   const billingQuery = useBillingSummary();
-  const health = useHealth().data;
+  const health = useHealth(tab === "sistema").data;
 
   const topology = topologyQuery.data;
   const snapshot = snapshotQuery.data;
@@ -200,7 +228,11 @@ export function App() {
               <span className="h-2.5 w-2.5 rounded-full bg-solar" />
             </div>
             <div>
-              <h1 className="text-[15px] font-medium text-ink">{topology?.plantName ?? "Cargando…"}</h1>
+              {topology ? (
+                <h1 className="text-[15px] font-medium text-ink">{topology.plantName}</h1>
+              ) : (
+                <Bone className="h-4 w-40" />
+              )}
               <p className="tnum mt-0.5 text-[12px] text-ink-faint">
                 {topology?.pvCapacityKwp ? `${topology.pvCapacityKwp} kWp` : "— kWp"}
                 {topology?.batteryCapacityKwh ? ` · ${topology.batteryCapacityKwh} kWh` : ""}
@@ -241,6 +273,7 @@ export function App() {
               </span>
             )}
             <Nav tab={tab} onChange={setTab} />
+            <LogoutButton />
           </div>
         </div>
       </header>
@@ -264,11 +297,18 @@ export function App() {
                       {...(gaugeCaption ? { caption: gaugeCaption } : {})}
                     />
                   ) : (
-                    <Skeleton label="Leyendo los inversores…" />
+                    <GaugeSkeleton />
                   )}
                 </Card>
 
                 {/* The informative cards fill the column under the gauge. */}
+                {!summary && todayQuery.isPending && (
+                  <div className="grid flex-1 auto-rows-fr grid-cols-2 gap-3">
+                    {Array.from({ length: 4 }, (_, i) => (
+                      <StatSkeleton key={i} />
+                    ))}
+                  </div>
+                )}
                 {summary && (
                   <div className="grid flex-1 auto-rows-fr grid-cols-2 gap-3">
                     <Stat className={FILL} label="Generado hoy" value={summary.pvKwh.toFixed(1)} unit="kWh" tone="solar"
@@ -311,7 +351,7 @@ export function App() {
                     {...(sun ? { isDaylight: sun.isDaylight, sunrise: sun.sunrise } : {})}
                   />
                 ) : (
-                  <Skeleton label="Leyendo el inversor…" />
+                  <FlowSkeleton />
                 )}
               </Card>
             </div>
@@ -349,13 +389,15 @@ export function App() {
               {snapshot ? (
                 <InverterFleet inverters={snapshot.inverters} strings={snapshot.strings} />
               ) : (
-                <Skeleton label="Leyendo inversores…" />
+                <RowsSkeleton rows={3} />
               )}
             </Card>
 
             <div className="space-y-5">
               <Card title="Alarmas activas">
-                {snapshot && snapshot.alarms.length > 0 ? (
+                {!snapshot ? (
+                  <RowsSkeleton rows={1} />
+                ) : snapshot.alarms.length > 0 ? (
                   <ul className="space-y-2.5">
                     {snapshot.alarms.map((alarm, i) => (
                       <li key={`${alarm.errorCode}-${i}`} className="rounded-lg border border-alert/25 bg-alert/5 px-3.5 py-2.5 text-[12.5px]">
@@ -393,7 +435,7 @@ export function App() {
                     </dd>
                   </dl>
                 ) : (
-                  <Skeleton label="Consultando…" />
+                  <RowsSkeleton rows={3} />
                 )}
               </Card>
             </div>

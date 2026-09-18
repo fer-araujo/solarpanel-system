@@ -1,4 +1,5 @@
 import {
+  QueryCache,
   QueryClient,
   useMutation,
   useQuery,
@@ -29,7 +30,16 @@ const SLOW_POLL_MS = 5 * 60_000;
 const STALL_THRESHOLD = 2;
 
 export function createQueryClient(): QueryClient {
-  return new QueryClient({
+  const client: QueryClient = new QueryClient({
+    // Any 401 means the session expired mid-use: re-check it, which sends the
+    // gate back to the login screen instead of leaving broken panels.
+    queryCache: new QueryCache({
+      onError: (error, query) => {
+        if (error instanceof ApiError && error.status === 401 && query.queryKey[0] !== "auth") {
+          void client.invalidateQueries({ queryKey: authKey });
+        }
+      },
+    }),
     defaultOptions: {
       queries: {
         // refetchInterval already pauses while the tab is in the background,
@@ -46,6 +56,40 @@ export function createQueryClient(): QueryClient {
         },
         staleTime: 30_000,
       },
+    },
+  });
+  return client;
+}
+
+const authKey = ["auth", "me"] as const;
+
+/** Who is logged in. A 401 here is the signal to show the login screen. */
+export function useMe() {
+  return useQuery({
+    queryKey: authKey,
+    queryFn: api.auth.me,
+    retry: false,
+    staleTime: Number.POSITIVE_INFINITY,
+  });
+}
+
+export function useLogin() {
+  const client = useQueryClient();
+  return useMutation({
+    mutationFn: ({ user, password }: { user: string; password: string }) =>
+      api.auth.login(user, password),
+    onSuccess: (me) => client.setQueryData(authKey, me),
+  });
+}
+
+export function useLogout() {
+  const client = useQueryClient();
+  return useMutation({
+    mutationFn: api.auth.logout,
+    // Drop every cached panel so nothing from the session lingers in memory.
+    onSettled: () => {
+      client.clear();
+      void client.invalidateQueries({ queryKey: authKey });
     },
   });
 }
@@ -243,10 +287,15 @@ export function useWeather(latitude: number | null, longitude: number | null) {
   });
 }
 
-export function useHealth() {
+/**
+ * SolaX connection status. Only polled while the Sistema tab is open — it was
+ * nearly 40% of all function invocations for a panel nobody is looking at.
+ */
+export function useHealth(enabled: boolean) {
   return useQuery({
     queryKey: queryKeys.health,
     queryFn: api.health,
-    refetchInterval: FAST_POLL_MS,
+    refetchInterval: enabled ? FAST_POLL_MS : false,
+    enabled,
   });
 }

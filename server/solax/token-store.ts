@@ -1,3 +1,4 @@
+import type { KeyValueStore } from "../storage/kv";
 import {
   SOLAX_OK_AUTH,
   SolaxError,
@@ -31,7 +32,14 @@ export interface TokenStoreOptions {
   refreshMarginMs?: number;
   fetchImpl?: typeof fetch;
   now?: () => number;
+  /**
+   * Where the token survives a serverless cold start. Without it every fresh
+   * instance would request a new 30-day token.
+   */
+  persistence?: KeyValueStore;
 }
+
+const PERSISTED_KEY = "solax-token";
 
 interface CachedToken {
   value: string;
@@ -48,13 +56,17 @@ interface CachedToken {
 const DEFAULT_REFRESH_MARGIN_MS = 24 * 60 * 60 * 1000; // one day
 
 export class TokenStore {
-  private readonly options: Required<Omit<TokenStoreOptions, "fetchImpl">> & {
+  private readonly options: Required<Omit<TokenStoreOptions, "fetchImpl" | "persistence">> & {
     fetchImpl: typeof fetch;
   };
+  private readonly persistence: KeyValueStore | null;
   private cached: CachedToken | null = null;
   private inFlight: Promise<string> | null = null;
+  /** Set by invalidate(): the persisted token was rejected, so do not reuse it. */
+  private skipPersisted = false;
 
   constructor(options: TokenStoreOptions) {
+    this.persistence = options.persistence ?? null;
     this.options = {
       baseUrl: options.baseUrl,
       clientId: options.clientId,
@@ -73,16 +85,31 @@ export class TokenStore {
     }
 
     // Single-flight: whoever arrives during a refresh waits on the same call.
-    this.inFlight ??= this.fetchToken().finally(() => {
+    this.inFlight ??= this.resolveToken().finally(() => {
       this.inFlight = null;
     });
 
     return this.inFlight;
   }
 
+  /** Persisted token first; SolaX only when there is none still valid. */
+  private async resolveToken(): Promise<string> {
+    const { now, refreshMarginMs } = this.options;
+    if (this.persistence && !this.skipPersisted) {
+      const stored = await this.persistence.get<CachedToken>(PERSISTED_KEY).catch(() => null);
+      if (stored && stored.expiresAt - refreshMarginMs > now()) {
+        this.cached = stored;
+        return stored.value;
+      }
+    }
+    this.skipPersisted = false;
+    return this.fetchToken();
+  }
+
   /** Forces a refresh on the next `get`. Used after a 10402. */
   invalidate(): void {
     this.cached = null;
+    this.skipPersisted = true;
   }
 
   private async fetchToken(): Promise<string> {
@@ -131,6 +158,11 @@ export class TokenStore {
       scope: parsed.data.scope ?? null,
       authStation: parsed.data.auth_station ?? null,
     };
+
+    // Best effort: a failed write only means the next cold start re-authenticates.
+    await this.persistence
+      ?.set(PERSISTED_KEY, this.cached, this.cached.expiresAt - now())
+      .catch(() => undefined);
 
     return this.cached.value;
   }

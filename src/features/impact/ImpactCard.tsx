@@ -3,6 +3,7 @@ import { estimateDailySavings } from "@core/billing/services/savings";
 import { environmentalBenefits } from "@core/energy/services/environment";
 import { useBillingSummary, usePlantRealtime } from "@/api/queries";
 import { Card } from "@/ui/primitives/Card";
+import { Bone } from "@/ui/primitives/Skeleton";
 
 /**
  * Savings and environmental impact.
@@ -20,7 +21,8 @@ const money = new Intl.NumberFormat("es-MX", {
 });
 
 export function ImpactCard() {
-  const plant = usePlantRealtime().data;
+  const plantQuery = usePlantRealtime();
+  const plant = plantQuery.data;
   const billing = useBillingSummary().data;
 
   const dailyKwh = plant?.dailyYield ?? null;
@@ -41,7 +43,13 @@ export function ImpactCard() {
             Ahorro estimado hoy
           </p>
           <p className="tnum mt-2 text-[30px] leading-none font-medium text-solar">
-            {savings ? money.format(savings.amount) : "—"}
+            {savings ? (
+              money.format(savings.amount)
+            ) : plantQuery.isPending ? (
+              <Bone className="h-[30px] w-28" />
+            ) : (
+              "—"
+            )}
           </p>
           <p className="mt-1.5 text-[12px] text-ink-faint">
             {savings

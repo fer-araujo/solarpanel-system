@@ -1,6 +1,7 @@
 import type { UseQueryResult } from "@tanstack/react-query";
 import type { BillingSummaryResponse } from "@/api/client";
 import { Card } from "@/ui/primitives/Card";
+import { RowsSkeleton, StatSkeleton } from "@/ui/primitives/Skeleton";
 
 /**
  * The CFE side of the picture: the energy bank, when it runs dry, and how close
@@ -153,9 +154,14 @@ export function BolsaPanel({
   if (!data) {
     return (
       <Card title="Bolsa energética CFE">
-        <p className="animate-pulse py-6 text-center text-[13px] text-ink-faint">
-          Cargando…
-        </p>
+        <div className="space-y-4">
+          <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
+            {Array.from({ length: 4 }, (_, i) => (
+              <StatSkeleton key={i} />
+            ))}
+          </div>
+          <RowsSkeleton rows={2} />
+        </div>
       </Card>
     );
   }

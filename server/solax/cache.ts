@@ -1,3 +1,5 @@
+import type { KeyValueStore } from "../storage/kv";
+
 /**
  * In-memory response cache with per-entry TTL and single-flight.
  *
@@ -28,6 +30,12 @@ export interface TtlCacheOptions {
   now?: () => number;
   /** Hard cap on entries, so a bug in key construction cannot grow forever. */
   maxEntries?: number;
+  /**
+   * Shared second level (Upstash) behind the in-memory map. On serverless a
+   * cold instance starts empty; without this it would re-spend SolaX calls on
+   * data another instance fetched seconds ago.
+   */
+  l2?: KeyValueStore;
 }
 
 export class TtlCache {
@@ -35,10 +43,12 @@ export class TtlCache {
   private readonly inFlight = new Map<string, Promise<unknown>>();
   private readonly now: () => number;
   private readonly maxEntries: number;
+  private readonly l2: KeyValueStore | null;
 
   constructor(options: TtlCacheOptions = {}) {
     this.now = options.now ?? Date.now;
     this.maxEntries = options.maxEntries ?? 200;
+    this.l2 = options.l2 ?? null;
   }
 
   /**
@@ -62,6 +72,14 @@ export class TtlCache {
       return { value: existing.value, stale: false, storedAt: existing.storedAt };
     }
 
+    if (this.l2) {
+      const shared = await this.l2.get<CacheEntry<T>>(`cache:${key}`).catch(() => null);
+      if (shared && shared.expiresAt > now) {
+        this.entries.set(key, shared);
+        return { value: shared.value, stale: false, storedAt: shared.storedAt };
+      }
+    }
+
     const pending = this.inFlight.get(key) as Promise<T> | undefined;
     if (pending) {
       const value = await pending;
@@ -69,8 +87,11 @@ export class TtlCache {
     }
 
     const promise = load()
-      .then((value) => {
+      .then(async (value) => {
         this.set(key, value, ttlMs);
+        const entry = this.entries.get(key);
+        // Best effort: an Upstash hiccup must not fail a request that succeeded.
+        if (this.l2 && entry) await this.l2.set(`cache:${key}`, entry, ttlMs).catch(() => undefined);
         return value;
       })
       .finally(() => {
