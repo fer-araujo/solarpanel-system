@@ -25,7 +25,7 @@ const CACHE_MS = 60_000;
 const CACHE_MAX = 500;
 
 /** Verifies a token with Supabase's `/auth/v1/user`, caching the result. */
-export function supabaseVerifier(url: string, anonKey: string): TokenVerifier {
+export function supabaseVerifier(url: string, publishableKey: string): TokenVerifier {
   const cache = new Map<string, { user: AuthUser | null; until: number }>();
 
   return async (token) => {
@@ -35,7 +35,7 @@ export function supabaseVerifier(url: string, anonKey: string): TokenVerifier {
     if (hit && hit.until > now) return hit.user;
 
     const response = await fetch(`${url.replace(/\/$/, "")}/auth/v1/user`, {
-      headers: { apikey: anonKey, Authorization: `Bearer ${token}` },
+      headers: { apikey: publishableKey, Authorization: `Bearer ${token}` },
     });
     let user: AuthUser | null = null;
     if (response.ok) {
@@ -53,13 +53,13 @@ export function supabaseVerifier(url: string, anonKey: string): TokenVerifier {
 }
 
 export function registerAuth(app: Hono, env: Env, verifyOverride?: TokenVerifier): void {
-  const configured = Boolean(env.SUPABASE_URL && env.SUPABASE_ANON_KEY);
+  const configured = Boolean(env.SUPABASE_URL && env.SUPABASE_PUBLISHABLE_KEY);
   const production = env.NODE_ENV === "production";
   // Locally with nothing configured, auth is off. Anywhere else it is on.
   const enforced = configured || production;
   const verify =
     verifyOverride ??
-    (configured ? supabaseVerifier(env.SUPABASE_URL!, env.SUPABASE_ANON_KEY!) : null);
+    (configured ? supabaseVerifier(env.SUPABASE_URL!, env.SUPABASE_PUBLISHABLE_KEY!) : null);
   const allowed = new Set(
     (env.AUTH_ALLOWED_EMAILS ?? "")
       .split(",")
@@ -67,11 +67,11 @@ export function registerAuth(app: Hono, env: Env, verifyOverride?: TokenVerifier
       .filter(Boolean),
   );
 
-  // Public on purpose: the anon key is designed to ship to browsers.
+  // Public on purpose: the publishable key is designed to ship to browsers.
   app.get("/api/auth/config", (c) =>
     c.json(
       configured
-        ? { enabled: true, url: env.SUPABASE_URL, anonKey: env.SUPABASE_ANON_KEY }
+        ? { enabled: true, url: env.SUPABASE_URL, publishableKey: env.SUPABASE_PUBLISHABLE_KEY }
         : { enabled: false, misconfigured: production },
     ),
   );

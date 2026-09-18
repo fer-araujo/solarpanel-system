@@ -145,7 +145,7 @@ pnpm dev               # SPA on :5173, proxies /api
 | `SOLAX_MAX_CALLS_PER_MINUTE` | | Local budget, default `60` |
 | `SOLAX_MAX_CALLS_PER_DAY` | | Local budget, default `20000` |
 | `SUPABASE_URL` | prod | Supabase project URL |
-| `SUPABASE_ANON_KEY` | prod | Supabase anon (publishable) key |
+| `SUPABASE_PUBLISHABLE_KEY` | prod | Supabase publishable key (`sb_publishable_...`). Never the secret key |
 | `AUTH_ALLOWED_EMAILS` | | Comma-separated emails allowed in; empty allows every user of the project |
 | `UPSTASH_REDIS_REST_URL` | prod | Upstash REST URL |
 | `UPSTASH_REDIS_REST_TOKEN` | prod | Upstash REST token |

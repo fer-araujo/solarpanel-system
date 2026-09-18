@@ -12,7 +12,7 @@ const BASE = {
 
 const SUPABASE = {
   SUPABASE_URL: "https://example.supabase.co",
-  SUPABASE_ANON_KEY: "public-anon-key",
+  SUPABASE_PUBLISHABLE_KEY: "sb_publishable_fixture",
 };
 
 /** Stand-in for Supabase: one known token, everything else is invalid. */
@@ -66,7 +66,7 @@ describe("auth", () => {
     expect(await res.json()).toEqual({
       enabled: true,
       url: SUPABASE.SUPABASE_URL,
-      anonKey: SUPABASE.SUPABASE_ANON_KEY,
+      publishableKey: SUPABASE.SUPABASE_PUBLISHABLE_KEY,
     });
   });
 

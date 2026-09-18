@@ -1,7 +1,7 @@
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 
 /**
- * Supabase client, configured from the server at runtime so the URL and anon
+ * Supabase client, configured from the server at runtime so the URL and publishable
  * key live in one place (the server's environment) instead of being baked
  * into the bundle at build time.
  *
@@ -11,7 +11,7 @@ import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 interface AuthConfig {
   enabled: boolean;
   url?: string;
-  anonKey?: string;
+  publishableKey?: string;
   misconfigured?: boolean;
 }
 
@@ -27,8 +27,8 @@ export function getSupabase(): Promise<SupabaseClient | null> {
       if (config.misconfigured) {
         throw new AuthConfigError("El servidor no tiene Supabase configurado.");
       }
-      if (!config.enabled || !config.url || !config.anonKey) return null;
-      return createClient(config.url, config.anonKey, {
+      if (!config.enabled || !config.url || !config.publishableKey) return null;
+      return createClient(config.url, config.publishableKey, {
         auth: { persistSession: true, autoRefreshToken: true, storageKey: "solar-auth" },
       });
     })

@@ -54,11 +54,11 @@ const schema = z.object({
   /**
    * Supabase Auth. Optional locally (auth is off), REQUIRED in production:
    * without it the server fails closed rather than exposing the plant and the
-   * CFE readings. The anon key is public by design; the server only uses it to
+   * CFE readings. The publishable key is public by design; the server only uses it to
    * ask Supabase who a token belongs to.
    */
   SUPABASE_URL: z.string().url().optional(),
-  SUPABASE_ANON_KEY: z.string().min(1).optional(),
+  SUPABASE_PUBLISHABLE_KEY: z.string().min(1).optional(),
   /** Comma-separated emails allowed in. Empty means any user of the Supabase project. */
   AUTH_ALLOWED_EMAILS: z.string().optional(),
 
