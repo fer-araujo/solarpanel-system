@@ -2,14 +2,13 @@ import { useMemo, useState } from "react";
 import { scaleLinear } from "d3-scale";
 import type { PlantStatEntry } from "@/api/client";
 import { ChartTooltip, TooltipRow } from "@/ui/primitives/ChartTooltip";
+import { useMeasuredWidth } from "./useMeasuredWidth";
 
 /**
  * Energy per bucket: days of a month, months of a year, or years.
  * Import/export series only appear when the hardware reported them.
  */
 
-const W = 900;
-const H = 260;
 const M = { top: 18, right: 14, bottom: 38, left: 46 };
 const MONTHS = ["ene", "feb", "mar", "abr", "may", "jun", "jul", "ago", "sep", "oct", "nov", "dic"];
 
@@ -29,6 +28,8 @@ export function MonthlyEnergy({
   label?: (date: string) => string;
 }) {
   const [hover, setHover] = useState<number | null>(null);
+  const [measureRef, W] = useMeasuredWidth(900);
+  const H = W < 640 ? 200 : 260;
 
   const series = useMemo(
     () => SERIES.filter((s) => entries.some((e) => e[s.key] !== null && e[s.key] !== undefined && (e[s.key] ?? 0) > 0)),
@@ -46,6 +47,8 @@ export function MonthlyEnergy({
   const slotW = (W - M.left - M.right) / entries.length;
   const y = scaleLinear().domain([0, peak * 1.08]).range([H - M.bottom, M.top]);
   const barW = Math.max(3, (slotW * 0.75) / series.length - 2);
+  // Keep labels ~30px apart so days of a month do not collide on a phone.
+  const labelStep = Math.max(1, Math.ceil(30 / slotW));
   const total = entries.reduce((sum, e) => sum + (e.pvGeneration ?? 0), 0);
   const active = hover === null ? null : entries[hover];
 
@@ -63,7 +66,7 @@ export function MonthlyEnergy({
         </span>
       </div>
 
-      <div className="relative">
+      <div ref={measureRef} className="relative">
         <svg viewBox={`0 0 ${W} ${H}`} className="w-full" role="img" onMouseLeave={() => setHover(null)}>
           <title>Energía por periodo</title>
           {y.ticks(4).map((tick) => (
@@ -88,7 +91,7 @@ export function MonthlyEnergy({
                       fillOpacity={hover === null || hover === i ? 0.9 : 0.4} />
                   );
                 })}
-                {(entries.length <= 16 || i % 2 === 0) && (
+                {i % labelStep === 0 && (
                   <text x={x0 + slotW / 2} y={H - 16} textAnchor="middle" fontSize="11" fill="var(--color-ink-faint)">
                     {label(entry.date)}
                   </text>

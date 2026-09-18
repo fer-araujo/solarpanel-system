@@ -22,6 +22,12 @@
 }
 
 @layer base {
+  /* Grid items default to min-width: auto, so one wide child (a table, a long
+     number) stretches its column past the screen on a phone. */
+  .grid > * {
+    min-width: 0;
+  }
+
   html {
     color-scheme: dark;
   }

@@ -4,6 +4,7 @@ import { area, line, curveMonotoneX } from "d3-shape";
 import { splitLoadSources } from "@core/energy/services/derive-load";
 import type { PowerSnapshot } from "@core/energy/model/power";
 import { ChartTooltip, TooltipRow } from "@/ui/primitives/ChartTooltip";
+import { useMeasuredWidth } from "./useMeasuredWidth";
 
 /**
  * The day's curve.
@@ -15,8 +16,8 @@ import { ChartTooltip, TooltipRow } from "@/ui/primitives/ChartTooltip";
  * The readout floats next to the cursor so the eye never leaves the data.
  */
 
-const W = 1000;
-const H = 320;
+/** Below this width the chart gets shorter and its hour axis sparser. */
+const NARROW = 640;
 const M = { top: 16, right: 16, bottom: 30, left: 44 };
 
 interface Band {
@@ -47,6 +48,9 @@ const kw = (w: number) => `${(w / 1000).toFixed(2)} kW`;
 
 export function ProductionCurve({ samples }: { samples: PowerSnapshot[] }) {
   const [hover, setHover] = useState<number | null>(null);
+  const [measureRef, W] = useMeasuredWidth(1000);
+  const narrow = W < NARROW;
+  const H = narrow ? 220 : 320;
 
   const points = useMemo<Point[]>(
     () =>
@@ -141,7 +145,7 @@ export function ProductionCurve({ samples }: { samples: PowerSnapshot[] }) {
         )}
       </div>
 
-      <div className="relative">
+      <div ref={measureRef} className="relative">
         <svg viewBox={`0 0 ${W} ${H}`} className="w-full cursor-crosshair" onMouseMove={onMove}
           onMouseLeave={() => setHover(null)} role="img">
           <title>Curva de generación del día</title>
@@ -167,7 +171,7 @@ export function ProductionCurve({ samples }: { samples: PowerSnapshot[] }) {
             </g>
           ))}
           <text x={M.left - 9} y={M.top - 4} textAnchor="end" fontSize="10" fill="var(--color-ink-faint)">kW</text>
-          {[0, 180, 360, 540, 720, 900, 1080, 1260, 1440].map((tick) => (
+          {(narrow ? [0, 360, 720, 1080, 1440] : [0, 180, 360, 540, 720, 900, 1080, 1260, 1440]).map((tick) => (
             <text key={tick} x={x(tick)} y={H - 9} textAnchor="middle" className="tnum" fontSize="11" fill="var(--color-ink-faint)">
               {hhmm(tick)}
             </text>

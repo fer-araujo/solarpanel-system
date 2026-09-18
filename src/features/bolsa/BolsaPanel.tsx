@@ -197,7 +197,7 @@ export function BolsaPanel({
       title="Bolsa energética CFE"
       hint={`Tarifa ${data.tariff.code} · lecturas bimestrales del medidor`}
     >
-      <div className="grid gap-5 lg:grid-cols-[minmax(0,280px)_minmax(0,1fr)]">
+      <div className="grid grid-cols-1 gap-5 lg:grid-cols-[minmax(0,280px)_minmax(0,1fr)]">
         <div className="space-y-4">
           <div>
             <p className="text-[11px] font-medium tracking-[0.08em] text-ink-faint uppercase">
