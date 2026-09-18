@@ -197,15 +197,30 @@ export function plantDayBoundsFor(
 /**
  * Parses `YYYY-MM-DD HH:mm:ss` as reported in plant-local time.
  *
- * Deliberately NOT given a timezone: the string carries none, and inventing UTC
- * would shift every timestamp by the plant's offset. Callers that need a real
- * instant must apply the plant's zone themselves.
+ * The string carries no zone, so the plant's offset turns it into a real
+ * instant. Reading it in the HOST's zone instead only works while the server
+ * happens to share the plant's zone: on a UTC server (Vercel) every timestamp
+ * lands six hours off. The host zone is used only when the offset is unknown.
  */
-export function parsePlantLocalTime(value: string | null | undefined): Date | null {
+export function parsePlantLocalTime(
+  value: string | null | undefined,
+  utcOffsetMinutes: number | null = null,
+): Date | null {
   if (!value) return null;
   const match = /^(\d{4})-(\d{2})-(\d{2})[ T](\d{2}):(\d{2})(?::(\d{2}))?/.exec(value);
   if (!match) return null;
   const [, y, mo, d, h, mi, s] = match;
+  if (utcOffsetMinutes !== null) {
+    const utc = Date.UTC(
+      Number(y),
+      Number(mo) - 1,
+      Number(d),
+      Number(h),
+      Number(mi),
+      s ? Number(s) : 0,
+    );
+    return Number.isNaN(utc) ? null : new Date(utc - utcOffsetMinutes * 60_000);
+  }
   const date = new Date(
     Number(y),
     Number(mo) - 1,

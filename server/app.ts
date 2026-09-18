@@ -313,6 +313,7 @@ export function registerApiRoutes(app: Hono, deps: AppDeps): Hono {
           battery,
           businessType,
           batteryCapacityKwh: system.batteryCapacityKwh,
+          utcOffsetMinutes: system.utcOffsetMinutes,
         }),
         strings: mapAllPvStrings(inverters, businessType),
         // One entry per unit, so each microinverter's status and temperature
@@ -397,7 +398,11 @@ export function registerApiRoutes(app: Hono, deps: AppDeps): Hono {
             ...window,
           });
           return raw.map((sample) =>
-            mapPowerSnapshot({ inverter: sample, businessType }),
+            mapPowerSnapshot({
+              inverter: sample,
+              businessType,
+              utcOffsetMinutes: system.utcOffsetMinutes,
+            }),
           );
         },
       );
