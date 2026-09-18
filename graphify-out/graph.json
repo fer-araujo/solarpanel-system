@@ -3325,7 +3325,7 @@
       "file_type": "code",
       "norm_label": "loginscreen()",
       "source_file": "src/features/auth/LoginScreen.tsx",
-      "source_location": "L52"
+      "source_location": "L54"
     },
     {
       "id": "src_features_auth_loginscreen_loginscreen_onsubmit",
@@ -3337,7 +3337,7 @@
       "file_type": "code",
       "norm_label": "onsubmit()",
       "source_file": "src/features/auth/LoginScreen.tsx",
-      "source_location": "L61"
+      "source_location": "L63"
     },
     {
       "id": "src_features_auth_loginscreen_sunemblem",
@@ -9430,7 +9430,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "src/features/auth/LoginScreen.tsx",
-      "source_location": "L53",
+      "source_location": "L55",
       "weight": 1.0
     },
     {
@@ -19697,7 +19697,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "src/features/auth/LoginScreen.tsx",
-      "source_location": "L52",
+      "source_location": "L54",
       "weight": 1.0
     },
     {
@@ -19708,7 +19708,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "src/features/auth/LoginScreen.tsx",
-      "source_location": "L61",
+      "source_location": "L63",
       "weight": 1.0
     },
     {
@@ -22100,5 +22100,5 @@
     }
   ],
   "hyperedges": [],
-  "built_at_commit": "d495a2d0eb44f36ff709f7b5ab427e96a5b85c41"
+  "built_at_commit": "7d548e5fe71ea54d8361c218e8f05de5fe9f48e5"
 }

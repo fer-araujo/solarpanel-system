@@ -35,7 +35,15 @@ await build({
 writeFileSync(
   `${fn}/.vc-config.json`,
   JSON.stringify(
-    { runtime: "nodejs22.x", handler: "index.mjs", launcherType: "Nodejs", shouldAddHelpers: false },
+    {
+      runtime: "nodejs22.x",
+      handler: "index.mjs",
+      launcherType: "Nodejs",
+      shouldAddHelpers: false,
+      // Oregon, next to the Upstash database (us-west-2): each request makes
+      // several Redis round trips, so co-location matters more than user distance.
+      regions: ["pdx1"],
+    },
     null,
     2,
   ),
