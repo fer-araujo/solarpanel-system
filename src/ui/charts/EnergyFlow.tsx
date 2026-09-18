@@ -1,4 +1,5 @@
 import type { PowerSnapshot } from "@core/energy/model/power";
+import { useMeasuredWidth } from "./useMeasuredWidth";
 
 /**
  * Live energy routing. Each link's dashes march at a speed proportional to the
@@ -193,6 +194,11 @@ export function EnergyFlow({
   sunrise,
 }: EnergyFlowProps) {
   const { pv, load, battery, grid, soc } = snapshot;
+  // The diagram scales down as a whole on a phone; enlarge its text to stay
+  // legible, and drop the secondary captions that would then collide.
+  const [measureRef, width] = useMeasuredWidth(680);
+  const narrow = width < 520;
+  const k = narrow ? 1.55 : 1;
 
   /**
    * With no battery, every watt produced goes to the house or the grid — that
@@ -252,7 +258,7 @@ export function EnergyFlow({
   };
 
   return (
-    <svg viewBox="0 0 680 408" className="w-full" role="img">
+    <svg ref={measureRef} viewBox="0 0 680 408" className="w-full" role="img">
       <title>Flujo de energía en tiempo real</title>
       <defs>
         <radialGradient id="haze" cx="50%" cy="50%">
@@ -313,32 +319,34 @@ export function EnergyFlow({
               </g>
             </g>
             <text
-              y="17"
+              y={narrow ? 21 : 17}
               textAnchor="middle"
               className="tnum"
-              fontSize="13"
+              fontSize={13 * k}
               fontWeight="500"
               fill={live ? "var(--color-ink)" : "var(--color-ink-faint)"}
             >
               {fmtKw(watts)}
             </text>
-            {!unavailable && (
+            {!unavailable && !narrow && (
               <text y="27" textAnchor="middle" fontSize="8" fill="var(--color-ink-faint)">
                 kW
               </text>
             )}
             <text
-              y={NODE_R + 17}
+              y={NODE_R + 17 * k}
               textAnchor="middle"
-              fontSize="12"
+              fontSize={12 * k}
               fontWeight="500"
               fill="var(--color-ink-dim)"
             >
               {node.label}
             </text>
-            <text y={NODE_R + 31} textAnchor="middle" fontSize="11" fill="var(--color-ink-faint)">
-              {captions[node.id]}
-            </text>
+            {!narrow && (
+              <text y={NODE_R + 31} textAnchor="middle" fontSize="11" fill="var(--color-ink-faint)">
+                {captions[node.id]}
+              </text>
+            )}
           </g>
         );
       })}

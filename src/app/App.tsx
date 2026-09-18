@@ -58,14 +58,14 @@ const TABS: { id: Tab; label: string }[] = [
 
 function Nav({ tab, onChange }: { tab: Tab; onChange: (tab: Tab) => void }) {
   return (
-    <nav className="flex gap-1 rounded-lg border border-line/60 bg-surface/80 p-1">
+    <nav className="flex flex-1 gap-1 rounded-lg border border-line/60 bg-surface/80 p-1 sm:flex-none">
       {TABS.map((item) => (
         <button
           key={item.id}
           type="button"
           aria-current={tab === item.id ? "page" : undefined}
           onClick={() => onChange(item.id)}
-          className={`rounded-md px-3.5 py-1.5 text-[13px] transition-colors ${
+          className={`flex-1 rounded-md px-3.5 py-1.5 text-[13px] transition-colors sm:flex-none ${
             tab === item.id ? "bg-raised text-ink" : "text-ink-dim hover:bg-raised/50 hover:text-ink"
           }`}
         >
@@ -87,7 +87,7 @@ function LogoutButton() {
       disabled={logout.isPending}
       aria-label="Cerrar sesión"
       title="Cerrar sesión"
-      className="flex h-9 w-9 items-center justify-center rounded-lg border border-line/60 bg-surface/80 text-ink-faint transition-colors hover:border-alert/40 hover:text-alert disabled:opacity-60"
+      className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-line/60 bg-surface/80 text-ink-faint transition-colors hover:border-alert/40 hover:text-alert disabled:opacity-60"
     >
       {logout.isPending ? (
         <Spinner />
@@ -222,7 +222,7 @@ export function App() {
   return (
     <div className="min-h-screen bg-void">
       <header className="sticky top-0 z-10 border-b border-line/50 bg-void/85 backdrop-blur-xl">
-        <div className="mx-auto flex max-w-[1440px] flex-wrap items-center justify-between gap-4 px-6 py-4">
+        <div className="mx-auto flex max-w-[1440px] flex-wrap items-center justify-between gap-x-4 gap-y-3 px-4 py-3 sm:px-6 sm:py-4">
           <div className="flex items-center gap-4">
             <div className="flex h-9 w-9 items-center justify-center rounded-lg border border-solar/25 bg-solar/10">
               <span className="h-2.5 w-2.5 rounded-full bg-solar" />
@@ -241,7 +241,7 @@ export function App() {
             </div>
           </div>
 
-          <div className="flex items-center gap-4">
+          <div className="flex w-full items-center gap-2 sm:w-auto sm:gap-4">
             {sun && (
               <span className="hidden items-center gap-3 text-[12px] text-ink-faint md:flex">
                 <span className="flex items-center gap-1.5">
@@ -256,7 +256,7 @@ export function App() {
             )}
             {snapshot && (
               <span
-                className={`flex items-center gap-2 rounded-full border px-3 py-1 text-[12px] ${
+                className={`flex shrink-0 items-center gap-2 whitespace-nowrap rounded-full border px-3 py-1 text-[12px] ${
                   snapshot.stale ? "border-grid/25 bg-grid/8 text-grid" : "border-solar/25 bg-solar/8 text-solar"
                 }`}
               >
@@ -266,9 +266,9 @@ export function App() {
                   )}
                   <span className={`relative inline-flex h-1.5 w-1.5 rounded-full ${snapshot.stale ? "bg-grid" : "bg-solar"}`} />
                 </span>
-                {snapshot.stale ? "Datos en caché" : "En línea"}
+                <span className="hidden sm:inline">{snapshot.stale ? "Datos en caché" : "En línea"}</span>
                 <span className="tnum">
-                  {snapshot.power.at.toLocaleTimeString("es-MX", { hour: "2-digit", minute: "2-digit" })}
+                  {snapshot.power.at.toLocaleTimeString("es-MX", { hour: "2-digit", minute: "2-digit", hourCycle: "h23" })}
                 </span>
               </span>
             )}
@@ -278,7 +278,7 @@ export function App() {
         </div>
       </header>
 
-      <main className="mx-auto max-w-[1440px] space-y-5 px-6 py-6">
+      <main className="mx-auto max-w-[1440px] space-y-5 px-4 py-5 sm:px-6 sm:py-6">
         {snapshotQuery.isError && <ErrorPanel error={snapshotQuery.error} />}
 
         {tab === "hoy" && (
