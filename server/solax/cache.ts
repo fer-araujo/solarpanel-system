@@ -13,6 +13,12 @@ import type { KeyValueStore } from "../storage/kv";
  * `stale` on the result.
  */
 
+/**
+ * Versioned so a change in how responses are mapped invalidates every shared
+ * entry at once. v2: timestamps are read in the plant's zone, not the host's.
+ */
+const L2_PREFIX = "cache:v2:";
+
 export interface CacheEntry<T> {
   value: T;
   storedAt: number;
@@ -73,7 +79,7 @@ export class TtlCache {
     }
 
     if (this.l2) {
-      const shared = await this.l2.get<CacheEntry<T>>(`cache:${key}`).catch(() => null);
+      const shared = await this.l2.get<CacheEntry<T>>(`${L2_PREFIX}${key}`).catch(() => null);
       if (shared && shared.expiresAt > now) {
         this.entries.set(key, shared);
         return { value: shared.value, stale: false, storedAt: shared.storedAt };
@@ -91,7 +97,7 @@ export class TtlCache {
         this.set(key, value, ttlMs);
         const entry = this.entries.get(key);
         // Best effort: an Upstash hiccup must not fail a request that succeeded.
-        if (this.l2 && entry) await this.l2.set(`cache:${key}`, entry, ttlMs).catch(() => undefined);
+        if (this.l2 && entry) await this.l2.set(`${L2_PREFIX}${key}`, entry, ttlMs).catch(() => undefined);
         return value;
       })
       .finally(() => {

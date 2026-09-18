@@ -88,6 +88,8 @@ export interface MapAggregateInput {
   inverters: readonly InverterRealtimeDto[];
   battery?: BatteryRealtimeDto | null;
   businessType: BusinessType;
+  /** The plant's UTC offset; timestamps are plant-local strings without a zone. */
+  utcOffsetMinutes?: number | null;
   batteryCapacityKwh?: number | null;
 }
 
@@ -103,7 +105,7 @@ export interface MapAggregateInput {
  * grid is idle when it is simply unmeasured.
  */
 export function mapAggregateSnapshot(input: MapAggregateInput): PowerSnapshot {
-  const { inverters, battery, businessType } = input;
+  const { inverters, battery, businessType, utcOffsetMinutes = null } = input;
 
   let pv = 0;
   let gridTotal = 0;
@@ -123,7 +125,7 @@ export function mapAggregateSnapshot(input: MapAggregateInput): PowerSnapshot {
       gridReported = true;
     }
 
-    const at = parsePlantLocalTime(inverter.plantLocalTime ?? inverter.dataTime);
+    const at = parsePlantLocalTime(inverter.plantLocalTime ?? inverter.dataTime, utcOffsetMinutes);
     if (at && (latest === null || at > latest)) latest = at;
   }
 
@@ -153,6 +155,8 @@ export interface MapSnapshotInput {
   inverter: InverterRealtimeDto;
   battery?: BatteryRealtimeDto | null;
   businessType: BusinessType;
+  /** The plant's UTC offset; timestamps are plant-local strings without a zone. */
+  utcOffsetMinutes?: number | null;
   /** kWh, from plant info. Needed to turn SOC into stored energy. */
   batteryCapacityKwh?: number | null;
 }
@@ -165,7 +169,7 @@ export interface MapSnapshotInput {
  * null — the UI must then say "no medible" rather than draw a zero line.
  */
 export function mapPowerSnapshot(input: MapSnapshotInput): PowerSnapshot {
-  const { inverter, battery, businessType } = input;
+  const { inverter, battery, businessType, utcOffsetMinutes = null } = input;
 
   const { watts: pv, source: pvSource } = resolvePvWatts(inverter, businessType);
 
@@ -175,7 +179,9 @@ export function mapPowerSnapshot(input: MapSnapshotInput): PowerSnapshot {
     : null;
 
   return {
-    at: parsePlantLocalTime(inverter.plantLocalTime ?? inverter.dataTime) ?? new Date(),
+    at:
+      parsePlantLocalTime(inverter.plantLocalTime ?? inverter.dataTime, utcOffsetMinutes) ??
+      new Date(),
     pv,
     battery: batteryPower,
     grid,
