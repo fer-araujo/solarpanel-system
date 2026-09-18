@@ -1,6 +1,7 @@
 import { serve } from "@hono/node-server";
 import { serveStatic } from "@hono/node-server/serve-static";
 import { Hono } from "hono";
+import { basicAuth } from "hono/basic-auth";
 import { apiErrorHandler, registerApiRoutes } from "./app";
 import { ReadingsStore } from "./billing/readings-store";
 import { describeEnv, loadDotEnv, loadEnv } from "./env";
@@ -41,6 +42,13 @@ const http = new SolaxHttpClient({
 });
 
 const app = new Hono();
+
+// Registered before every route so it guards both the API and the client.
+if (env.APP_USER && env.APP_PASSWORD) {
+  app.use("*", basicAuth({ username: env.APP_USER, password: env.APP_PASSWORD }));
+} else if (env.NODE_ENV === "production") {
+  console.warn("WARNING: APP_USER / APP_PASSWORD not set — the dashboard is public.");
+}
 
 registerApiRoutes(app, {
   env,

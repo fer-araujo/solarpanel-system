@@ -51,6 +51,14 @@ const schema = z.object({
   SOLAX_MAX_CALLS_PER_MINUTE: z.coerce.number().int().positive().default(60),
   SOLAX_MAX_CALLS_PER_DAY: z.coerce.number().int().positive().default(20_000),
 
+  /**
+   * Basic-auth credentials for the whole app. Optional locally, but set them on
+   * any public deploy: without them anyone with the URL can read the plant data
+   * and overwrite the CFE readings.
+   */
+  APP_USER: z.string().min(1).optional(),
+  APP_PASSWORD: z.string().min(1).optional(),
+
   PORT: z.coerce.number().int().positive().default(8787),
 
   NODE_ENV: z
