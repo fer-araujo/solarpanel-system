@@ -1,0 +1,28 @@
+node_modules/
+dist/
+dist-server/
+
+# Secrets. SOLAX_CLIENT_SECRET grants scope "all", which includes the inverter
+# CONTROL endpoints (work mode, forced charge/discharge, export limits) — a leak
+# is write access to the hardware, not just a data leak.
+.env
+.env.*
+!.env.example
+
+# graphify: graph.json and GRAPH_REPORT.md are tracked on purpose (the
+# post-commit hook rebuilds them and a merge driver is registered for them).
+# Everything else in there is local scratch.
+graphify-out/cache/
+graphify-out/.graphify_*
+graphify-out/cost.json
+graphify-out/obsidian/
+
+*.tsbuildinfo
+*.log
+.DS_Store
+Thumbs.db
+.vite/
+coverage/
+
+# Local runtime state: personal meter readings.
+data/
