@@ -37,7 +37,7 @@ import {
 } from "./solax/endpoints";
 import { RateLimitExceededError, type SolaxHttpClient } from "./solax/http-client";
 import type { TokenStore } from "./solax/token-store";
-import { ReadingsStore, readingSchema } from "./billing/readings-store";
+import { readingSchema, type ReadingsRepository } from "./billing/readings-store";
 
 /**
  * The HTTP surface.
@@ -56,7 +56,7 @@ export interface AppDeps {
   http: SolaxHttpClient;
   tokenStore: TokenStore;
   cache: TtlCache;
-  readings: ReadingsStore;
+  readings: ReadingsRepository;
 }
 
 /**

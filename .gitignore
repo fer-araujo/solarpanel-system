@@ -33,3 +33,7 @@ data/
 # graphify backups and local manifest.
 graphify-out/20*/
 graphify-out/manifest.json
+
+# Vercel build output.
+.vercel/
+.atl/

@@ -10,6 +10,7 @@ import type { BankPeriod, BankProjection } from "@core/billing/services/energy-b
 import type { DacRisk } from "@core/billing/services/dac-risk";
 import type { BalanceTrend } from "@core/billing/services/period-balance";
 import type { MeterReading } from "@core/billing/model/meter-reading";
+import { accessToken, getSupabase } from "./auth";
 
 /**
  * Typed client for our own BFF.
@@ -48,9 +49,14 @@ export class ApiError extends Error {
 }
 
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
+  const token = await accessToken();
   const response = await fetch(path, {
-    headers: { Accept: "application/json", ...init?.headers },
     ...init,
+    headers: {
+      Accept: "application/json",
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      ...init?.headers,
+    },
   });
 
   if (!response.ok) {
@@ -175,7 +181,44 @@ export interface PlantRealtimeResponse {
   stale: boolean;
 }
 
+export interface MeResponse {
+  user: string;
+  /** True locally when Supabase is not configured and auth is off. */
+  authDisabled?: boolean;
+}
+
+const unauthorized = (message: string) => new ApiError({ status: 401, message });
+
 export const api = {
+  auth: {
+    /** Asks Supabase (not the local cache) so a revoked user is sent back to login. */
+    me: async (): Promise<MeResponse> => {
+      const supabase = await getSupabase();
+      if (!supabase) return { user: "local", authDisabled: true };
+      const { data: session } = await supabase.auth.getSession();
+      if (!session.session) throw unauthorized("Sesión requerida");
+      const { data, error } = await supabase.auth.getUser();
+      if (error || !data.user) throw unauthorized("Sesión expirada");
+      return { user: data.user.email ?? data.user.id };
+    },
+    login: async (email: string, password: string): Promise<MeResponse> => {
+      const supabase = await getSupabase();
+      if (!supabase) return { user: "local", authDisabled: true };
+      const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+      if (error || !data.user) {
+        if (error?.status === 429) {
+          throw new ApiError({ status: 429, message: "Demasiados intentos. Espera unos minutos." });
+        }
+        throw unauthorized("Correo o contraseña incorrectos.");
+      }
+      return { user: data.user.email ?? data.user.id };
+    },
+    logout: async (): Promise<void> => {
+      const supabase = await getSupabase();
+      await supabase?.auth.signOut();
+    },
+  },
+
   health: () => request<HealthResponse>("/api/health"),
 
   topology: () => request<SystemTopology>("/api/topology"),

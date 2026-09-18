@@ -5,6 +5,7 @@ import { queryKeys, useDay, useStatsMonth, useStatsYear } from "@/api/queries";
 import { Card } from "@/ui/primitives/Card";
 import { ProductionCurve } from "@/ui/charts/ProductionCurve";
 import { MonthlyEnergy } from "@/ui/charts/MonthlyEnergy";
+import { ChartSkeleton } from "@/ui/primitives/Skeleton";
 
 /**
  * Day / Month / Year / All with date navigation.
@@ -116,8 +117,14 @@ export function EnergyAnalysis({ installedAt }: { installedAt: string | null }) 
     body = dayQuery.data ? (
       <ProductionCurve samples={dayQuery.data.samples} />
     ) : (
-      <p className="animate-pulse py-12 text-center text-[13px] text-ink-faint">Cargando el día…</p>
+      <ChartSkeleton />
     );
+  } else if (
+    (mode === "month" && monthQuery.isPending) ||
+    (mode === "year" && yearQuery.isPending) ||
+    (mode === "all" && allQueries.some((q) => q.isPending))
+  ) {
+    body = <ChartSkeleton />;
   } else {
     const entries =
       mode === "month"

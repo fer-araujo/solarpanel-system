@@ -7,6 +7,7 @@ import {
   useSaveReading,
 } from "@/api/queries";
 import { Card } from "@/ui/primitives/Card";
+import { Spinner } from "@/ui/primitives/Skeleton";
 
 /**
  * Capture for the CFE meter — the one data source the SolaX API cannot supply
@@ -96,7 +97,8 @@ export function ReadingsForm() {
           </div>
           <div>
             <button type="submit" disabled={saveReading.isPending}
-              className="w-full rounded-lg border border-solar/40 bg-solar/10 px-4 py-2 text-[13px] font-medium text-solar hover:bg-solar/20 disabled:opacity-50 sm:w-auto">
+              className="inline-flex w-full items-center justify-center gap-2 rounded-lg border border-solar/40 bg-solar/10 px-4 py-2 text-[13px] font-medium text-solar hover:bg-solar/20 disabled:opacity-50 sm:w-auto">
+              {saveReading.isPending && <Spinner />}
               {saveReading.isPending ? "Guardando…" : "Guardar"}
             </button>
           </div>
@@ -160,7 +162,8 @@ export function ReadingsForm() {
                 { onSuccess: () => { setInstalled(null); setCarryover(null); } },
               )
             }
-            className="rounded-lg border border-line px-3.5 py-2 text-[13px] text-ink-dim hover:text-ink disabled:opacity-40">
+            className="inline-flex items-center gap-2 rounded-lg border border-line px-3.5 py-2 text-[13px] text-ink-dim hover:text-ink disabled:opacity-40">
+            {saveMeter.isPending && <Spinner />}
             Guardar
           </button>
         </div>
