@@ -57,7 +57,12 @@ const schema = z.object({
    * CFE readings. The publishable key is public by design; the server only uses it to
    * ask Supabase who a token belongs to.
    */
-  SUPABASE_URL: z.string().url().optional(),
+  SUPABASE_URL: z
+    .string()
+    .url()
+    // The dashboard also shows the REST endpoint; accept it and keep the project root.
+    .transform((url) => url.replace(/\/+$/, "").replace(/\/rest\/v1$/, ""))
+    .optional(),
   SUPABASE_PUBLISHABLE_KEY: z.string().min(1).optional(),
   /** Comma-separated emails allowed in. Empty means any user of the Supabase project. */
   AUTH_ALLOWED_EMAILS: z.string().optional(),
