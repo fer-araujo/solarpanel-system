@@ -7,8 +7,9 @@
   --color-line: #2a2f35;
   --color-line-soft: #1c2126;
 
-  --color-solar: #10b981;
-  --color-solar-lift: #34d399;
+  --color-solar: hsl(142 72% 45%);
+  --color-solar-lift: hsl(142 70% 58%);
+  --color-solar-hover: hsl(142 55% 40%);
   --color-grid: #f59e0b;
   --color-batt: #60a5fa;
   --color-alert: #f87171;
@@ -60,14 +61,6 @@
 }
 
 @layer components {
-  /* A day with no data from the dongle: hatched, so it never reads as zero. */
-  .heatmap-gap {
-    background: repeating-linear-gradient(
-      135deg,
-      transparent 0 2px,
-      color-mix(in oklab, var(--color-line) 70%, transparent) 2px 3px
-    );
-  }
 
   /* Skeleton bone: the layout's shape, with a slow sheen passing over it. */
   .skeleton {

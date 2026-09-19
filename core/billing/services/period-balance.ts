@@ -55,6 +55,8 @@ export interface PeriodBalance {
    */
   consistent: boolean;
   inconsistency: string | null;
+  /** Context that does not invalidate the numbers, shown next to them. */
+  note: string | null;
   days: number | null;
 }
 
@@ -103,6 +105,7 @@ export function balancePeriod(input: PeriodBalanceInput): PeriodBalance {
         : null,
     consistent,
     inconsistency,
+    note: null,
     days: input.days ?? null,
   };
 }

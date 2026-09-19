@@ -618,9 +618,9 @@ export function registerApiRoutes(app: Hono, deps: AppDeps): Hono {
           days: daysBetween(start, end) + (index === 0 ? 1 : 0),
         });
 
-        // SolaX only has generation from its first reporting day. If the meter
-        // window starts earlier, PV is undercounted and the balance would look
-        // plausible while being wrong — so it is flagged, not published.
+        // Days before the first day SolaX recorded production count as zero:
+        // on a new install the panels simply were not on yet. Said next to the
+        // numbers, so a dongle that joined late would still be noticed.
         const firstDataDay = [...pvByDay.entries()]
           .filter(([, kwh]) => kwh > 0)
           .map(([day]) => day)
@@ -629,12 +629,9 @@ export function registerApiRoutes(app: Hono, deps: AppDeps): Hono {
           firstDataDay && start < firstDataDay
             ? {
                 ...balance,
-                consistent: false,
-                selfSufficiency: null,
-                selfConsumption: null,
-                inconsistency:
-                  `SolaX solo tiene generación desde ${firstDataDay}, pero el periodo ` +
-                  `empieza el ${start}. El balance se calcula desde la próxima lectura.`,
+                note:
+                  `Generación contada desde el ${firstDataDay}, primer día con datos de ` +
+                  `SolaX; los días anteriores del periodo cuentan como 0 kWh.`,
               }
             : balance,
         );

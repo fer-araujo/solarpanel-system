@@ -7,6 +7,7 @@ import {
   useHealth,
   useLogout,
   useMe,
+  useReadings,
   useSnapshot,
   useToday,
   useTopology,
@@ -171,10 +172,20 @@ export function App() {
   const todayQuery = useToday(5);
   const billingQuery = useBillingSummary();
   const health = useHealth(tab === "sistema").data;
+  const readingsFile = useReadings().data;
+  // Most recent dated reading, shown on the grid node of the flow diagram.
+  const lastReading = useMemo(() => {
+    const dated = (readingsFile?.readings ?? []).filter(
+      (r): r is typeof r & { takenOn: string } => typeof r.takenOn === "string",
+    );
+    return dated.sort((a, b) => b.takenOn.localeCompare(a.takenOn))[0] ?? null;
+  }, [readingsFile]);
 
   const topology = topologyQuery.data;
   const snapshot = snapshotQuery.data;
   const today = todayQuery.data;
+  // House consumption per day, exact over the periods closed by the readings.
+  const dailyLoadKwh = billingQuery.data?.balance?.averageDailyLoadKwh ?? null;
   const sun = useSunWindow(topology);
 
   /**
@@ -325,7 +336,10 @@ export function App() {
                         value={summary.selfSufficiency === null ? "—" : summary.selfSufficiency.toFixed(0)}
                         unit="%" detail={`${summary.loadKwh.toFixed(1)} kWh consumidos`} tone="solar" />
                     ) : (
-                      <Stat className={FILL} label="Consumo en vivo" value="—" detail="con el Shelly" />
+                      <Stat className={FILL} label="Consumo diario"
+                        value={dailyLoadKwh === null ? "—" : `~${dailyLoadKwh.toFixed(0)}`}
+                        unit={dailyLoadKwh === null ? undefined : "kWh"}
+                        detail={dailyLoadKwh === null ? "captura lecturas en CFE" : "promedio de tus lecturas"} />
                     )}
                   </div>
                 )}
@@ -349,6 +363,8 @@ export function App() {
                     snapshot={snapshot.power}
                     hasBattery={topology?.hasBattery ?? false}
                     hasGridMetering={topology?.hasGridMetering ?? false}
+                    lastReading={lastReading}
+                    estimatedLoadWatts={dailyLoadKwh === null ? null : (dailyLoadKwh * 1000) / 24}
                     {...(sun ? { isDaylight: sun.isDaylight, sunrise: sun.sunrise } : {})}
                   />
                 ) : (

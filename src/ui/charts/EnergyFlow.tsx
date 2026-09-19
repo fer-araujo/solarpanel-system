@@ -184,7 +184,22 @@ interface EnergyFlowProps {
    */
   isDaylight?: boolean;
   sunrise?: string;
+  /**
+   * Latest CFE meter reading entered by hand. With no meter in the system it
+   * is the only grid figure there is, so the grid node shows it — dated, so
+   * it never passes for a live value.
+   */
+  lastReading?: { importRegister: number; exportRegister: number; takenOn: string } | null;
+  /**
+   * Average house load in watts, from the energy balance of the meter
+   * readings. Shown on the house node when nothing measures it live, marked as
+   * an estimate (dashed ring, "~").
+   */
+  estimatedLoadWatts?: number | null;
 }
+
+const MONTHS = ["ene", "feb", "mar", "abr", "may", "jun", "jul", "ago", "sep", "oct", "nov", "dic"];
+const shortDate = (iso: string) => `${Number(iso.slice(8, 10))} ${MONTHS[Number(iso.slice(5, 7)) - 1] ?? ""}`;
 
 export function EnergyFlow({
   snapshot,
@@ -192,8 +207,20 @@ export function EnergyFlow({
   hasGridMetering = true,
   isDaylight,
   sunrise,
+  lastReading = null,
+  estimatedLoadWatts = null,
 }: EnergyFlowProps) {
-  const { pv, load, battery, grid, soc } = snapshot;
+  const { pv, battery, soc } = snapshot;
+  /**
+   * With no meter, the readings' average load stands in for the house, and the
+   * grid follows from it: grid = load - production (positive = importing).
+   * Every value derived this way is marked "~" and drawn with a dashed ring.
+   */
+  const estimating =
+    snapshot.load === null && snapshot.grid === null && !hasBattery && estimatedLoadWatts !== null;
+  const load = estimating ? estimatedLoadWatts : snapshot.load;
+  const grid = estimating && load !== null ? load - pv : snapshot.grid;
+  const importing = (grid ?? 0) > 40;
   // The diagram scales down as a whole on a phone; enlarge the nodes to stay
   // legible, and drop the secondary captions that would then collide.
   const [measureRef, width] = useMeasuredWidth(680);
@@ -217,11 +244,22 @@ export function EnergyFlow({
 
   const values: Record<string, number | null> = {
     sun: pv,
-    inv: pv,
+    // At night the grid feeds the house through the same node, so it shows that flow.
+    inv: importing && estimating ? load : pv,
     house: load,
     batt: battery === null ? null : Math.abs(battery),
     grid: grid === null ? null : Math.abs(grid),
   };
+
+  const readingLines =
+    !hasGridMetering && lastReading
+      ? estimating
+        ? [
+            `lectura ${shortDate(lastReading.takenOn)}`,
+            `imp. ${lastReading.importRegister} · exp. ${lastReading.exportRegister} kWh`,
+          ]
+        : [`importado ${lastReading.importRegister} kWh`, `exportado ${lastReading.exportRegister} kWh`]
+      : null;
 
   const captions: Record<string, string> = {
     sun:
@@ -234,8 +272,12 @@ export function EnergyFlow({
           : isDaylight === true
             ? "sol arriba, sin producción"
             : "sin producción",
-    inv: soc === null ? "MPPT activo" : `${soc.toFixed(0)}% batería`,
-    house: load !== null ? "consumiendo" : unsplit ? "recibe una parte · sin medir" : "requiere medidor",
+    inv: estimating && importing ? "desde la red" : soc === null ? "MPPT activo" : `${soc.toFixed(0)}% batería`,
+    house: estimating
+      ? "promedio de tus lecturas"
+      : load !== null
+        ? "consumiendo"
+        : unsplit ? "recibe una parte · sin medir" : "requiere medidor",
     batt:
       battery === null
         ? "sin batería"
@@ -244,7 +286,15 @@ export function EnergyFlow({
           : battery > 40
             ? "descargando"
             : "en reposo",
-    grid: unsplit
+    grid: estimating && grid !== null
+      ? grid < -40
+        ? "exportando aprox."
+        : grid > 40
+          ? "importando aprox."
+          : "sin flujo aprox."
+      : !hasGridMetering && lastReading
+      ? `última lectura · ${shortDate(lastReading.takenOn)}`
+      : unsplit
       ? "recibe el excedente · sin medir"
       : !hasGridMetering
       ? "sin medidor · ver CFE"
@@ -274,7 +324,7 @@ export function EnergyFlow({
         id="f-house"
         path={LINKS.house}
         watts={load ?? (unsplit ? pv / 2 : null)}
-        color="var(--color-solar-lift)"
+        color={importing ? "var(--color-grid)" : "var(--color-solar-lift)"}
         reverse={false}
         maxWatts={maxWatts}
       />
@@ -292,7 +342,7 @@ export function EnergyFlow({
         id="f-grid"
         path={LINKS.grid}
         watts={grid === null ? (unsplit ? pv / 2 : null) : Math.abs(grid)}
-        color="var(--color-grid)"
+        color={importing || !estimating ? "var(--color-grid)" : "var(--color-solar)"}
         reverse={(grid ?? 0) > 0}
         maxWatts={maxWatts}
       />
@@ -301,6 +351,15 @@ export function EnergyFlow({
         const watts = values[node.id] ?? null;
         const live = watts !== null && watts > 40;
         const unavailable = watts === null;
+        const estimated =
+          estimating && (node.id === "house" || node.id === "grid" || (node.id === "inv" && importing));
+        // Inverter and house take the colour of the energy feeding the house.
+        const color =
+          grid !== null && (node.id === "inv" || node.id === "house")
+            ? importing
+              ? "var(--color-grid)"
+              : "var(--color-solar)"
+            : node.color;
         return (
           <g key={node.id} transform={`translate(${node.at.x} ${node.at.y}) scale(${k})`}>
             <circle r={NODE_R} fill="var(--color-void)" />
@@ -308,12 +367,12 @@ export function EnergyFlow({
               r={NODE_R}
               fill="var(--color-raised)"
               fillOpacity="0.85"
-              stroke={live ? node.color : "var(--color-line)"}
+              stroke={live ? color : "var(--color-line)"}
               strokeWidth="1"
               strokeOpacity={live ? 0.55 : 0.5}
-              strokeDasharray={unavailable ? "3 4" : undefined}
+              strokeDasharray={unavailable || estimated ? "3 4" : undefined}
             />
-            <g style={{ color: live ? node.color : "var(--color-ink-faint)" }}>
+            <g style={{ color: live ? color : "var(--color-ink-faint)" }}>
               <g transform="translate(0 -9)">
                 <Glyph kind={node.glyph} />
               </g>
@@ -326,7 +385,7 @@ export function EnergyFlow({
               fontWeight="500"
               fill={live ? "var(--color-ink)" : "var(--color-ink-faint)"}
             >
-              {fmtKw(watts)}
+              {estimated ? `~${fmtKw(watts)}` : fmtKw(watts)}
             </text>
             {!unavailable && (
               <text y="27" textAnchor="middle" fontSize="8" fill="var(--color-ink-faint)">
@@ -342,11 +401,18 @@ export function EnergyFlow({
             >
               {node.label}
             </text>
-            {!narrow && (
+            {(!narrow || (node.id === "grid" && readingLines)) && (
               <text y={NODE_R + 31} textAnchor="middle" fontSize="11" fill="var(--color-ink-faint)">
                 {captions[node.id]}
               </text>
             )}
+            {node.id === "grid" &&
+              readingLines?.map((line, i) => (
+                <text key={line} y={NODE_R + 45 + i * 14} textAnchor="middle" className="tnum" fontSize="11"
+                  fill="var(--color-grid)">
+                  {line}
+                </text>
+              ))}
           </g>
         );
       })}

@@ -3,7 +3,6 @@ import { scaleLinear } from "d3-scale";
 import { area, line, curveMonotoneX } from "d3-shape";
 import { splitLoadSources } from "@core/energy/services/derive-load";
 import type { PowerSnapshot } from "@core/energy/model/power";
-import { estimatedLoadAt } from "@core/energy/services/load-profile";
 import { ChartTooltip, TooltipRow } from "@/ui/primitives/ChartTooltip";
 import { useMeasuredWidth } from "./useMeasuredWidth";
 
@@ -29,6 +28,8 @@ interface Band {
 
 interface Point {
   minute: number;
+  /** Units that reported in this slot, when known. */
+  units: number | null;
   pv: number;
   load: number | null;
   fromPv: number;
@@ -49,14 +50,14 @@ const kw = (w: number) => `${(w / 1000).toFixed(2)} kW`;
 
 export function ProductionCurve({
   samples,
-  estimatedLoad = [],
+  averageLoadWatts = null,
 }: {
   samples: PowerSnapshot[];
   /**
-   * Hourly estimated house load (24 values, watts) from the bill history.
-   * Drawn only when there is no meter, dashed and labelled as an estimate.
+   * Average house load from the meter-reading balance. Drawn flat, because
+   * the readings pin down the level of consumption, not its shape in the day.
    */
-  estimatedLoad?: readonly number[];
+  averageLoadWatts?: number | null;
 }) {
   const [hover, setHover] = useState<number | null>(null);
   const [measureRef, W] = useMeasuredWidth(1000);
@@ -69,6 +70,7 @@ export function ProductionCurve({
         const split = splitLoadSources(sample.pv, sample.battery, sample.grid);
         return {
           minute: minuteOf(sample.at),
+          units: sample.unitsReporting ?? null,
           pv: sample.pv,
           load: sample.load,
           fromPv: split?.fromPv ?? 0,
@@ -80,21 +82,16 @@ export function ProductionCurve({
   );
 
   const metered = useMemo(() => points.some((p) => p.load !== null), [points]);
-  const estimate = useMemo(
-    () =>
-      !metered && estimatedLoad.length === 24
-        ? Array.from({ length: 97 }, (_, i) => ({ minute: i * 15, watts: estimatedLoadAt(estimatedLoad, i * 15) ?? 0 }))
-        : [],
-    [metered, estimatedLoad],
-  );
+  // A slot where some microinverter uploaded late holds part of the array.
+  // Drawing it would show a drop that never happened, so the curve bridges it
+  // and it is marked instead.
+  const expectedUnits = useMemo(() => Math.max(0, ...points.map((p) => p.units ?? 0)), [points]);
+  const isPartial = (p: Point) => p.units !== null && p.units < expectedUnits;
+  const complete = useMemo(() => points.filter((p) => !isPartial(p)), [points, expectedUnits]);
+  const average = !metered && averageLoadWatts !== null && averageLoadWatts > 0 ? averageLoadWatts : null;
   const peak = useMemo(
-    () =>
-      Math.max(
-        1000,
-        ...points.map((p) => Math.max(p.pv, p.load ?? 0)),
-        ...estimate.map((e) => e.watts),
-      ),
-    [points, estimate],
+    () => Math.max(1000, average ?? 0, ...points.map((p) => Math.max(p.pv, p.load ?? 0))),
+    [points, average],
   );
 
   const x = scaleLinear().domain([0, 1440]).range([M.left, W - M.right]);
@@ -116,10 +113,6 @@ export function ProductionCurve({
   const bandPath = area<Band>().x((d) => x(d.minute)).y0((d) => y(d.lo)).y1((d) => y(d.hi)).curve(curveMonotoneX);
   const pvArea = area<Point>().x((d) => x(d.minute)).y0(y(0)).y1((d) => y(d.pv)).curve(curveMonotoneX);
   const pvLine = line<Point>().x((d) => x(d.minute)).y((d) => y(d.pv)).curve(curveMonotoneX);
-  const estimateLine = line<{ minute: number; watts: number }>()
-    .x((d) => x(d.minute))
-    .y((d) => y(d.watts))
-    .curve(curveMonotoneX);
 
   const active = hover === null ? null : points[hover];
   const peakPoint = points.reduce<Point | null>((top, p) => (!top || p.pv > top.pv ? p : top), null);
@@ -164,10 +157,10 @@ export function ProductionCurve({
               <span className="inline-block h-2 w-2 rounded-full bg-solar" />
               Producción solar
             </span>
-            {estimate.length > 0 && (
-              <span className="flex items-center gap-2" title="Estimado con tu consumo típico de los recibos CFE">
+            {average !== null && (
+              <span className="flex items-center gap-2">
                 <span className="inline-block w-3 border-t-2 border-dashed border-grid" />
-                Consumo estimado
+                Consumo promedio · tus lecturas
               </span>
             )}
           </>
@@ -216,14 +209,19 @@ export function ProductionCurve({
             ? bands.map((b) => (
                 <path key={b.key} d={bandPath(b.data) ?? undefined} fill={`url(#g-${b.key})`} stroke={b.color} strokeWidth="1" strokeOpacity="0.7" />
               ))
-            : <path d={pvArea(points) ?? undefined} fill="url(#g-pvonly)" />}
+            : <path d={pvArea(complete) ?? undefined} fill="url(#g-pvonly)" />}
 
-          <path d={pvLine(points) ?? undefined} fill="none" stroke="var(--color-solar-lift)" strokeWidth="1.8" />
+          <path d={pvLine(complete) ?? undefined} fill="none" stroke="var(--color-solar-lift)" strokeWidth="1.8" />
 
-          {estimate.length > 0 && (
-            <path d={estimateLine(estimate) ?? undefined} fill="none" stroke="var(--color-grid)"
-              strokeWidth="1.6" strokeDasharray="5 4" strokeOpacity="0.85" />
+          {average !== null && (
+            <line x1={M.left} x2={W - M.right} y1={y(average)} y2={y(average)} stroke="var(--color-grid)"
+              strokeWidth="1.5" strokeDasharray="5 4" strokeOpacity="0.85" />
           )}
+
+          {points.filter(isPartial).map((p) => (
+            <circle key={p.minute} cx={x(p.minute)} cy={y(p.pv)} r="2.5" fill="var(--color-void)"
+              stroke="var(--color-grid)" strokeWidth="1.2" />
+          ))}
 
           {active && (
             <g>
@@ -241,12 +239,20 @@ export function ProductionCurve({
           <ChartTooltip xPct={(x(active.minute) / W) * 100}>
             <p className="tnum mb-1 font-medium text-ink">{hhmm(active.minute)}</p>
             <TooltipRow label="Producción" value={kw(active.pv)} color="var(--color-solar)" />
+            {isPartial(active) && (
+              <p className="mt-1 text-[11px] text-grid">
+                Parcial: {active.units} de {expectedUnits} inversores reportaron
+              </p>
+            )}
             {active.load === null ? (
-              estimate.length > 0 ? (
+              average !== null ? (
                 <>
-                  <TooltipRow label="Consumo est." value={kw(estimatedLoadAt(estimatedLoad, active.minute) ?? 0)}
-                    color="var(--color-grid)" />
-                  <p className="mt-1 text-[11px] text-ink-faint">Estimado con tus recibos CFE</p>
+                  <TooltipRow label="Consumo prom." value={`~${kw(average)}`} color="var(--color-grid)" />
+                  <TooltipRow
+                    label={active.pv >= average ? "Excedente aprox." : "De la red aprox."}
+                    value={`~${kw(Math.abs(active.pv - average))}`}
+                    color={active.pv >= average ? "var(--color-solar)" : "var(--color-grid)"}
+                  />
                 </>
               ) : (
                 <p className="mt-1 text-[11px] text-ink-faint">Casa y red: sin medir</p>

@@ -17,7 +17,7 @@ function Splash() {
   return (
     <div className="flex min-h-screen items-center justify-center bg-void" role="status" aria-label="Cargando">
       <motion.span
-        className="h-3 w-3 rounded-full bg-solar shadow-[0_0_24px_rgba(16,185,129,0.8)]"
+        className="h-3 w-3 rounded-full bg-solar shadow-[0_0_24px_var(--color-solar)]"
         animate={{ scale: [1, 1.6, 1], opacity: [0.6, 1, 0.6] }}
         transition={{ duration: 1.4, repeat: Infinity }}
       />

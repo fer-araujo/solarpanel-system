@@ -28,7 +28,8 @@ coverage/
 /data/
 
 # Personal Claude Code settings.
-.claude/settings.local.json
+.claude/
+CLAUDE.md
 
 # graphify backups and local manifest.
 graphify-out/20*/
@@ -37,3 +38,6 @@ graphify-out/manifest.json
 # Vercel build output.
 .vercel/
 .atl/
+
+# graphify knowledge graph: generated locally by the post-commit hook
+graphify-out/

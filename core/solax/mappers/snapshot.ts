@@ -180,6 +180,7 @@ export function mapAggregateHistory(
     .map(([slot, inverters]) => ({
       ...mapAggregateSnapshot({ inverters, businessType, utcOffsetMinutes }),
       at: new Date(slot),
+      unitsReporting: new Set(inverters.map((unit) => unit.deviceSn)).size,
     }));
 }
 

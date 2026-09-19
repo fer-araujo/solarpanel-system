@@ -1,53 +1,102 @@
-import { useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { useQueries } from "@tanstack/react-query";
 import { api } from "@/api/client";
 import { queryKeys } from "@/api/queries";
 import { Card } from "@/ui/primitives/Card";
-import { Bone } from "@/ui/primitives/Skeleton";
 
 /**
- * Daily production as a calendar: one row per month, one cell per day.
+ * Daily production drawn like GitHub's contribution calendar, measured from
+ * github.com: 12px square cells (GitHub uses 11), 2px radius, 4px spacing, flat colours on a
+ * five-step scale, 12px labels, one column per week and one row per weekday.
+ * The calendar keeps that fixed size; the rest of the card holds a summary,
+ * the way GitHub puts the year list beside it.
  *
- * Good and bad days stand out at a glance, and so do GAPS: a day inside the
- * plant's life with no data is drawn hatched, never as a zero, because "the
- * dongle was offline" and "the panels produced nothing" are different faults.
- *
- * Reuses the month stats queries (1 call per month, cached for an hour), so it
- * shares cache with the Mes view of the analysis chart.
+ * Only months since installation are fetched (1 stats call each, cached for an
+ * hour and shared with the Mes view).
  */
 
-const MAX_MONTHS = 12;
+const WEEKS = 53;
+const CELL = 12;
+const GAP = 4;
 const MONTHS = ["ene", "feb", "mar", "abr", "may", "jun", "jul", "ago", "sep", "oct", "nov", "dic"];
-const DAYS = Array.from({ length: 31 }, (_, i) => i + 1);
+const WEEKDAYS = ["", "lun", "", "mié", "", "vie", ""];
+
+/** GitHub's luminance steps in the app's green; level 0 is GitHub's empty cell. */
+const LEVELS = [
+  "#151b23",
+  "hsl(142 80% 13%)",
+  "hsl(142 62% 26%)",
+  "hsl(142 60% 37%)",
+  "hsl(142 72% 45%)",
+] as const;
+
+/** Quartiles of the best day: 0 (nothing produced) to 4 (near the best). */
+const levelOf = (kwh: number | undefined, max: number) =>
+  kwh === undefined || kwh <= 0 || max <= 0 ? 0 : Math.min(4, Math.max(1, Math.ceil((kwh / max) * 4)));
 
 const pad = (n: number) => String(n).padStart(2, "0");
 const isoDay = (d: Date) => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+const monthName = (iso: string) => MONTHS[Number(iso.slice(5, 7)) - 1] ?? "";
+const shortDate = (iso: string) => `${Number(iso.slice(8, 10))} ${monthName(iso)}`;
 
-function monthsBetween(first: Date, last: Date): string[] {
-  const list: string[] = [];
-  const cursor = new Date(first.getFullYear(), first.getMonth(), 1);
-  while (cursor <= last) {
-    list.push(`${cursor.getFullYear()}-${pad(cursor.getMonth() + 1)}`);
-    cursor.setMonth(cursor.getMonth() + 1);
-  }
-  return list.slice(-MAX_MONTHS);
+interface Day {
+  date: string;
+  future: boolean;
 }
 
-type Cell =
-  | { kind: "none" } // not a real day, before installation, or in the future
-  | { kind: "gap"; date: string }
-  | { kind: "value"; date: string; kwh: number };
+function Summary({ label, value, unit }: { label: string; value: string; unit?: string }) {
+  return (
+    <div>
+      <p className="text-[11px] tracking-[0.08em] text-ink-faint uppercase">{label}</p>
+      <p className="tnum mt-1 text-[20px] leading-none font-medium text-ink">
+        {value}
+        {unit && <span className="ml-1 text-[12px] font-normal text-ink-faint">{unit}</span>}
+      </p>
+    </div>
+  );
+}
 
 export function ProductionHeatmap({ installedAt }: { installedAt: string | null }) {
-  const today = isoDay(new Date());
   const firstDay = installedAt && /^\d{4}-\d{2}-\d{2}/.test(installedAt) ? installedAt.slice(0, 10) : null;
+
+  /** 53 weeks × 7 days, Sunday first, ending with the current week. */
+  const weeks = useMemo(() => {
+    const today = new Date();
+    const todayIso = isoDay(today);
+    const start = new Date(today.getFullYear(), today.getMonth(), today.getDate() - today.getDay() - (WEEKS - 1) * 7);
+    return Array.from({ length: WEEKS }, (_, w) =>
+      Array.from({ length: 7 }, (_, d): Day => {
+        const iso = isoDay(new Date(start.getFullYear(), start.getMonth(), start.getDate() + w * 7 + d));
+        return { date: iso, future: iso > todayIso };
+      }),
+    );
+  }, []);
+
+  /** A month's name sits over the first week that starts inside it (as GitHub does). */
+  const monthLabels = useMemo(
+    () =>
+      weeks.map((week, w) => {
+        const month = week[0]!.date.slice(0, 7);
+        const previous = w > 0 ? weeks[w - 1]![0]!.date.slice(0, 7) : null;
+        // The first column's label is dropped when the next month starts right
+        // after it, so the two names never overlap.
+        const next = weeks[w + 1]?.[0]?.date.slice(0, 7);
+        if (w === 0 && next !== month) return "";
+        return month !== previous ? monthName(week[0]!.date) : "";
+      }),
+    [weeks],
+  );
+
   const months = useMemo(() => {
-    const now = new Date();
-    const first = firstDay
-      ? new Date(Number(firstDay.slice(0, 4)), Number(firstDay.slice(5, 7)) - 1, 1)
-      : new Date(now.getFullYear(), now.getMonth() - (MAX_MONTHS - 1), 1);
-    return monthsBetween(first, now);
-  }, [firstDay]);
+    const keys = new Set<string>();
+    for (const week of weeks) {
+      for (const day of week) {
+        const month = day.date.slice(0, 7);
+        if (!day.future && (!firstDay || month >= firstDay.slice(0, 7))) keys.add(month);
+      }
+    }
+    return [...keys];
+  }, [weeks, firstDay]);
 
   const queries = useQueries({
     queries: months.map((month) => ({
@@ -57,109 +106,96 @@ export function ProductionHeatmap({ installedAt }: { installedAt: string | null 
     })),
   });
 
-  const [selected, setSelected] = useState<Exclude<Cell, { kind: "none" }> | null>(null);
+  const byDay = new Map<string, number>();
+  for (const query of queries) {
+    for (const entry of query.data?.plantEnergyStatDataList ?? []) {
+      const kwh = entry.pvGeneration ?? entry.inverterACOutputEnergy;
+      if (kwh !== null && kwh !== undefined && kwh > 0) byDay.set(entry.date.slice(0, 10), kwh);
+    }
+  }
+  const values = [...byDay.values()];
+  const max = Math.max(0, ...values);
+  const total = values.reduce((sum, kwh) => sum + kwh, 0);
+  const best = [...byDay.entries()].find(([, kwh]) => kwh === max)?.[0] ?? null;
+  const loading = queries.some((q) => q.isPending);
 
-  const { rows, max } = useMemo(() => {
-    let peak = 0;
-    const built = months.map((month, i) => {
-      const byDay = new Map<string, number>();
-      for (const entry of queries[i]?.data?.plantEnergyStatDataList ?? []) {
-        const kwh = entry.pvGeneration ?? entry.inverterACOutputEnergy;
-        if (kwh !== null && kwh !== undefined) byDay.set(entry.date.slice(0, 10), kwh);
-      }
-      const [y, m] = month.split("-").map(Number);
-      const daysInMonth = new Date(y ?? 1970, m ?? 1, 0).getDate();
-      const cells: Cell[] = DAYS.map((day) => {
-        const date = `${month}-${pad(day)}`;
-        if (day > daysInMonth || date > today || (firstDay && date < firstDay)) return { kind: "none" };
-        const kwh = byDay.get(date);
-        if (kwh === undefined) return { kind: "gap", date };
-        peak = Math.max(peak, kwh);
-        return { kind: "value", date, kwh };
-      });
-      return { month, cells, loading: queries[i]?.isPending ?? false };
-    });
-    return { rows: built, max: peak };
-  }, [months, queries, today, firstDay]);
+  const [selected, setSelected] = useState<string | null>(null);
 
-  const label = (month: string) => {
-    const [y, m] = month.split("-");
-    return `${MONTHS[Number(m) - 1]} ${y?.slice(2)}`;
+  // On a phone the calendar scrolls sideways; start at the current week.
+  const scrollToEnd = useCallback((element: HTMLDivElement | null) => {
+    if (element) element.scrollLeft = element.scrollWidth;
+  }, []);
+
+  const describe = (date: string) => {
+    const kwh = byDay.get(date);
+    return kwh === undefined ? `${shortDate(date)} · sin producción` : `${shortDate(date)} · ${kwh.toFixed(1)} kWh`;
   };
 
-  const describe = (cell: Cell | null) => {
-    if (!cell || cell.kind === "none") return null;
-    const [, m, d] = cell.date.split("-");
-    const day = `${Number(d)} ${MONTHS[Number(m) - 1]}`;
-    return cell.kind === "gap" ? `${day} · sin datos del dongle` : `${day} · ${cell.kwh.toFixed(1)} kWh`;
-  };
+  const columns = `28px repeat(${WEEKS}, ${CELL}px)`;
 
   return (
-    <Card title="Producción diaria" hint="Cada celda es un día; toca una para ver su generación">
-      {/* Scrolls sideways on a phone so every cell stays big enough to tap. */}
-      <div className="-mx-1 overflow-x-auto px-1 pb-1">
-      <div
-        className="grid min-w-[480px] gap-[3px]"
-        style={{ gridTemplateColumns: "44px repeat(31, minmax(0, 1fr))" }}
-        onMouseLeave={() => setSelected(null)}
-      >
-        {rows.map((row) => (
-          <div key={row.month} className="contents">
-            <span className="tnum self-center pr-1 text-[10.5px] text-ink-faint">{label(row.month)}</span>
-            {row.loading
-              ? DAYS.map((day) => <Bone key={day} className="aspect-square rounded-[3px]" />)
-              : row.cells.map((cell, i) => {
-                  if (cell.kind === "none") return <span key={i} className="aspect-square" />;
-                  const intensity = cell.kind === "value" && max > 0 ? cell.kwh / max : 0;
-                  return (
-                    <button
-                      key={i}
-                      type="button"
-                      aria-label={describe(cell) ?? undefined}
-                      onMouseEnter={() => setSelected(cell)}
-                      onClick={() => setSelected(cell)}
-                      className={`aspect-square rounded-[3px] transition-transform hover:scale-125 ${
-                        cell.kind === "gap" ? "heatmap-gap border border-dashed border-line" : ""
-                      } ${selected?.date === cell.date ? "ring-1 ring-ink" : ""}`}
-                      style={
-                        cell.kind === "value"
-                          ? {
-                              background: `color-mix(in oklab, var(--color-solar) ${Math.round(12 + intensity * 88)}%, var(--color-raised))`,
-                            }
-                          : undefined
-                      }
-                    />
-                  );
-                })}
+    <Card title={`${total.toFixed(0)} kWh generados en el último año`}>
+      <div className="flex flex-col gap-6 lg:flex-row lg:items-start">
+        <div className="min-w-0">
+          <div ref={scrollToEnd} className="overflow-x-auto">
+            <div className="w-max" onMouseLeave={() => setSelected(null)}>
+              <div className="grid" style={{ gridTemplateColumns: columns, columnGap: GAP }}>
+                <span />
+                {monthLabels.map((label, w) => (
+                  <span key={w} className="overflow-visible whitespace-nowrap text-[12px] leading-[18px] text-ink-dim">
+                    {label}
+                  </span>
+                ))}
+              </div>
+
+              <div
+                className="grid"
+                style={{ gridTemplateColumns: columns, gridAutoRows: `${CELL}px`, gap: GAP }}
+              >
+                {WEEKDAYS.map((weekday, d) => (
+                  <div key={d} className="contents">
+                    <span className="self-center text-[12px] leading-none text-ink-dim">{weekday}</span>
+                    {weeks.map((week) => {
+                      const day = week[d]!;
+                      if (day.future) return <span key={day.date} />;
+                      return (
+                        <button
+                          key={day.date}
+                          type="button"
+                          aria-label={describe(day.date)}
+                          onMouseEnter={() => setSelected(day.date)}
+                          onClick={() => setSelected(day.date)}
+                          className={`rounded-[2px] outline-offset-[-1px] ${loading ? "skeleton" : ""} ${
+                            selected === day.date ? "outline outline-1 outline-ink/70" : ""
+                          }`}
+                          style={loading ? undefined : { background: LEVELS[levelOf(byDay.get(day.date), max)] }}
+                        />
+                      );
+                    })}
+                  </div>
+                ))}
+              </div>
+            </div>
           </div>
-        ))}
 
-        <span />
-        {DAYS.map((day) => (
-          <span key={day} className="tnum text-center text-[9.5px] text-ink-faint">
-            {day % 5 === 0 || day === 1 ? day : ""}
-          </span>
-        ))}
-      </div>
-      </div>
+          <div className="mt-2 flex items-center justify-between gap-4 text-[12px] text-ink-faint">
+            <span className="tnum text-ink-dim">{selected ? describe(selected) : "Pasa o toca un día"}</span>
+            <span className="flex items-center gap-[3px]">
+              <span className="mr-1">Menos</span>
+              {LEVELS.map((color) => (
+                <span key={color} className="inline-block rounded-[2px]" style={{ width: CELL, height: CELL, background: color }} />
+              ))}
+              <span className="ml-1">Más</span>
+            </span>
+          </div>
+        </div>
 
-      <div className="mt-4 flex flex-wrap items-center justify-between gap-3 text-[11.5px] text-ink-faint">
-        <span className="tnum min-h-[16px] text-ink-dim">{describe(selected) ?? " "}</span>
-        <span className="flex items-center gap-2">
-          <span className="flex items-center gap-1.5">
-            <span className="heatmap-gap inline-block h-2.5 w-2.5 rounded-[2px] border border-dashed border-line" />
-            sin datos
-          </span>
-          <span className="ml-2">menos</span>
-          <span
-            className="inline-block h-2.5 w-16 rounded-full"
-            style={{
-              background:
-                "linear-gradient(90deg, color-mix(in oklab, var(--color-solar) 12%, var(--color-raised)), var(--color-solar))",
-            }}
-          />
-          <span>más{max > 0 ? ` · ${max.toFixed(0)} kWh` : ""}</span>
-        </span>
+        <div className="grid flex-1 grid-cols-2 gap-x-6 gap-y-5 border-line/50 lg:border-l lg:pl-6">
+          <Summary label="Mejor día" value={max > 0 ? max.toFixed(1) : "—"} unit={best ? `kWh · ${shortDate(best)}` : undefined} />
+          <Summary label="Promedio" value={values.length > 0 ? (total / values.length).toFixed(1) : "—"} unit="kWh/día" />
+          <Summary label="Días generando" value={String(values.length)} />
+          <Summary label="Total" value={total.toFixed(0)} unit="kWh" />
+        </div>
       </div>
     </Card>
   );
