@@ -210,7 +210,17 @@ export function EnergyFlow({
   lastReading = null,
   estimatedLoadWatts = null,
 }: EnergyFlowProps) {
-  const { pv, load, battery, grid, soc } = snapshot;
+  const { pv, battery, soc } = snapshot;
+  /**
+   * With no meter, the readings' average load stands in for the house, and the
+   * grid follows from it: grid = load - production (positive = importing).
+   * Every value derived this way is marked "~" and drawn with a dashed ring.
+   */
+  const estimating =
+    snapshot.load === null && snapshot.grid === null && !hasBattery && estimatedLoadWatts !== null;
+  const load = estimating ? estimatedLoadWatts : snapshot.load;
+  const grid = estimating && load !== null ? load - pv : snapshot.grid;
+  const importing = (grid ?? 0) > 40;
   // The diagram scales down as a whole on a phone; enlarge the nodes to stay
   // legible, and drop the secondary captions that would then collide.
   const [measureRef, width] = useMeasuredWidth(680);
@@ -235,16 +245,20 @@ export function EnergyFlow({
   const values: Record<string, number | null> = {
     sun: pv,
     inv: pv,
-    house: load ?? estimatedLoadWatts,
+    house: load,
     batt: battery === null ? null : Math.abs(battery),
     grid: grid === null ? null : Math.abs(grid),
   };
 
   const readingLines =
     !hasGridMetering && lastReading
-      ? [`importado ${lastReading.importRegister} kWh`, `exportado ${lastReading.exportRegister} kWh`]
+      ? estimating
+        ? [
+            `lectura ${shortDate(lastReading.takenOn)}`,
+            `imp. ${lastReading.importRegister} · exp. ${lastReading.exportRegister} kWh`,
+          ]
+        : [`importado ${lastReading.importRegister} kWh`, `exportado ${lastReading.exportRegister} kWh`]
       : null;
-  const houseEstimated = load === null && estimatedLoadWatts !== null;
 
   const captions: Record<string, string> = {
     sun:
@@ -258,10 +272,10 @@ export function EnergyFlow({
             ? "sol arriba, sin producción"
             : "sin producción",
     inv: soc === null ? "MPPT activo" : `${soc.toFixed(0)}% batería`,
-    house: load !== null
-      ? "consumiendo"
-      : estimatedLoadWatts !== null
-        ? "promedio de tus lecturas"
+    house: estimating
+      ? "promedio de tus lecturas"
+      : load !== null
+        ? "consumiendo"
         : unsplit ? "recibe una parte · sin medir" : "requiere medidor",
     batt:
       battery === null
@@ -271,7 +285,13 @@ export function EnergyFlow({
           : battery > 40
             ? "descargando"
             : "en reposo",
-    grid: !hasGridMetering && lastReading
+    grid: estimating && grid !== null
+      ? grid < -40
+        ? "exportando aprox."
+        : grid > 40
+          ? "importando aprox."
+          : "sin flujo aprox."
+      : !hasGridMetering && lastReading
       ? `última lectura · ${shortDate(lastReading.takenOn)}`
       : unsplit
       ? "recibe el excedente · sin medir"
@@ -303,7 +323,7 @@ export function EnergyFlow({
         id="f-house"
         path={LINKS.house}
         watts={load ?? (unsplit ? pv / 2 : null)}
-        color="var(--color-solar-lift)"
+        color={importing ? "var(--color-grid)" : "var(--color-solar-lift)"}
         reverse={false}
         maxWatts={maxWatts}
       />
@@ -321,7 +341,7 @@ export function EnergyFlow({
         id="f-grid"
         path={LINKS.grid}
         watts={grid === null ? (unsplit ? pv / 2 : null) : Math.abs(grid)}
-        color="var(--color-grid)"
+        color={importing || !estimating ? "var(--color-grid)" : "var(--color-solar)"}
         reverse={(grid ?? 0) > 0}
         maxWatts={maxWatts}
       />
@@ -330,7 +350,7 @@ export function EnergyFlow({
         const watts = values[node.id] ?? null;
         const live = watts !== null && watts > 40;
         const unavailable = watts === null;
-        const estimated = node.id === "house" && houseEstimated;
+        const estimated = estimating && (node.id === "house" || node.id === "grid");
         return (
           <g key={node.id} transform={`translate(${node.at.x} ${node.at.y}) scale(${k})`}>
             <circle r={NODE_R} fill="var(--color-void)" />
