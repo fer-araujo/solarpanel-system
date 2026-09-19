@@ -194,11 +194,11 @@ export function EnergyFlow({
   sunrise,
 }: EnergyFlowProps) {
   const { pv, load, battery, grid, soc } = snapshot;
-  // The diagram scales down as a whole on a phone; enlarge its text to stay
+  // The diagram scales down as a whole on a phone; enlarge the nodes to stay
   // legible, and drop the secondary captions that would then collide.
   const [measureRef, width] = useMeasuredWidth(680);
   const narrow = width < 520;
-  const k = narrow ? 1.55 : 1;
+  const k = narrow ? 1.5 : 1;
 
   /**
    * With no battery, every watt produced goes to the house or the grid — that
@@ -258,7 +258,7 @@ export function EnergyFlow({
   };
 
   return (
-    <svg ref={measureRef} viewBox="0 0 680 408" className="w-full" role="img">
+    <svg ref={measureRef} viewBox="0 0 680 408" className="w-full" overflow="visible" role="img">
       <title>Flujo de energía en tiempo real</title>
       <defs>
         <radialGradient id="haze" cx="50%" cy="50%">
@@ -302,7 +302,7 @@ export function EnergyFlow({
         const live = watts !== null && watts > 40;
         const unavailable = watts === null;
         return (
-          <g key={node.id} transform={`translate(${node.at.x} ${node.at.y})`}>
+          <g key={node.id} transform={`translate(${node.at.x} ${node.at.y}) scale(${k})`}>
             <circle r={NODE_R} fill="var(--color-void)" />
             <circle
               r={NODE_R}
@@ -319,24 +319,24 @@ export function EnergyFlow({
               </g>
             </g>
             <text
-              y={narrow ? 21 : 17}
+              y="17"
               textAnchor="middle"
               className="tnum"
-              fontSize={13 * k}
+              fontSize="13"
               fontWeight="500"
               fill={live ? "var(--color-ink)" : "var(--color-ink-faint)"}
             >
               {fmtKw(watts)}
             </text>
-            {!unavailable && !narrow && (
+            {!unavailable && (
               <text y="27" textAnchor="middle" fontSize="8" fill="var(--color-ink-faint)">
                 kW
               </text>
             )}
             <text
-              y={NODE_R + 17 * k}
+              y={NODE_R + 17}
               textAnchor="middle"
-              fontSize={12 * k}
+              fontSize="12"
               fontWeight="500"
               fill="var(--color-ink-dim)"
             >

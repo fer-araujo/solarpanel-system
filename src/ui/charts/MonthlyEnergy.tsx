@@ -29,7 +29,7 @@ export function MonthlyEnergy({
 }) {
   const [hover, setHover] = useState<number | null>(null);
   const [measureRef, W] = useMeasuredWidth(900);
-  const H = W < 640 ? 200 : 260;
+  const H = Math.round(Math.min(260, Math.max(160, W * 0.45)));
 
   const series = useMemo(
     () => SERIES.filter((s) => entries.some((e) => e[s.key] !== null && e[s.key] !== undefined && (e[s.key] ?? 0) > 0)),

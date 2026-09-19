@@ -50,7 +50,7 @@ export function ProductionCurve({ samples }: { samples: PowerSnapshot[] }) {
   const [hover, setHover] = useState<number | null>(null);
   const [measureRef, W] = useMeasuredWidth(1000);
   const narrow = W < NARROW;
-  const H = narrow ? 220 : 320;
+  const H = Math.round(Math.min(320, Math.max(170, W * 0.5)));
 
   const points = useMemo<Point[]>(
     () =>

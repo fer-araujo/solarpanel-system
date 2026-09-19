@@ -37,7 +37,7 @@ export function PowerGauge({
 
   return (
     <div className="flex flex-col items-center">
-      <svg viewBox="-120 -120 240 205" className="w-full max-w-[260px]" role="img">
+      <svg viewBox="-120 -120 240 205" className="w-full max-w-[190px] sm:max-w-[260px]" role="img">
         <title>Potencia solar actual</title>
         <defs>
           <linearGradient id="pvGauge" x1="0" y1="1" x2="1" y2="0">
