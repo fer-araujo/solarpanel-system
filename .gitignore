@@ -28,7 +28,8 @@ coverage/
 /data/
 
 # Personal Claude Code settings.
-.claude/settings.local.json
+.claude/
+CLAUDE.md
 
 # graphify backups and local manifest.
 graphify-out/20*/
