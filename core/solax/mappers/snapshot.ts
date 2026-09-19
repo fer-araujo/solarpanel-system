@@ -151,6 +151,38 @@ export function mapAggregateSnapshot(input: MapAggregateInput): PowerSnapshot {
   };
 }
 
+/**
+ * Turns history samples from several units into one array-wide series.
+ *
+ * Each microinverter reports its own sample per time slot. Plotting them as
+ * separate points made the curve jump between units and counted only a
+ * fraction of the energy; summing them per slot gives the whole array.
+ */
+export function mapAggregateHistory(
+  samples: readonly InverterRealtimeDto[],
+  options: { businessType: BusinessType; utcOffsetMinutes: number | null; intervalMinutes: number },
+): PowerSnapshot[] {
+  const { businessType, utcOffsetMinutes, intervalMinutes } = options;
+  const slotMs = intervalMinutes * 60_000;
+  const slots = new Map<number, InverterRealtimeDto[]>();
+
+  for (const sample of samples) {
+    const at = parsePlantLocalTime(sample.plantLocalTime ?? sample.dataTime, utcOffsetMinutes);
+    if (!at) continue;
+    const slot = Math.round(at.getTime() / slotMs) * slotMs;
+    const units = slots.get(slot);
+    if (units) units.push(sample);
+    else slots.set(slot, [sample]);
+  }
+
+  return [...slots.entries()]
+    .sort(([a], [b]) => a - b)
+    .map(([slot, inverters]) => ({
+      ...mapAggregateSnapshot({ inverters, businessType, utcOffsetMinutes }),
+      at: new Date(slot),
+    }));
+}
+
 export interface MapSnapshotInput {
   inverter: InverterRealtimeDto;
   battery?: BatteryRealtimeDto | null;
