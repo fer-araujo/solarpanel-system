@@ -190,6 +190,12 @@ interface EnergyFlowProps {
    * it never passes for a live value.
    */
   lastReading?: { importRegister: number; exportRegister: number; takenOn: string } | null;
+  /**
+   * Average house load in watts, from the energy balance of the meter
+   * readings. Shown on the house node when nothing measures it live, marked as
+   * an estimate (dashed ring, "~").
+   */
+  estimatedLoadWatts?: number | null;
 }
 
 const MONTHS = ["ene", "feb", "mar", "abr", "may", "jun", "jul", "ago", "sep", "oct", "nov", "dic"];
@@ -202,6 +208,7 @@ export function EnergyFlow({
   isDaylight,
   sunrise,
   lastReading = null,
+  estimatedLoadWatts = null,
 }: EnergyFlowProps) {
   const { pv, load, battery, grid, soc } = snapshot;
   // The diagram scales down as a whole on a phone; enlarge the nodes to stay
@@ -228,15 +235,16 @@ export function EnergyFlow({
   const values: Record<string, number | null> = {
     sun: pv,
     inv: pv,
-    house: load,
+    house: load ?? estimatedLoadWatts,
     batt: battery === null ? null : Math.abs(battery),
     grid: grid === null ? null : Math.abs(grid),
   };
 
-  const readingLine =
+  const readingLines =
     !hasGridMetering && lastReading
-      ? `importado ${lastReading.importRegister} · exportado ${lastReading.exportRegister} kWh`
+      ? [`importado ${lastReading.importRegister} kWh`, `exportado ${lastReading.exportRegister} kWh`]
       : null;
+  const houseEstimated = load === null && estimatedLoadWatts !== null;
 
   const captions: Record<string, string> = {
     sun:
@@ -250,7 +258,11 @@ export function EnergyFlow({
             ? "sol arriba, sin producción"
             : "sin producción",
     inv: soc === null ? "MPPT activo" : `${soc.toFixed(0)}% batería`,
-    house: load !== null ? "consumiendo" : unsplit ? "recibe una parte · sin medir" : "requiere medidor",
+    house: load !== null
+      ? "consumiendo"
+      : estimatedLoadWatts !== null
+        ? "promedio de tus lecturas"
+        : unsplit ? "recibe una parte · sin medir" : "requiere medidor",
     batt:
       battery === null
         ? "sin batería"
@@ -318,6 +330,7 @@ export function EnergyFlow({
         const watts = values[node.id] ?? null;
         const live = watts !== null && watts > 40;
         const unavailable = watts === null;
+        const estimated = node.id === "house" && houseEstimated;
         return (
           <g key={node.id} transform={`translate(${node.at.x} ${node.at.y}) scale(${k})`}>
             <circle r={NODE_R} fill="var(--color-void)" />
@@ -328,7 +341,7 @@ export function EnergyFlow({
               stroke={live ? node.color : "var(--color-line)"}
               strokeWidth="1"
               strokeOpacity={live ? 0.55 : 0.5}
-              strokeDasharray={unavailable ? "3 4" : undefined}
+              strokeDasharray={unavailable || estimated ? "3 4" : undefined}
             />
             <g style={{ color: live ? node.color : "var(--color-ink-faint)" }}>
               <g transform="translate(0 -9)">
@@ -343,7 +356,7 @@ export function EnergyFlow({
               fontWeight="500"
               fill={live ? "var(--color-ink)" : "var(--color-ink-faint)"}
             >
-              {fmtKw(watts)}
+              {estimated ? `~${fmtKw(watts)}` : fmtKw(watts)}
             </text>
             {!unavailable && (
               <text y="27" textAnchor="middle" fontSize="8" fill="var(--color-ink-faint)">
@@ -359,16 +372,18 @@ export function EnergyFlow({
             >
               {node.label}
             </text>
-            {(!narrow || (node.id === "grid" && readingLine)) && (
+            {(!narrow || (node.id === "grid" && readingLines)) && (
               <text y={NODE_R + 31} textAnchor="middle" fontSize="11" fill="var(--color-ink-faint)">
                 {captions[node.id]}
               </text>
             )}
-            {node.id === "grid" && readingLine && (
-              <text y={NODE_R + 45} textAnchor="middle" className="tnum" fontSize="11" fill="var(--color-grid)">
-                {readingLine}
-              </text>
-            )}
+            {node.id === "grid" &&
+              readingLines?.map((line, i) => (
+                <text key={line} y={NODE_R + 45 + i * 14} textAnchor="middle" className="tnum" fontSize="11"
+                  fill="var(--color-grid)">
+                  {line}
+                </text>
+              ))}
           </g>
         );
       })}

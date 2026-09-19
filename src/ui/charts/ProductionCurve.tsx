@@ -48,7 +48,17 @@ const hhmm = (minute: number) =>
   `${String(Math.floor(minute / 60)).padStart(2, "0")}:${String(Math.round(minute % 60)).padStart(2, "0")}`;
 const kw = (w: number) => `${(w / 1000).toFixed(2)} kW`;
 
-export function ProductionCurve({ samples }: { samples: PowerSnapshot[] }) {
+export function ProductionCurve({
+  samples,
+  averageLoadWatts = null,
+}: {
+  samples: PowerSnapshot[];
+  /**
+   * Average house load from the meter-reading balance. Drawn flat, because
+   * the readings pin down the level of consumption, not its shape in the day.
+   */
+  averageLoadWatts?: number | null;
+}) {
   const [hover, setHover] = useState<number | null>(null);
   const [measureRef, W] = useMeasuredWidth(1000);
   const narrow = W < NARROW;
@@ -78,9 +88,10 @@ export function ProductionCurve({ samples }: { samples: PowerSnapshot[] }) {
   const expectedUnits = useMemo(() => Math.max(0, ...points.map((p) => p.units ?? 0)), [points]);
   const isPartial = (p: Point) => p.units !== null && p.units < expectedUnits;
   const complete = useMemo(() => points.filter((p) => !isPartial(p)), [points, expectedUnits]);
+  const average = !metered && averageLoadWatts !== null && averageLoadWatts > 0 ? averageLoadWatts : null;
   const peak = useMemo(
-    () => Math.max(1000, ...points.map((p) => Math.max(p.pv, p.load ?? 0))),
-    [points],
+    () => Math.max(1000, average ?? 0, ...points.map((p) => Math.max(p.pv, p.load ?? 0))),
+    [points, average],
   );
 
   const x = scaleLinear().domain([0, 1440]).range([M.left, W - M.right]);
@@ -141,10 +152,18 @@ export function ProductionCurve({ samples }: { samples: PowerSnapshot[] }) {
             </span>
           ))
         ) : (
-          <span className="flex items-center gap-2">
-            <span className="inline-block h-2 w-2 rounded-full bg-solar" />
-            Producción solar
-          </span>
+          <>
+            <span className="flex items-center gap-2">
+              <span className="inline-block h-2 w-2 rounded-full bg-solar" />
+              Producción solar
+            </span>
+            {average !== null && (
+              <span className="flex items-center gap-2">
+                <span className="inline-block w-3 border-t-2 border-dashed border-grid" />
+                Consumo promedio · tus lecturas
+              </span>
+            )}
+          </>
         )}
         {peakPoint && peakPoint.pv > 0 && (
           <span className="ml-auto text-ink-faint">
@@ -194,6 +213,11 @@ export function ProductionCurve({ samples }: { samples: PowerSnapshot[] }) {
 
           <path d={pvLine(complete) ?? undefined} fill="none" stroke="var(--color-solar-lift)" strokeWidth="1.8" />
 
+          {average !== null && (
+            <line x1={M.left} x2={W - M.right} y1={y(average)} y2={y(average)} stroke="var(--color-grid)"
+              strokeWidth="1.5" strokeDasharray="5 4" strokeOpacity="0.85" />
+          )}
+
           {points.filter(isPartial).map((p) => (
             <circle key={p.minute} cx={x(p.minute)} cy={y(p.pv)} r="2.5" fill="var(--color-void)"
               stroke="var(--color-grid)" strokeWidth="1.2" />
@@ -221,7 +245,18 @@ export function ProductionCurve({ samples }: { samples: PowerSnapshot[] }) {
               </p>
             )}
             {active.load === null ? (
-              <p className="mt-1 text-[11px] text-ink-faint">Casa y red: sin medir</p>
+              average !== null ? (
+                <>
+                  <TooltipRow label="Consumo prom." value={`~${kw(average)}`} color="var(--color-grid)" />
+                  <TooltipRow
+                    label={active.pv >= average ? "Excedente aprox." : "De la red aprox."}
+                    value={`~${kw(Math.abs(active.pv - average))}`}
+                    color={active.pv >= average ? "var(--color-solar)" : "var(--color-grid)"}
+                  />
+                </>
+              ) : (
+                <p className="mt-1 text-[11px] text-ink-faint">Casa y red: sin medir</p>
+              )
             ) : (
               <>
                 <TooltipRow label="Consumo" value={kw(active.load)} color="var(--color-ink)" />

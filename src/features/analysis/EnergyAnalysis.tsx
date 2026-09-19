@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
 import { useQueries } from "@tanstack/react-query";
 import { api, type PlantStatEntry } from "@/api/client";
-import { queryKeys, useDay, useStatsMonth, useStatsYear } from "@/api/queries";
+import { queryKeys, useBillingSummary, useDay, useStatsMonth, useStatsYear } from "@/api/queries";
 import { Card } from "@/ui/primitives/Card";
 import { ProductionCurve } from "@/ui/charts/ProductionCurve";
 import { MonthlyEnergy } from "@/ui/charts/MonthlyEnergy";
@@ -42,6 +42,9 @@ function total(entries: PlantStatEntry[]): number {
 export function EnergyAnalysis({ installedAt }: { installedAt: string | null }) {
   const [mode, setMode] = useState<Mode>("day");
   const [cursor, setCursor] = useState(() => new Date());
+  // Average house load from the meter-reading balance, in watts.
+  const dailyLoadKwh = useBillingSummary().data?.balance?.averageDailyLoadKwh ?? null;
+  const averageLoadWatts = dailyLoadKwh === null ? null : (dailyLoadKwh * 1000) / 24;
 
   const now = new Date();
   const dayKey = iso(cursor);
@@ -115,7 +118,7 @@ export function EnergyAnalysis({ installedAt }: { installedAt: string | null }) 
     );
   } else if (mode === "day") {
     body = dayQuery.data ? (
-      <ProductionCurve samples={dayQuery.data.samples} />
+      <ProductionCurve samples={dayQuery.data.samples} averageLoadWatts={averageLoadWatts} />
     ) : (
       <ChartSkeleton />
     );
