@@ -1,12 +1,13 @@
 import { Hono, type Context } from "hono";
 import { z, ZodError } from "zod";
+import type { InverterRealtimeDto } from "@core/solax/dto/device";
 import { SolaxError } from "@core/solax/dto/envelope";
 import {
   mapAggregateSnapshot,
   mapAllPvStrings,
   mapBatteryState,
   mapInverterState,
-  mapPowerSnapshot,
+  mapAggregateHistory,
 } from "@core/solax/mappers/snapshot";
 import { mapTopology } from "@core/solax/mappers/topology";
 import { effectivePvKwh, normalizeStatEntries } from "@core/solax/mappers/stats";
@@ -382,7 +383,7 @@ export function registerApiRoutes(app: Hono, deps: AppDeps): Hono {
 
     const now = Date.now();
     let anyStale = false;
-    const samples: ReturnType<typeof mapPowerSnapshot>[] = [];
+    const samples: ReturnType<typeof mapAggregateHistory> = [];
 
     for (const window of windows) {
       // Any window fully in the past is immutable — including every window of
@@ -392,18 +393,23 @@ export function registerApiRoutes(app: Hono, deps: AppDeps): Hono {
         `history:${interval}:${window.startMs}-${window.endMs}`,
         closed ? TTL.closedHistoryWindow : TTL.history,
         async () => {
-          const raw = await endpoints.getInverterHistoryWindow({
-            serialNumbers: serials,
-            interval,
-            ...window,
+          // One request per unit, then summed per time slot, so the curve is
+          // the whole array however SolaX lays out a multi-serial response.
+          const raw: InverterRealtimeDto[] = [];
+          for (const serial of serials) {
+            raw.push(
+              ...(await endpoints.getInverterHistoryWindow({
+                serialNumbers: [serial],
+                interval,
+                ...window,
+              })),
+            );
+          }
+          return mapAggregateHistory(raw, {
+            businessType,
+            utcOffsetMinutes: system.utcOffsetMinutes,
+            intervalMinutes: interval,
           });
-          return raw.map((sample) =>
-            mapPowerSnapshot({
-              inverter: sample,
-              businessType,
-              utcOffsetMinutes: system.utcOffsetMinutes,
-            }),
-          );
         },
       );
       if (windowResult.stale) anyStale = true;

@@ -7,6 +7,7 @@ import {
 } from "@core/solax/dto/device";
 import { plantInfoSchema } from "@core/solax/dto/plant";
 import {
+  mapAggregateHistory,
   mapAggregateSnapshot,
   mapAllPvStrings,
   mapBatteryState,
@@ -428,5 +429,39 @@ describe("unwrapEnvelope", () => {
 
   it("rejects a response that is not the documented envelope", () => {
     expect(() => unwrapEnvelope({ unexpected: true })).toThrow(/documented envelope/);
+  });
+});
+
+describe("history across microinverters", () => {
+  const at = (sn: string, time: string, watts: number) =>
+    inverter({ deviceSn: sn, plantLocalTime: time, MPPTTotalInputPower: watts });
+  const options = { businessType: 1 as const, utcOffsetMinutes: -360, intervalMinutes: 5 };
+
+  it("sums every unit in the same slot into one point", () => {
+    const series = mapAggregateHistory(
+      [
+        at("MICRO-1", "2026-09-18 12:00:00", 2100),
+        at("MICRO-2", "2026-09-18 12:00:00", 2200),
+        at("MICRO-3", "2026-09-18 12:00:00", 2150),
+      ],
+      options,
+    );
+    expect(series).toHaveLength(1);
+    expect(series[0]?.pv).toBe(6450);
+    expect(series[0]?.at.toISOString()).toBe("2026-09-18T18:00:00.000Z");
+  });
+
+  it("orders slots in time even when units arrive one after another", () => {
+    const series = mapAggregateHistory(
+      [
+        at("MICRO-1", "2026-09-18 12:05:00", 100),
+        at("MICRO-1", "2026-09-18 12:00:00", 100),
+        at("MICRO-2", "2026-09-18 12:00:00", 200),
+        at("MICRO-2", "2026-09-18 12:05:00", 200),
+      ],
+      options,
+    );
+    expect(series.map((s) => s.pv)).toEqual([300, 300]);
+    expect(series[0]!.at < series[1]!.at).toBe(true);
   });
 });

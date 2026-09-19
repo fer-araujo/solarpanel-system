@@ -3,6 +3,7 @@ import { scaleLinear } from "d3-scale";
 import { area, line, curveMonotoneX } from "d3-shape";
 import { splitLoadSources } from "@core/energy/services/derive-load";
 import type { PowerSnapshot } from "@core/energy/model/power";
+import { estimatedLoadAt } from "@core/energy/services/load-profile";
 import { ChartTooltip, TooltipRow } from "@/ui/primitives/ChartTooltip";
 import { useMeasuredWidth } from "./useMeasuredWidth";
 
@@ -46,7 +47,17 @@ const hhmm = (minute: number) =>
   `${String(Math.floor(minute / 60)).padStart(2, "0")}:${String(Math.round(minute % 60)).padStart(2, "0")}`;
 const kw = (w: number) => `${(w / 1000).toFixed(2)} kW`;
 
-export function ProductionCurve({ samples }: { samples: PowerSnapshot[] }) {
+export function ProductionCurve({
+  samples,
+  estimatedLoad = [],
+}: {
+  samples: PowerSnapshot[];
+  /**
+   * Hourly estimated house load (24 values, watts) from the bill history.
+   * Drawn only when there is no meter, dashed and labelled as an estimate.
+   */
+  estimatedLoad?: readonly number[];
+}) {
   const [hover, setHover] = useState<number | null>(null);
   const [measureRef, W] = useMeasuredWidth(1000);
   const narrow = W < NARROW;
@@ -69,9 +80,21 @@ export function ProductionCurve({ samples }: { samples: PowerSnapshot[] }) {
   );
 
   const metered = useMemo(() => points.some((p) => p.load !== null), [points]);
+  const estimate = useMemo(
+    () =>
+      !metered && estimatedLoad.length === 24
+        ? Array.from({ length: 97 }, (_, i) => ({ minute: i * 15, watts: estimatedLoadAt(estimatedLoad, i * 15) ?? 0 }))
+        : [],
+    [metered, estimatedLoad],
+  );
   const peak = useMemo(
-    () => Math.max(1000, ...points.map((p) => Math.max(p.pv, p.load ?? 0))),
-    [points],
+    () =>
+      Math.max(
+        1000,
+        ...points.map((p) => Math.max(p.pv, p.load ?? 0)),
+        ...estimate.map((e) => e.watts),
+      ),
+    [points, estimate],
   );
 
   const x = scaleLinear().domain([0, 1440]).range([M.left, W - M.right]);
@@ -93,6 +116,10 @@ export function ProductionCurve({ samples }: { samples: PowerSnapshot[] }) {
   const bandPath = area<Band>().x((d) => x(d.minute)).y0((d) => y(d.lo)).y1((d) => y(d.hi)).curve(curveMonotoneX);
   const pvArea = area<Point>().x((d) => x(d.minute)).y0(y(0)).y1((d) => y(d.pv)).curve(curveMonotoneX);
   const pvLine = line<Point>().x((d) => x(d.minute)).y((d) => y(d.pv)).curve(curveMonotoneX);
+  const estimateLine = line<{ minute: number; watts: number }>()
+    .x((d) => x(d.minute))
+    .y((d) => y(d.watts))
+    .curve(curveMonotoneX);
 
   const active = hover === null ? null : points[hover];
   const peakPoint = points.reduce<Point | null>((top, p) => (!top || p.pv > top.pv ? p : top), null);
@@ -132,10 +159,18 @@ export function ProductionCurve({ samples }: { samples: PowerSnapshot[] }) {
             </span>
           ))
         ) : (
-          <span className="flex items-center gap-2">
-            <span className="inline-block h-2 w-2 rounded-full bg-solar" />
-            Producción solar
-          </span>
+          <>
+            <span className="flex items-center gap-2">
+              <span className="inline-block h-2 w-2 rounded-full bg-solar" />
+              Producción solar
+            </span>
+            {estimate.length > 0 && (
+              <span className="flex items-center gap-2" title="Estimado con tu consumo típico de los recibos CFE">
+                <span className="inline-block w-3 border-t-2 border-dashed border-grid" />
+                Consumo estimado
+              </span>
+            )}
+          </>
         )}
         {peakPoint && peakPoint.pv > 0 && (
           <span className="ml-auto text-ink-faint">
@@ -185,6 +220,11 @@ export function ProductionCurve({ samples }: { samples: PowerSnapshot[] }) {
 
           <path d={pvLine(points) ?? undefined} fill="none" stroke="var(--color-solar-lift)" strokeWidth="1.8" />
 
+          {estimate.length > 0 && (
+            <path d={estimateLine(estimate) ?? undefined} fill="none" stroke="var(--color-grid)"
+              strokeWidth="1.6" strokeDasharray="5 4" strokeOpacity="0.85" />
+          )}
+
           {active && (
             <g>
               <line x1={x(active.minute)} x2={x(active.minute)} y1={M.top} y2={H - M.bottom}
@@ -202,7 +242,15 @@ export function ProductionCurve({ samples }: { samples: PowerSnapshot[] }) {
             <p className="tnum mb-1 font-medium text-ink">{hhmm(active.minute)}</p>
             <TooltipRow label="Producción" value={kw(active.pv)} color="var(--color-solar)" />
             {active.load === null ? (
-              <p className="mt-1 text-[11px] text-ink-faint">Casa y red: sin medir</p>
+              estimate.length > 0 ? (
+                <>
+                  <TooltipRow label="Consumo est." value={kw(estimatedLoadAt(estimatedLoad, active.minute) ?? 0)}
+                    color="var(--color-grid)" />
+                  <p className="mt-1 text-[11px] text-ink-faint">Estimado con tus recibos CFE</p>
+                </>
+              ) : (
+                <p className="mt-1 text-[11px] text-ink-faint">Casa y red: sin medir</p>
+              )
             ) : (
               <>
                 <TooltipRow label="Consumo" value={kw(active.load)} color="var(--color-ink)" />

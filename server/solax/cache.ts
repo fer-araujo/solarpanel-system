@@ -15,9 +15,9 @@ import type { KeyValueStore } from "../storage/kv";
 
 /**
  * Versioned so a change in how responses are mapped invalidates every shared
- * entry at once. v2: timestamps are read in the plant's zone, not the host's.
+ * entry at once. v2: timestamps in the plant's zone. v3: history summed across units.
  */
-const L2_PREFIX = "cache:v2:";
+const L2_PREFIX = "cache:v3:";
 
 export interface CacheEntry<T> {
   value: T;
