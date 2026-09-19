@@ -353,9 +353,9 @@ export function EnergyFlow({
         const unavailable = watts === null;
         const estimated =
           estimating && (node.id === "house" || node.id === "grid" || (node.id === "inv" && importing));
-        // Inverter and grid take the colour of the energy passing through them.
+        // Inverter and house take the colour of the energy feeding the house.
         const color =
-          grid !== null && (node.id === "inv" || node.id === "grid")
+          grid !== null && (node.id === "inv" || node.id === "house")
             ? importing
               ? "var(--color-grid)"
               : "var(--color-solar)"
