@@ -1,9 +1,7 @@
 import { useMemo, useState } from "react";
 import { useQueries } from "@tanstack/react-query";
 import { api, type PlantStatEntry } from "@/api/client";
-import { queryKeys, useBillingSummary, useDay, useStatsMonth, useStatsYear } from "@/api/queries";
-import { estimateHourlyLoadWatts } from "@core/energy/services/load-profile";
-import { DAYS_PER_BIMESTER } from "@core/billing/services/savings";
+import { queryKeys, useDay, useStatsMonth, useStatsYear } from "@/api/queries";
 import { Card } from "@/ui/primitives/Card";
 import { ProductionCurve } from "@/ui/charts/ProductionCurve";
 import { MonthlyEnergy } from "@/ui/charts/MonthlyEnergy";
@@ -44,12 +42,6 @@ function total(entries: PlantStatEntry[]): number {
 export function EnergyAnalysis({ installedAt }: { installedAt: string | null }) {
   const [mode, setMode] = useState<Mode>("day");
   const [cursor, setCursor] = useState(() => new Date());
-  // Typical daily consumption from the bills, for the estimated load line.
-  const averageBimonthlyKwh = useBillingSummary().data?.averageBimonthlyKwh ?? null;
-  const estimatedLoad = useMemo(
-    () => (averageBimonthlyKwh ? estimateHourlyLoadWatts(averageBimonthlyKwh / DAYS_PER_BIMESTER) : []),
-    [averageBimonthlyKwh],
-  );
 
   const now = new Date();
   const dayKey = iso(cursor);
@@ -123,7 +115,7 @@ export function EnergyAnalysis({ installedAt }: { installedAt: string | null }) 
     );
   } else if (mode === "day") {
     body = dayQuery.data ? (
-      <ProductionCurve samples={dayQuery.data.samples} estimatedLoad={estimatedLoad} />
+      <ProductionCurve samples={dayQuery.data.samples} />
     ) : (
       <ChartSkeleton />
     );
