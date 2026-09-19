@@ -43,6 +43,11 @@ export interface PowerSnapshot {
    * — which at night is indistinguishable from a true zero.
    */
   pvSource?: string;
+  /**
+   * History only: how many units reported in this time slot. A slot where a
+   * microinverter uploaded late holds part of the array, not a real drop.
+   */
+  unitsReporting?: number;
 }
 
 export interface PowerSample {

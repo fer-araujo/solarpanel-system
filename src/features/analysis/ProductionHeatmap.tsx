@@ -8,15 +8,27 @@ import { Bone } from "@/ui/primitives/Skeleton";
 /**
  * Daily production as a calendar: one row per month, one cell per day.
  *
- * Good and bad days stand out at a glance, and so do GAPS: a day inside the
- * plant's life with no data is drawn hatched, never as a zero, because "the
- * dongle was offline" and "the panels produced nothing" are different faults.
+ * GitHub-style: four discrete greens on a dark grid, so good and bad days
+ * stand out at a glance. A day with no data keeps the empty cell and says so
+ * on tap, rather than being coloured as a zero.
  *
  * Reuses the month stats queries (1 call per month, cached for an hour), so it
  * shares cache with the Mes view of the analysis chart.
  */
 
 const MAX_MONTHS = 12;
+/** Empty cell, then four levels of the accent over the page background. */
+const LEVELS = [
+  "var(--color-raised)",
+  "color-mix(in oklab, var(--color-solar) 28%, var(--color-void))",
+  "color-mix(in oklab, var(--color-solar) 50%, var(--color-void))",
+  "color-mix(in oklab, var(--color-solar) 75%, var(--color-void))",
+  "var(--color-solar)",
+] as const;
+
+/** Quartiles of the best day: 1 (weak) to 4 (near the best). */
+const levelOf = (kwh: number, max: number) =>
+  max <= 0 ? 1 : Math.min(4, Math.max(1, Math.ceil((kwh / max) * 4)));
 const MONTHS = ["ene", "feb", "mar", "abr", "may", "jun", "jul", "ago", "sep", "oct", "nov", "dic"];
 const DAYS = Array.from({ length: 31 }, (_, i) => i + 1);
 
@@ -110,7 +122,7 @@ export function ProductionHeatmap({ installedAt }: { installedAt: string | null 
               ? DAYS.map((day) => <Bone key={day} className="aspect-square rounded-[3px]" />)
               : row.cells.map((cell, i) => {
                   if (cell.kind === "none") return <span key={i} className="aspect-square" />;
-                  const intensity = cell.kind === "value" && max > 0 ? cell.kwh / max : 0;
+                  const level = cell.kind === "value" ? levelOf(cell.kwh, max) : 0;
                   return (
                     <button
                       key={i}
@@ -118,16 +130,10 @@ export function ProductionHeatmap({ installedAt }: { installedAt: string | null 
                       aria-label={describe(cell) ?? undefined}
                       onMouseEnter={() => setSelected(cell)}
                       onClick={() => setSelected(cell)}
-                      className={`aspect-square rounded-[3px] transition-transform hover:scale-125 ${
-                        cell.kind === "gap" ? "heatmap-gap border border-dashed border-line" : ""
-                      } ${selected?.date === cell.date ? "ring-1 ring-ink" : ""}`}
-                      style={
-                        cell.kind === "value"
-                          ? {
-                              background: `color-mix(in oklab, var(--color-solar) ${Math.round(12 + intensity * 88)}%, var(--color-raised))`,
-                            }
-                          : undefined
-                      }
+                      className={`aspect-square rounded-[2px] outline-offset-1 hover:outline hover:outline-1 hover:outline-ink-dim ${
+                        selected?.date === cell.date ? "outline outline-1 outline-ink" : ""
+                      }`}
+                      style={{ background: LEVELS[level] }}
                     />
                   );
                 })}
@@ -145,20 +151,12 @@ export function ProductionHeatmap({ installedAt }: { installedAt: string | null 
 
       <div className="mt-4 flex flex-wrap items-center justify-between gap-3 text-[11.5px] text-ink-faint">
         <span className="tnum min-h-[16px] text-ink-dim">{describe(selected) ?? " "}</span>
-        <span className="flex items-center gap-2">
-          <span className="flex items-center gap-1.5">
-            <span className="heatmap-gap inline-block h-2.5 w-2.5 rounded-[2px] border border-dashed border-line" />
-            sin datos
-          </span>
-          <span className="ml-2">menos</span>
-          <span
-            className="inline-block h-2.5 w-16 rounded-full"
-            style={{
-              background:
-                "linear-gradient(90deg, color-mix(in oklab, var(--color-solar) 12%, var(--color-raised)), var(--color-solar))",
-            }}
-          />
-          <span>más{max > 0 ? ` · ${max.toFixed(0)} kWh` : ""}</span>
+        <span className="flex items-center gap-1">
+          <span className="mr-1">menos</span>
+          {LEVELS.map((color) => (
+            <span key={color} className="inline-block h-2.5 w-2.5 rounded-[2px]" style={{ background: color }} />
+          ))}
+          <span className="ml-1">más{max > 0 ? ` · mejor día ${max.toFixed(0)} kWh` : ""}</span>
         </span>
       </div>
     </Card>

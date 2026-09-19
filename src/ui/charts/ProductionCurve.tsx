@@ -28,6 +28,8 @@ interface Band {
 
 interface Point {
   minute: number;
+  /** Units that reported in this slot, when known. */
+  units: number | null;
   pv: number;
   load: number | null;
   fromPv: number;
@@ -58,6 +60,7 @@ export function ProductionCurve({ samples }: { samples: PowerSnapshot[] }) {
         const split = splitLoadSources(sample.pv, sample.battery, sample.grid);
         return {
           minute: minuteOf(sample.at),
+          units: sample.unitsReporting ?? null,
           pv: sample.pv,
           load: sample.load,
           fromPv: split?.fromPv ?? 0,
@@ -69,6 +72,12 @@ export function ProductionCurve({ samples }: { samples: PowerSnapshot[] }) {
   );
 
   const metered = useMemo(() => points.some((p) => p.load !== null), [points]);
+  // A slot where some microinverter uploaded late holds part of the array.
+  // Drawing it would show a drop that never happened, so the curve bridges it
+  // and it is marked instead.
+  const expectedUnits = useMemo(() => Math.max(0, ...points.map((p) => p.units ?? 0)), [points]);
+  const isPartial = (p: Point) => p.units !== null && p.units < expectedUnits;
+  const complete = useMemo(() => points.filter((p) => !isPartial(p)), [points, expectedUnits]);
   const peak = useMemo(
     () => Math.max(1000, ...points.map((p) => Math.max(p.pv, p.load ?? 0))),
     [points],
@@ -181,9 +190,14 @@ export function ProductionCurve({ samples }: { samples: PowerSnapshot[] }) {
             ? bands.map((b) => (
                 <path key={b.key} d={bandPath(b.data) ?? undefined} fill={`url(#g-${b.key})`} stroke={b.color} strokeWidth="1" strokeOpacity="0.7" />
               ))
-            : <path d={pvArea(points) ?? undefined} fill="url(#g-pvonly)" />}
+            : <path d={pvArea(complete) ?? undefined} fill="url(#g-pvonly)" />}
 
-          <path d={pvLine(points) ?? undefined} fill="none" stroke="var(--color-solar-lift)" strokeWidth="1.8" />
+          <path d={pvLine(complete) ?? undefined} fill="none" stroke="var(--color-solar-lift)" strokeWidth="1.8" />
+
+          {points.filter(isPartial).map((p) => (
+            <circle key={p.minute} cx={x(p.minute)} cy={y(p.pv)} r="2.5" fill="var(--color-void)"
+              stroke="var(--color-grid)" strokeWidth="1.2" />
+          ))}
 
           {active && (
             <g>
@@ -201,6 +215,11 @@ export function ProductionCurve({ samples }: { samples: PowerSnapshot[] }) {
           <ChartTooltip xPct={(x(active.minute) / W) * 100}>
             <p className="tnum mb-1 font-medium text-ink">{hhmm(active.minute)}</p>
             <TooltipRow label="Producción" value={kw(active.pv)} color="var(--color-solar)" />
+            {isPartial(active) && (
+              <p className="mt-1 text-[11px] text-grid">
+                Parcial: {active.units} de {expectedUnits} inversores reportaron
+              </p>
+            )}
             {active.load === null ? (
               <p className="mt-1 text-[11px] text-ink-faint">Casa y red: sin medir</p>
             ) : (

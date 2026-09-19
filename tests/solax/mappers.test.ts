@@ -448,6 +448,7 @@ describe("history across microinverters", () => {
     );
     expect(series).toHaveLength(1);
     expect(series[0]?.pv).toBe(6450);
+    expect(series[0]?.unitsReporting).toBe(3);
     expect(series[0]?.at.toISOString()).toBe("2026-09-18T18:00:00.000Z");
   });
 
