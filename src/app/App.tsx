@@ -17,6 +17,7 @@ import { RadialGauge } from "@/ui/charts/RadialGauge";
 import { PowerGauge } from "@/ui/charts/PowerGauge";
 import { StringHealth } from "@/ui/charts/StringHealth";
 import { EnergyAnalysis } from "@/features/analysis/EnergyAnalysis";
+import { ProductionHeatmap } from "@/features/analysis/ProductionHeatmap";
 import { WeatherCard } from "@/features/weather/WeatherCard";
 import { ImpactCard } from "@/features/impact/ImpactCard";
 import { BillHistory } from "@/features/bolsa/BillHistory";
@@ -358,6 +359,8 @@ export function App() {
 
             {/* One chart with Día / Mes / Año / Todo — no separate history tab. */}
             <EnergyAnalysis installedAt={topology?.installedAt ?? null} />
+
+            <ProductionHeatmap installedAt={topology?.installedAt ?? null} />
 
             <div className="grid gap-5 lg:grid-cols-2">
               <WeatherCard
