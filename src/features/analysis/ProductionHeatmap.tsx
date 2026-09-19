@@ -17,14 +17,24 @@ const WEEKS = 53;
 const MONTHS = ["ene", "feb", "mar", "abr", "may", "jun", "jul", "ago", "sep", "oct", "nov", "dic"];
 const WEEKDAYS = ["", "lun", "", "mié", "", "vie", ""];
 
-/** Empty cell, then four levels of the accent over the page background. */
-const LEVELS = [
+/** Level colours: an empty cell, then four strengths of the accent. */
+const BASES = [
   "var(--color-raised)",
-  "color-mix(in oklab, var(--color-solar) 28%, var(--color-void))",
-  "color-mix(in oklab, var(--color-solar) 50%, var(--color-void))",
-  "color-mix(in oklab, var(--color-solar) 75%, var(--color-void))",
+  "color-mix(in oklab, var(--color-solar) 30%, var(--color-void))",
+  "color-mix(in oklab, var(--color-solar) 52%, var(--color-void))",
+  "color-mix(in oklab, var(--color-solar) 76%, var(--color-void))",
   "var(--color-solar)",
 ] as const;
+
+/** Each filled cell catches light from its top-left corner. */
+const LEVELS = BASES.map((base, level) =>
+  level === 0
+    ? base
+    : `linear-gradient(135deg, color-mix(in oklab, ${base} 70%, var(--color-solar-lift)), ${base} 55%, color-mix(in oklab, ${base} 80%, var(--color-void)))`,
+);
+
+/** Row height: short, wide cells keep the card low while it spans the width. */
+const ROW = 12;
 
 /** Quartiles of the best day: 0 (nothing produced) to 4 (near the best). */
 const levelOf = (kwh: number | undefined, max: number) =>
@@ -124,7 +134,7 @@ export function ProductionHeatmap({ installedAt }: { installedAt: string | null 
       }
     >
       <div ref={scrollToEnd} className="overflow-x-auto pb-1">
-        <div className="min-w-[640px]" onMouseLeave={() => setSelected(null)}>
+        <div className="min-w-[560px]" onMouseLeave={() => setSelected(null)}>
           <div className="mb-1 grid gap-[3px]" style={{ gridTemplateColumns: columns }}>
             <span />
             {monthLabels.map((label, w) => (
@@ -134,10 +144,10 @@ export function ProductionHeatmap({ installedAt }: { installedAt: string | null 
             ))}
           </div>
 
-          <div className="grid gap-[3px]" style={{ gridTemplateColumns: columns }}>
+          <div className="grid gap-[3px]" style={{ gridTemplateColumns: columns, gridAutoRows: `${ROW}px` }}>
             {WEEKDAYS.map((weekday, d) => (
               <div key={d} className="contents">
-                <span className="self-center text-[10px] leading-none text-ink-faint">{weekday}</span>
+                <span className="self-center text-[9.5px] leading-none text-ink-faint">{weekday}</span>
                 {weeks.map((week) => {
                   const day = week[d]!;
                   if (day.future) return <span key={day.date} />;
@@ -149,7 +159,7 @@ export function ProductionHeatmap({ installedAt }: { installedAt: string | null 
                       aria-label={describe(day.date) ?? undefined}
                       onMouseEnter={() => setSelected(day.date)}
                       onClick={() => setSelected(day.date)}
-                      className={`aspect-square rounded-[2px] ${loading ? "skeleton" : ""} ${
+                      className={`rounded-[3px] ${loading ? "skeleton" : ""} ${
                         selected === day.date
                           ? "outline outline-1 outline-offset-1 outline-ink"
                           : "hover:outline hover:outline-1 hover:outline-ink-dim"
