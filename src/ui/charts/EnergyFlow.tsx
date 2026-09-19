@@ -244,7 +244,8 @@ export function EnergyFlow({
 
   const values: Record<string, number | null> = {
     sun: pv,
-    inv: pv,
+    // At night the grid feeds the house through the same node, so it shows that flow.
+    inv: importing && estimating ? load : pv,
     house: load,
     batt: battery === null ? null : Math.abs(battery),
     grid: grid === null ? null : Math.abs(grid),
@@ -271,7 +272,7 @@ export function EnergyFlow({
           : isDaylight === true
             ? "sol arriba, sin producción"
             : "sin producción",
-    inv: soc === null ? "MPPT activo" : `${soc.toFixed(0)}% batería`,
+    inv: estimating && importing ? "desde la red" : soc === null ? "MPPT activo" : `${soc.toFixed(0)}% batería`,
     house: estimating
       ? "promedio de tus lecturas"
       : load !== null
@@ -350,7 +351,15 @@ export function EnergyFlow({
         const watts = values[node.id] ?? null;
         const live = watts !== null && watts > 40;
         const unavailable = watts === null;
-        const estimated = estimating && (node.id === "house" || node.id === "grid");
+        const estimated =
+          estimating && (node.id === "house" || node.id === "grid" || (node.id === "inv" && importing));
+        // Inverter and grid take the colour of the energy passing through them.
+        const color =
+          grid !== null && (node.id === "inv" || node.id === "grid")
+            ? importing
+              ? "var(--color-grid)"
+              : "var(--color-solar)"
+            : node.color;
         return (
           <g key={node.id} transform={`translate(${node.at.x} ${node.at.y}) scale(${k})`}>
             <circle r={NODE_R} fill="var(--color-void)" />
@@ -358,12 +367,12 @@ export function EnergyFlow({
               r={NODE_R}
               fill="var(--color-raised)"
               fillOpacity="0.85"
-              stroke={live ? node.color : "var(--color-line)"}
+              stroke={live ? color : "var(--color-line)"}
               strokeWidth="1"
               strokeOpacity={live ? 0.55 : 0.5}
               strokeDasharray={unavailable || estimated ? "3 4" : undefined}
             />
-            <g style={{ color: live ? node.color : "var(--color-ink-faint)" }}>
+            <g style={{ color: live ? color : "var(--color-ink-faint)" }}>
               <g transform="translate(0 -9)">
                 <Glyph kind={node.glyph} />
               </g>
