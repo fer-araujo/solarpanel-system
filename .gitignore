@@ -38,3 +38,6 @@ graphify-out/manifest.json
 # Vercel build output.
 .vercel/
 .atl/
+
+# graphify knowledge graph: generated locally by the post-commit hook
+graphify-out/
