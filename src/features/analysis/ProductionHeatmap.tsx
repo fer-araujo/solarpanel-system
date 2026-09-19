@@ -26,9 +26,12 @@ const LEVELS = [
   "var(--color-solar)",
 ] as const;
 
-/** Quartiles of the best day: 1 (weak) to 4 (near the best). */
+/** Quartiles of the best day: 0 (nothing produced) to 4 (near the best). */
 const levelOf = (kwh: number, max: number) =>
-  max <= 0 ? 1 : Math.min(4, Math.max(1, Math.ceil((kwh / max) * 4)));
+  kwh <= 0 || max <= 0 ? 0 : Math.min(4, Math.max(1, Math.ceil((kwh / max) * 4)));
+
+/** Fixed GitHub-sized cells: small squares, not stretched to the card. */
+const CELL = 13;
 const MONTHS = ["ene", "feb", "mar", "abr", "may", "jun", "jul", "ago", "sep", "oct", "nov", "dic"];
 const DAYS = Array.from({ length: 31 }, (_, i) => i + 1);
 
@@ -111,17 +114,17 @@ export function ProductionHeatmap({ installedAt }: { installedAt: string | null 
       {/* Scrolls sideways on a phone so every cell stays big enough to tap. */}
       <div className="-mx-1 overflow-x-auto px-1 pb-1">
       <div
-        className="grid min-w-[480px] gap-[3px]"
-        style={{ gridTemplateColumns: "44px repeat(31, minmax(0, 1fr))" }}
+        className="grid w-max gap-[3px]"
+        style={{ gridTemplateColumns: `44px repeat(31, ${CELL}px)`, gridAutoRows: `${CELL}px` }}
         onMouseLeave={() => setSelected(null)}
       >
         {rows.map((row) => (
           <div key={row.month} className="contents">
             <span className="tnum self-center pr-1 text-[10.5px] text-ink-faint">{label(row.month)}</span>
             {row.loading
-              ? DAYS.map((day) => <Bone key={day} className="aspect-square rounded-[3px]" />)
+              ? DAYS.map((day) => <Bone key={day} className="rounded-[2px]" />)
               : row.cells.map((cell, i) => {
-                  if (cell.kind === "none") return <span key={i} className="aspect-square" />;
+                  if (cell.kind === "none") return <span key={i} />;
                   const level = cell.kind === "value" ? levelOf(cell.kwh, max) : 0;
                   return (
                     <button
@@ -130,7 +133,7 @@ export function ProductionHeatmap({ installedAt }: { installedAt: string | null 
                       aria-label={describe(cell) ?? undefined}
                       onMouseEnter={() => setSelected(cell)}
                       onClick={() => setSelected(cell)}
-                      className={`aspect-square rounded-[2px] outline-offset-1 hover:outline hover:outline-1 hover:outline-ink-dim ${
+                      className={`rounded-[2px] outline-offset-1 hover:outline hover:outline-1 hover:outline-ink-dim ${
                         selected?.date === cell.date ? "outline outline-1 outline-ink" : ""
                       }`}
                       style={{ background: LEVELS[level] }}
