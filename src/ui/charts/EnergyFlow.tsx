@@ -184,7 +184,16 @@ interface EnergyFlowProps {
    */
   isDaylight?: boolean;
   sunrise?: string;
+  /**
+   * Latest CFE meter reading entered by hand. With no meter in the system it
+   * is the only grid figure there is, so the grid node shows it — dated, so
+   * it never passes for a live value.
+   */
+  lastReading?: { importRegister: number; exportRegister: number; takenOn: string } | null;
 }
+
+const MONTHS = ["ene", "feb", "mar", "abr", "may", "jun", "jul", "ago", "sep", "oct", "nov", "dic"];
+const shortDate = (iso: string) => `${Number(iso.slice(8, 10))} ${MONTHS[Number(iso.slice(5, 7)) - 1] ?? ""}`;
 
 export function EnergyFlow({
   snapshot,
@@ -192,6 +201,7 @@ export function EnergyFlow({
   hasGridMetering = true,
   isDaylight,
   sunrise,
+  lastReading = null,
 }: EnergyFlowProps) {
   const { pv, load, battery, grid, soc } = snapshot;
   // The diagram scales down as a whole on a phone; enlarge the nodes to stay
@@ -223,6 +233,11 @@ export function EnergyFlow({
     grid: grid === null ? null : Math.abs(grid),
   };
 
+  const readingLine =
+    !hasGridMetering && lastReading
+      ? `consumo ${lastReading.importRegister} · retorno ${lastReading.exportRegister} kWh`
+      : null;
+
   const captions: Record<string, string> = {
     sun:
       pv > 40
@@ -244,7 +259,9 @@ export function EnergyFlow({
           : battery > 40
             ? "descargando"
             : "en reposo",
-    grid: unsplit
+    grid: !hasGridMetering && lastReading
+      ? `última lectura · ${shortDate(lastReading.takenOn)}`
+      : unsplit
       ? "recibe el excedente · sin medir"
       : !hasGridMetering
       ? "sin medidor · ver CFE"
@@ -342,9 +359,14 @@ export function EnergyFlow({
             >
               {node.label}
             </text>
-            {!narrow && (
+            {(!narrow || (node.id === "grid" && readingLine)) && (
               <text y={NODE_R + 31} textAnchor="middle" fontSize="11" fill="var(--color-ink-faint)">
                 {captions[node.id]}
+              </text>
+            )}
+            {node.id === "grid" && readingLine && (
+              <text y={NODE_R + 45} textAnchor="middle" className="tnum" fontSize="11" fill="var(--color-grid)">
+                {readingLine}
               </text>
             )}
           </g>

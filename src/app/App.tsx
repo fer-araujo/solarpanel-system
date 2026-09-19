@@ -7,6 +7,7 @@ import {
   useHealth,
   useLogout,
   useMe,
+  useReadings,
   useSnapshot,
   useToday,
   useTopology,
@@ -171,6 +172,14 @@ export function App() {
   const todayQuery = useToday(5);
   const billingQuery = useBillingSummary();
   const health = useHealth(tab === "sistema").data;
+  const readingsFile = useReadings().data;
+  // Most recent dated reading, shown on the grid node of the flow diagram.
+  const lastReading = useMemo(() => {
+    const dated = (readingsFile?.readings ?? []).filter(
+      (r): r is typeof r & { takenOn: string } => typeof r.takenOn === "string",
+    );
+    return dated.sort((a, b) => b.takenOn.localeCompare(a.takenOn))[0] ?? null;
+  }, [readingsFile]);
 
   const topology = topologyQuery.data;
   const snapshot = snapshotQuery.data;
@@ -349,6 +358,7 @@ export function App() {
                     snapshot={snapshot.power}
                     hasBattery={topology?.hasBattery ?? false}
                     hasGridMetering={topology?.hasGridMetering ?? false}
+                    lastReading={lastReading}
                     {...(sun ? { isDaylight: sun.isDaylight, sunrise: sun.sunrise } : {})}
                   />
                 ) : (
