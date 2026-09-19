@@ -6,7 +6,7 @@ import { Card } from "@/ui/primitives/Card";
 
 /**
  * Daily production drawn like GitHub's contribution calendar, measured from
- * github.com: 11px square cells, 2px radius, 4px spacing, flat colours on a
+ * github.com: 12px square cells (GitHub uses 11), 2px radius, 4px spacing, flat colours on a
  * five-step scale, 12px labels, one column per week and one row per weekday.
  * The calendar keeps that fixed size; the rest of the card holds a summary,
  * the way GitHub puts the year list beside it.
@@ -16,7 +16,7 @@ import { Card } from "@/ui/primitives/Card";
  */
 
 const WEEKS = 53;
-const CELL = 11;
+const CELL = 12;
 const GAP = 4;
 const MONTHS = ["ene", "feb", "mar", "abr", "may", "jun", "jul", "ago", "sep", "oct", "nov", "dic"];
 const WEEKDAYS = ["", "lun", "", "mié", "", "vie", ""];

@@ -235,7 +235,7 @@ export function EnergyFlow({
 
   const readingLine =
     !hasGridMetering && lastReading
-      ? `consumo ${lastReading.importRegister} · retorno ${lastReading.exportRegister} kWh`
+      ? `importado ${lastReading.importRegister} · exportado ${lastReading.exportRegister} kWh`
       : null;
 
   const captions: Record<string, string> = {

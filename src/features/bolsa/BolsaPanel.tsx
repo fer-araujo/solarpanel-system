@@ -29,6 +29,9 @@ function BalanceSummary({
   balance: NonNullable<BillingSummaryResponse["balance"]>;
 }) {
   const broken = balance.periods.filter((period) => !period.consistent);
+  // The most recent period, with its raw figures: what the house used of the
+  // solar, what went to the grid and what came from it.
+  const latest = [...balance.periods].reverse().find((period) => period.consistent) ?? null;
 
   return (
     <div className="rounded-xl border border-solar/25 bg-solar/5 px-4 py-3.5">
@@ -67,6 +70,34 @@ function BalanceSummary({
           <p className="mt-1.5 text-[11.5px] text-ink-faint">kWh/día en casa</p>
         </div>
       </div>
+
+      {latest && (
+        <div className="mt-3 rounded-lg border border-line/50 bg-void/40 px-3 py-2.5">
+          <p className="text-[11.5px] text-ink-faint">
+            {latest.period}
+            {latest.days !== null && ` · ${latest.days} días hasta tu última lectura`}
+          </p>
+          <dl className="tnum mt-2 grid grid-cols-2 gap-x-4 gap-y-1.5 text-[12.5px] sm:grid-cols-4">
+            <div>
+              <dt className="text-ink-faint">Generado</dt>
+              <dd className="text-solar">{latest.pvGeneratedKwh.toFixed(1)} kWh</dd>
+            </div>
+            <div>
+              <dt className="text-ink-faint">Usado en casa del solar</dt>
+              <dd className="text-ink">{latest.selfConsumedKwh.toFixed(1)} kWh</dd>
+            </div>
+            <div>
+              <dt className="text-ink-faint">Exportado a la red</dt>
+              <dd className="text-grid">{latest.exportedKwh.toFixed(1)} kWh</dd>
+            </div>
+            <div>
+              <dt className="text-ink-faint">Consumo total de la casa</dt>
+              <dd className="text-ink">{latest.loadKwh.toFixed(1)} kWh</dd>
+            </div>
+          </dl>
+          {latest.note && <p className="mt-2 text-[11.5px] leading-relaxed text-ink-faint">{latest.note}</p>}
+        </div>
+      )}
 
       <p className="mt-3 text-[12px] leading-relaxed text-ink-faint">
         Calculado, no medido:{" "}
