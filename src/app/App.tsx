@@ -236,7 +236,9 @@ export function App() {
     : undefined;
 
   return (
-    <div className="min-h-screen bg-void">
+    // Clipped here, not only on html/body: Chrome for Android still lets a
+    // finger pan the viewport sideways when just the root elements clip.
+    <div className="min-h-screen overflow-x-clip bg-void">
       <header className="sticky top-0 z-10 border-b border-line/50 bg-void/85 backdrop-blur-xl">
         <div className="mx-auto flex max-w-[1440px] flex-wrap items-center justify-between gap-x-4 gap-y-3 px-4 py-3 sm:px-6 sm:py-4">
           <div className="flex items-center gap-4">
