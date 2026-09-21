@@ -265,6 +265,11 @@ export function EnergyFlow({
         : [`imp. ${lastReading.importRegister} kWh`, `exp. ${lastReading.exportRegister} kWh`]
       : null;
 
+  // The grid node sits low and carries up to three lines of text; on a phone
+  // the node is scaled up too. The canvas grows to hold them inside the card.
+  const gridTextLines = 1 + (readingLines?.length ?? 0);
+  const height = Math.max(408, Math.ceil(318 + k * (NODE_R + 17 + gridTextLines * 14 + 6)));
+
   const captions: Record<string, string> = {
     sun:
       pv > 40
@@ -312,7 +317,7 @@ export function EnergyFlow({
   };
 
   return (
-    <svg ref={measureRef} viewBox="0 0 680 408" className="w-full" overflow="visible" role="img">
+    <svg ref={measureRef} viewBox={`0 0 680 ${height}`} className="w-full" overflow="visible" role="img">
       <title>Flujo de energía en tiempo real</title>
       <defs>
         <radialGradient id="haze" cx="50%" cy="50%">
