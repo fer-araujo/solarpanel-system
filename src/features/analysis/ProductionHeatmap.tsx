@@ -1,7 +1,7 @@
 import { useCallback, useMemo, useState } from "react";
 import { useQueries } from "@tanstack/react-query";
 import { api } from "@/api/client";
-import { queryKeys } from "@/api/queries";
+import { queryKeys, statsStaleTime } from "@/api/queries";
 import { Card } from "@/ui/primitives/Card";
 
 /**
@@ -102,7 +102,7 @@ export function ProductionHeatmap({ installedAt }: { installedAt: string | null 
     queries: months.map((month) => ({
       queryKey: queryKeys.statsMonth(month),
       queryFn: () => api.statsMonth(month),
-      staleTime: 60 * 60 * 1000,
+      staleTime: statsStaleTime(month),
     })),
   });
 

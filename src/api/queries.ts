@@ -210,21 +210,29 @@ export function useSaveMeter() {
   );
 }
 
-/** Any past day's curve. Past days never change, so they never go stale. */
+/**
+ * Any day's curve. A past day cannot change, but a copy fetched while it was
+ * still "today" is partial, so past days go stale after an hour rather than
+ * never (the server keeps closed windows cached, so a refetch is cheap).
+ */
 export function useDay(date: string, isToday: boolean) {
   return useQuery({
     queryKey: ["day", date],
     queryFn: () => api.day(date, 5),
     refetchInterval: isToday ? 5 * 60_000 : false,
-    staleTime: isToday ? 150_000 : Number.POSITIVE_INFINITY,
+    staleTime: isToday ? 150_000 : 60 * 60 * 1000,
   });
 }
+
+/** The current month still gains today's production, so it goes stale sooner. */
+export const statsStaleTime = (month: string) =>
+  new Date().toISOString().startsWith(month) ? 10 * 60 * 1000 : 60 * 60 * 1000;
 
 export function useStatsMonth(month: string, enabled = true) {
   return useQuery({
     queryKey: queryKeys.statsMonth(month),
     queryFn: () => api.statsMonth(month),
-    staleTime: 60 * 60 * 1000,
+    staleTime: statsStaleTime(month),
     enabled,
   });
 }

@@ -184,6 +184,10 @@ export function App() {
   const topology = topologyQuery.data;
   const snapshot = snapshotQuery.data;
   const today = todayQuery.data;
+  // After the phone resumes a frozen tab, the last numbers show until the
+  // refetch lands; label them rather than pass them off as current.
+  const todayRefreshing =
+    todayQuery.isFetching && Date.now() - todayQuery.dataUpdatedAt > 10 * 60_000;
   // House consumption per day, exact over the periods closed by the readings.
   const dailyLoadKwh = billingQuery.data?.balance?.averageDailyLoadKwh ?? null;
   const sun = useSunWindow(topology);
@@ -324,7 +328,7 @@ export function App() {
                 {summary && (
                   <div className="grid flex-1 auto-rows-fr grid-cols-2 gap-3">
                     <Stat className={FILL} label="Generado hoy" value={summary.pvKwh.toFixed(1)} unit="kWh" tone="solar"
-                      detail={`pico ${summary.peakPvKw} kW`} />
+                      detail={todayRefreshing ? "actualizando…" : `pico ${summary.peakPvKw} kW`} />
                     <Stat className={FILL} label="Rendimiento"
                       value={summary.specificYield === null ? "—" : summary.specificYield.toFixed(2)}
                       unit={summary.specificYield === null ? undefined : "kWh/kWp"}

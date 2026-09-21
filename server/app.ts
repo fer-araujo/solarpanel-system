@@ -75,6 +75,8 @@ const TTL = {
    */
   closedHistoryWindow: 12 * 60 * 60 * 1000,
   stats: 60 * 60 * 1000,
+  /** The current month or year still gains today's production; refresh it sooner. */
+  currentStats: 10 * 60 * 1000,
   alarms: 5 * 60 * 1000,
 } as const;
 
@@ -353,7 +355,10 @@ export function registerApiRoutes(app: Hono, deps: AppDeps): Hono {
     const bounds = requested
       ? plantDayBoundsFor(requested, system.timeZone)
       : plantLocalDayBounds(system.timeZone);
-    const endMs = Math.min(bounds.endMs, Date.now());
+    // One clock reading for the whole request: comparing two separate
+    // Date.now() calls made the window containing "now" look closed.
+    const now = Date.now();
+    const endMs = Math.min(bounds.endMs, now);
     if (endMs <= bounds.startMs) {
       return context.json({ samples: [], interval, dayBoundsExact: bounds.exact, stale: false });
     }
@@ -369,29 +374,33 @@ export function registerApiRoutes(app: Hono, deps: AppDeps): Hono {
      *
      * This roughly halves the day's history calls, and more on a long day.
      */
-    const windows: { startMs: number; endMs: number }[] = [];
+    const windows: { startMs: number; endMs: number; key: string; closed: boolean }[] = [];
     for (
       let cursor = bounds.startMs;
       cursor < endMs;
       cursor += HISTORY_MAX_WINDOW_MS
     ) {
+      // Keyed by the window's natural end, so the open window reuses one cache
+      // entry for its TTL instead of writing a new one on every request.
+      const naturalEnd = Math.min(cursor + HISTORY_MAX_WINDOW_MS, bounds.endMs);
+      const closed = naturalEnd <= now;
       windows.push({
         startMs: cursor,
-        endMs: Math.min(cursor + HISTORY_MAX_WINDOW_MS, endMs),
+        endMs: Math.min(naturalEnd, now),
+        key: `history:${interval}:${cursor}-${naturalEnd}:${closed ? "closed" : "open"}`,
+        closed,
       });
     }
 
-    const now = Date.now();
     let anyStale = false;
     const samples: ReturnType<typeof mapAggregateHistory> = [];
 
     for (const window of windows) {
       // Any window fully in the past is immutable — including every window of
       // a past day — so it is fetched once and kept.
-      const closed = window.endMs <= now;
       const windowResult = await cache.fetch(
-        `history:${interval}:${window.startMs}-${window.endMs}`,
-        closed ? TTL.closedHistoryWindow : TTL.history,
+        window.key,
+        window.closed ? TTL.closedHistoryWindow : TTL.history,
         async () => {
           // One request per unit, then summed per time slot, so the curve is
           // the whole array however SolaX lays out a multi-serial response.
@@ -401,7 +410,8 @@ export function registerApiRoutes(app: Hono, deps: AppDeps): Hono {
               ...(await endpoints.getInverterHistoryWindow({
                 serialNumbers: [serial],
                 interval,
-                ...window,
+                startMs: window.startMs,
+                endMs: window.endMs,
               })),
             );
           }
@@ -444,9 +454,12 @@ export function registerApiRoutes(app: Hono, deps: AppDeps): Hono {
       );
     }
 
+    // Plant-local "now", so the current period is recognised on a UTC server.
+    const plantNow = new Date(Date.now() + (system.utcOffsetMinutes ?? 0) * 60_000).toISOString();
+    const isCurrent = plantNow.startsWith(date);
     const result = await cache.fetch(
       `stats:${dateType}:${date}`,
-      TTL.stats,
+      isCurrent ? TTL.currentStats : TTL.stats,
       async () =>
         endpoints.getPlantStats({
           plantId: system.plantId,
