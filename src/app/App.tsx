@@ -60,14 +60,14 @@ const TABS: { id: Tab; label: string }[] = [
 
 function Nav({ tab, onChange }: { tab: Tab; onChange: (tab: Tab) => void }) {
   return (
-    <nav className="flex flex-1 gap-1 rounded-lg border border-line/60 bg-surface/80 p-1 sm:flex-none">
+    <nav className="flex min-w-0 flex-1 gap-1 rounded-lg border border-line/60 bg-surface/80 p-1 sm:flex-none">
       {TABS.map((item) => (
         <button
           key={item.id}
           type="button"
           aria-current={tab === item.id ? "page" : undefined}
           onClick={() => onChange(item.id)}
-          className={`flex-1 rounded-md px-3.5 py-1.5 text-[13px] transition-colors sm:flex-none ${
+          className={`flex-1 rounded-md px-2 py-1.5 text-[13px] transition-colors sm:flex-none sm:px-3.5 ${
             tab === item.id ? "bg-raised text-ink" : "text-ink-dim hover:bg-raised/50 hover:text-ink"
           }`}
         >

@@ -77,7 +77,7 @@ function BalanceSummary({
             {latest.period}
             {latest.days !== null && ` · ${latest.days} días hasta tu última lectura`}
           </p>
-          <dl className="tnum mt-2 grid grid-cols-2 gap-x-4 gap-y-1.5 text-[12.5px] sm:grid-cols-4">
+          <dl className="tnum mt-2 grid grid-cols-2 gap-x-4 gap-y-2.5 text-center text-[12.5px] sm:grid-cols-4 sm:gap-y-1.5 sm:text-left">
             <div>
               <dt className="text-ink-faint">Generado</dt>
               <dd className="text-solar">{latest.pvGeneratedKwh.toFixed(1)} kWh</dd>

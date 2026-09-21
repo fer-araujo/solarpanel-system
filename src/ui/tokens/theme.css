@@ -33,6 +33,13 @@
     color-scheme: dark;
   }
 
+  /* Safety net: nothing may widen the page on a phone. `clip` (not hidden)
+     keeps the sticky header working. */
+  html,
+  body {
+    overflow-x: clip;
+  }
+
   body {
     margin: 0;
     background-color: var(--color-void);
