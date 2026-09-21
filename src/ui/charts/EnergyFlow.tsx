@@ -256,9 +256,13 @@ export function EnergyFlow({
       ? estimating
         ? [
             `lectura ${shortDate(lastReading.takenOn)}`,
-            `imp. ${lastReading.importRegister} · exp. ${lastReading.exportRegister} kWh`,
+            // Shorter on phones, where the node is scaled up and the text would
+            // run past the card's edge.
+            narrow
+              ? `imp ${lastReading.importRegister} · exp ${lastReading.exportRegister}`
+              : `imp. ${lastReading.importRegister} · exp. ${lastReading.exportRegister} kWh`,
           ]
-        : [`importado ${lastReading.importRegister} kWh`, `exportado ${lastReading.exportRegister} kWh`]
+        : [`imp. ${lastReading.importRegister} kWh`, `exp. ${lastReading.exportRegister} kWh`]
       : null;
 
   const captions: Record<string, string> = {
