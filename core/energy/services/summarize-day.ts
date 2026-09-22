@@ -45,7 +45,7 @@ export interface DaySummary {
 }
 
 /** Mexican grid emission factor, kg CO2 per kWh. */
-const GRID_CO2_KG_PER_KWH = 0.423;
+export const GRID_CO2_KG_PER_KWH = 0.423;
 
 function toKwh(watts: number, stepMinutes: number): number {
   return (watts * stepMinutes) / 60 / 1000;
