@@ -52,19 +52,16 @@ const schema = z.object({
   SOLAX_MAX_CALLS_PER_DAY: z.coerce.number().int().positive().default(20_000),
 
   /**
-   * Supabase Auth. Optional locally (auth is off), REQUIRED in production:
-   * without it the server fails closed rather than exposing the plant and the
-   * CFE readings. The publishable key is public by design; the server only uses it to
-   * ask Supabase who a token belongs to.
+   * Firebase Authentication. Optional locally (auth is off), REQUIRED in
+   * production: without it the server fails closed rather than exposing the
+   * plant and the CFE readings. Both values are public by design — the server
+   * verifies tokens against Google's public keys, with no secret of its own.
    */
-  SUPABASE_URL: z
-    .string()
-    .url()
-    // The dashboard also shows the REST endpoint; accept it and keep the project root.
-    .transform((url) => url.replace(/\/+$/, "").replace(/\/rest\/v1$/, ""))
-    .optional(),
-  SUPABASE_PUBLISHABLE_KEY: z.string().min(1).optional(),
-  /** Comma-separated emails allowed in. Empty means any user of the Supabase project. */
+  FIREBASE_PROJECT_ID: z.string().min(1).optional(),
+  FIREBASE_API_KEY: z.string().min(1).optional(),
+  /** Defaults to `<project>.firebaseapp.com`; set it only with a custom domain. */
+  FIREBASE_AUTH_DOMAIN: z.string().min(1).optional(),
+  /** Comma-separated emails allowed in. Empty means any user of the Firebase project. */
   AUTH_ALLOWED_EMAILS: z.string().optional(),
 
   /** Upstash REST credentials. Required on serverless, where memory and disk do not persist. */

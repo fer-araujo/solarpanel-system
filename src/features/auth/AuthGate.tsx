@@ -1,6 +1,6 @@
 import { useEffect, type ReactNode } from "react";
 import { useQueryClient } from "@tanstack/react-query";
-import { getSupabase } from "@/api/auth";
+import { getAuthClient } from "@/api/auth";
 import { AnimatePresence, motion } from "motion/react";
 import { ApiError } from "@/api/client";
 import { authKey, useMe } from "@/api/queries";
@@ -44,15 +44,20 @@ export function AuthGate({ children }: { children: ReactNode }) {
   // here: re-check the session so the gate follows it.
   useEffect(() => {
     let unsubscribe: (() => void) | undefined;
-    void getSupabase()
-      .then((supabase) => {
-        const { data } = supabase?.auth.onAuthStateChange((event) => {
-          if (event === "SIGNED_OUT") void client.invalidateQueries({ queryKey: authKey });
-        }) ?? { data: null };
-        unsubscribe = () => data?.subscription.unsubscribe();
+    let cancelled = false;
+    void getAuthClient()
+      .then(async (auth) => {
+        if (!auth || cancelled) return;
+        const { onAuthStateChanged } = await import("firebase/auth");
+        unsubscribe = onAuthStateChanged(auth, () => {
+          void client.invalidateQueries({ queryKey: authKey });
+        });
       })
       .catch(() => undefined);
-    return () => unsubscribe?.();
+    return () => {
+      cancelled = true;
+      unsubscribe?.();
+    };
   }, [client]);
 
   let view: { key: string; node: ReactNode };

@@ -7,7 +7,7 @@ import {
   type UseQueryResult,
 } from "@tanstack/react-query";
 import type { MeterReading } from "@core/billing/model/meter-reading";
-import { getSupabase } from "./auth";
+import { signOut } from "./auth";
 import {
   ApiError,
   api,
@@ -41,9 +41,7 @@ export function createQueryClient(): QueryClient {
           void client.invalidateQueries({ queryKey: authKey });
         } else if (error.status === 403) {
           // Signed in, but not on the allow list: drop the session.
-          void getSupabase()
-            .then((supabase) => supabase?.auth.signOut())
-            .finally(() => client.invalidateQueries({ queryKey: authKey }));
+          void signOut().finally(() => client.invalidateQueries({ queryKey: authKey }));
         }
       },
     }),

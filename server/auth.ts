@@ -1,18 +1,21 @@
-import { createHash } from "node:crypto";
 import type { Hono } from "hono";
+import { createRemoteJWKSet, jwtVerify } from "jose";
 import type { Env } from "./env";
 
 /**
- * Supabase Auth.
+ * Firebase Authentication.
  *
- * The browser signs in with Supabase and sends its access token as a Bearer
- * header. The server asks Supabase who the token belongs to, which works with
- * both legacy (HS256) and asymmetric signing keys and honours revocations. The
- * answer is cached briefly so a dashboard refresh is not a dozen round trips.
+ * The browser signs in with Firebase and sends its ID token as a Bearer
+ * header. The server verifies that token's signature against GOOGLE'S PUBLIC
+ * KEYS, so it needs no secret and no service account — only the project id,
+ * which the token's issuer and audience must match.
  *
- * Fails CLOSED: in production without Supabase configured, every API call is
+ * Fails CLOSED: in production without Firebase configured, every API call is
  * refused instead of the dashboard silently going public.
  */
+
+const JWKS_URL =
+  "https://www.googleapis.com/service_accounts/v1/jwk/securetoken@system.gserviceaccount.com";
 
 export interface AuthUser {
   id: string;
@@ -21,45 +24,38 @@ export interface AuthUser {
 
 export type TokenVerifier = (token: string) => Promise<AuthUser | null>;
 
-const CACHE_MS = 60_000;
-const CACHE_MAX = 500;
-
-/** Verifies a token with Supabase's `/auth/v1/user`, caching the result. */
-export function supabaseVerifier(url: string, publishableKey: string): TokenVerifier {
-  const cache = new Map<string, { user: AuthUser | null; until: number }>();
+/** Verifies a Firebase ID token. The key set is cached and refreshed by jose. */
+export function firebaseVerifier(projectId: string): TokenVerifier {
+  const keys = createRemoteJWKSet(new URL(JWKS_URL));
 
   return async (token) => {
-    const key = createHash("sha256").update(token).digest("hex");
-    const now = Date.now();
-    const hit = cache.get(key);
-    if (hit && hit.until > now) return hit.user;
-
-    const response = await fetch(`${url.replace(/\/$/, "")}/auth/v1/user`, {
-      headers: { apikey: publishableKey, Authorization: `Bearer ${token}` },
-    });
-    let user: AuthUser | null = null;
-    if (response.ok) {
-      const body = (await response.json()) as { id?: string; email?: string | null };
-      if (body.id) user = { id: body.id, email: body.email ?? null };
-    } else if (response.status >= 500) {
-      // Supabase itself failed: do not cache, and do not pretend the token is bad.
-      throw new Error(`Supabase auth responded ${response.status}`);
+    try {
+      const { payload } = await jwtVerify(token, keys, {
+        issuer: `https://securetoken.google.com/${projectId}`,
+        audience: projectId,
+      });
+      // `sub` is the Firebase uid; a token without one is not a user token.
+      if (typeof payload.sub !== "string" || payload.sub.length === 0) return null;
+      const email = typeof payload.email === "string" ? payload.email : null;
+      return { id: payload.sub, email };
+    } catch (error) {
+      // A bad signature, a wrong project or an expired token are all "not
+      // signed in". Anything else (network, key fetch) must surface as an
+      // outage rather than as a rejected session.
+      const code = (error as { code?: string }).code ?? "";
+      if (code.startsWith("ERR_JWKS_") || code === "ERR_JOSE_GENERIC") throw error;
+      return null;
     }
-
-    if (cache.size >= CACHE_MAX) cache.clear();
-    cache.set(key, { user, until: now + CACHE_MS });
-    return user;
   };
 }
 
 export function registerAuth(app: Hono, env: Env, verifyOverride?: TokenVerifier): void {
-  const configured = Boolean(env.SUPABASE_URL && env.SUPABASE_PUBLISHABLE_KEY);
+  const configured = Boolean(env.FIREBASE_PROJECT_ID && env.FIREBASE_API_KEY);
   const production = env.NODE_ENV === "production";
   // Locally with nothing configured, auth is off. Anywhere else it is on.
   const enforced = configured || production;
   const verify =
-    verifyOverride ??
-    (configured ? supabaseVerifier(env.SUPABASE_URL!, env.SUPABASE_PUBLISHABLE_KEY!) : null);
+    verifyOverride ?? (configured ? firebaseVerifier(env.FIREBASE_PROJECT_ID!) : null);
   const allowed = new Set(
     (env.AUTH_ALLOWED_EMAILS ?? "")
       .split(",")
@@ -67,11 +63,17 @@ export function registerAuth(app: Hono, env: Env, verifyOverride?: TokenVerifier
       .filter(Boolean),
   );
 
-  // Public on purpose: the publishable key is designed to ship to browsers.
+  // Public on purpose: a Firebase web API key identifies the project, it does
+  // not authorise anything on its own.
   app.get("/api/auth/config", (c) =>
     c.json(
       configured
-        ? { enabled: true, url: env.SUPABASE_URL, publishableKey: env.SUPABASE_PUBLISHABLE_KEY }
+        ? {
+            enabled: true,
+            apiKey: env.FIREBASE_API_KEY,
+            projectId: env.FIREBASE_PROJECT_ID,
+            authDomain: env.FIREBASE_AUTH_DOMAIN ?? `${env.FIREBASE_PROJECT_ID}.firebaseapp.com`,
+          }
         : { enabled: false, misconfigured: production },
     ),
   );
@@ -79,7 +81,7 @@ export function registerAuth(app: Hono, env: Env, verifyOverride?: TokenVerifier
   app.use("/api/*", async (c, next) => {
     if (c.req.path === "/api/auth/config" || !enforced) return next();
     if (!verify) {
-      return c.json({ error: "El servidor no tiene Supabase configurado." }, 503);
+      return c.json({ error: "El servidor no tiene Firebase configurado." }, 503);
     }
 
     const header = c.req.header("authorization") ?? "";
