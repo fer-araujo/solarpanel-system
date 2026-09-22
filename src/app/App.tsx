@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { summarizeDay } from "@core/energy/services/summarize-day";
+import { GRID_CO2_KG_PER_KWH, summarizeDay } from "@core/energy/services/summarize-day";
 import type { SystemTopology } from "@core/energy/model/power";
 import { ApiError } from "@/api/client";
 import {
@@ -7,6 +7,7 @@ import {
   useHealth,
   useLogout,
   useMe,
+  usePlantRealtime,
   useReadings,
   useSnapshot,
   useToday,
@@ -184,6 +185,12 @@ export function App() {
   const topology = topologyQuery.data;
   const snapshot = snapshotQuery.data;
   const today = todayQuery.data;
+  /**
+   * The day's energy from SolaX's own counter — the figure its app and the
+   * heatmap show. Integrating the 5-minute curve overestimates it by 2-4%, so
+   * that is only the fallback.
+   */
+  const dailyYield = usePlantRealtime().data?.dailyYield ?? null;
   // After the phone resumes a frozen tab, the last numbers show until the
   // refetch lands; label them rather than pass them off as current.
   const todayRefreshing =
@@ -228,6 +235,10 @@ export function App() {
       </div>
     );
   }
+
+  const generatedKwh = dailyYield ?? summary?.pvKwh ?? 0;
+  const capacityKwp = topology?.pvCapacityKwp ?? null;
+  const specificYield = capacityKwp ? generatedKwh / capacityKwp : null;
 
   const gaugeCaption = sun
     ? sun.isDaylight
@@ -329,13 +340,13 @@ export function App() {
                 )}
                 {summary && (
                   <div className="grid flex-1 auto-rows-fr grid-cols-2 gap-3">
-                    <Stat className={FILL} label="Generado hoy" value={summary.pvKwh.toFixed(1)} unit="kWh" tone="solar"
+                    <Stat className={FILL} label="Generado hoy" value={generatedKwh.toFixed(1)} unit="kWh" tone="solar"
                       detail={todayRefreshing ? "actualizando…" : `pico ${summary.peakPvKw} kW`} />
                     <Stat className={FILL} label="Rendimiento"
-                      value={summary.specificYield === null ? "—" : summary.specificYield.toFixed(2)}
-                      unit={summary.specificYield === null ? undefined : "kWh/kWp"}
+                      value={specificYield === null ? "—" : specificYield.toFixed(2)}
+                      unit={specificYield === null ? undefined : "kWh/kWp"}
                       detail="horas sol equiv." tone="batt" />
-                    <Stat className={FILL} label="CO₂ evitado" value={summary.co2AvoidedKg.toFixed(1)} unit="kg" tone="solar"
+                    <Stat className={FILL} label="CO₂ evitado" value={(generatedKwh * GRID_CO2_KG_PER_KWH).toFixed(1)} unit="kg" tone="solar"
                       detail="hoy" />
                     {summary.loadKwh !== null ? (
                       <Stat className={FILL} label="Autosuficiencia"
