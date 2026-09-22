@@ -57,7 +57,7 @@ flowchart LR
     end
 
     subgraph Server["Hono BFF (Node / Vercel Function)"]
-        AUTH["Auth guard<br/>Supabase token"]
+        AUTH["Auth guard<br/>Firebase ID token"]
         ROUTES["/api routes<br/>return DOMAIN models"]
         SOLAX["SolaX client<br/>token · rate limit · cache"]
         READ["Readings repository"]
@@ -118,6 +118,7 @@ tests/           Vitest: domain, mappers, server
 | Data | TanStack Query v5 |
 | Server | Hono on `@hono/node-server` |
 | Validation | Zod |
+| Auth | Firebase Authentication (ID tokens verified with `jose`) |
 | Storage | JSON file locally, Upstash Redis in production |
 | Tests | Vitest |
 
@@ -144,25 +145,28 @@ pnpm dev               # SPA on :5173, proxies /api
 | `SOLAX_BUSINESS_TYPE` | | `1` residential (default) or `4` C&I |
 | `SOLAX_MAX_CALLS_PER_MINUTE` | | Local budget, default `60` |
 | `SOLAX_MAX_CALLS_PER_DAY` | | Local budget, default `20000` |
-| `SUPABASE_URL` | prod | Supabase project URL |
-| `SUPABASE_PUBLISHABLE_KEY` | prod | Supabase publishable key (`sb_publishable_...`). Never the secret key |
+| `FIREBASE_PROJECT_ID` | prod | Firebase project id |
+| `FIREBASE_API_KEY` | prod | Firebase web API key (public by design) |
+| `FIREBASE_AUTH_DOMAIN` | | Defaults to `<project>.firebaseapp.com` |
 | `AUTH_ALLOWED_EMAILS` | | Comma-separated emails allowed in; empty allows every user of the project |
 | `UPSTASH_REDIS_REST_URL` | prod | Upstash REST URL |
 | `UPSTASH_REDIS_REST_TOKEN` | prod | Upstash REST token |
 | `NODE_ENV` | | Leave unset on Vercel: the function forces production itself |
 
-Locally, without the Supabase variables, the login is disabled. **In production the app refuses every
+Locally, without the Firebase variables, the login is disabled. **In production the app refuses every
 request until they are configured.**
 
 ---
 
 ## Authentication
 
-[Supabase Auth](https://supabase.com/docs/guides/auth) with email and password, one account per person.
-The browser signs in with Supabase and sends its access token as a Bearer header; the server confirms
-the token with Supabase on every API call (cached for a minute), so revoking a user takes effect
-within a minute. Disable public sign-ups in Supabase and invite accounts from its dashboard, or restrict
-access with `AUTH_ALLOWED_EMAILS` when the Supabase project is shared with other apps.
+[Firebase Authentication](https://firebase.google.com/docs/auth) with email and password, one account
+per person. The browser signs in with Firebase and sends its ID token as a Bearer header; the server
+verifies that token against **Google's public keys**, so it holds no secret and needs no service
+account — only the project id, which the token's issuer and audience must match. Tokens last an hour,
+so removing a user takes effect within that hour. Turn off public sign-up in *Authentication →
+Settings → User actions* and create accounts from the console, and use `AUTH_ALLOWED_EMAILS` to
+restrict access when the Firebase project is shared with other apps.
 
 ---
 
@@ -175,7 +179,7 @@ access with `AUTH_ALLOWED_EMAILS` when the Supabase project is shared with other
    ```
 3. **Vercel**: import the repository. `vercel.json` already sets the install and build commands;
    the build emits the SPA as static files and the API as one Node function via the Build Output API.
-4. **Supabase**: under *Authentication → URL Configuration*, add the Vercel domain.
+4. **Firebase**: in *Authentication → Settings → Authorized domains*, add the deployed domain.
 5. Add the environment variables above in *Project → Settings → Environment Variables* and deploy.
 
 The Hobby plan has no card on file and pauses the project if a limit is ever reached; it never bills.

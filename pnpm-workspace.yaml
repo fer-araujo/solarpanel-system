@@ -1,2 +1,5 @@
 allowBuilds:
+  # Firestore/gRPC helpers we never load; the app only uses Firebase Auth.
+  '@firebase/util': false
+  protobufjs: false
   esbuild: true

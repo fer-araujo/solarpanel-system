@@ -10,12 +10,12 @@ const BASE = {
   SOLAX_BUSINESS_TYPE: "1",
 };
 
-const SUPABASE = {
-  SUPABASE_URL: "https://example.supabase.co",
-  SUPABASE_PUBLISHABLE_KEY: "sb_publishable_fixture",
+const FIREBASE = {
+  FIREBASE_PROJECT_ID: "solar-fixture",
+  FIREBASE_API_KEY: "AIzaFixture",
 };
 
-/** Stand-in for Supabase: one known token, everything else is invalid. */
+/** Stand-in for Firebase: one known token, everything else is invalid. */
 const verifier: TokenVerifier = async (token) =>
   token === "valid-token" ? { id: "u1", email: "owner@example.com" } : null;
 
@@ -30,47 +30,48 @@ const bearer = (token: string) => ({ headers: { Authorization: `Bearer ${token}`
 
 describe("auth", () => {
   it("blocks the API without a token", async () => {
-    expect((await appWith(SUPABASE).request("/api/data")).status).toBe(401);
+    expect((await appWith(FIREBASE).request("/api/data")).status).toBe(401);
   });
 
-  it("rejects a token Supabase does not recognise", async () => {
-    expect((await appWith(SUPABASE).request("/api/data", bearer("forged"))).status).toBe(401);
+  it("rejects a token Firebase does not recognise", async () => {
+    expect((await appWith(FIREBASE).request("/api/data", bearer("forged"))).status).toBe(401);
   });
 
   it("lets a valid session through", async () => {
-    const res = await appWith(SUPABASE).request("/api/data", bearer("valid-token"));
+    const res = await appWith(FIREBASE).request("/api/data", bearer("valid-token"));
     expect(res.status).toBe(200);
     expect(await res.text()).toBe("datos");
   });
 
   it("refuses users outside the allow list", async () => {
-    const app = appWith({ ...SUPABASE, AUTH_ALLOWED_EMAILS: "someone@else.com" });
+    const app = appWith({ ...FIREBASE, AUTH_ALLOWED_EMAILS: "someone@else.com" });
     expect((await app.request("/api/data", bearer("valid-token"))).status).toBe(403);
   });
 
   it("accepts allow-listed users regardless of case", async () => {
-    const app = appWith({ ...SUPABASE, AUTH_ALLOWED_EMAILS: " Owner@Example.com , b@c.com" });
+    const app = appWith({ ...FIREBASE, AUTH_ALLOWED_EMAILS: " Owner@Example.com , b@c.com" });
     expect((await app.request("/api/data", bearer("valid-token"))).status).toBe(200);
   });
 
-  it("answers 503, not 401, when Supabase is down", async () => {
+  it("answers 503, not 401, when Firebase is down", async () => {
     const down: TokenVerifier = async () => {
       throw new Error("down");
     };
-    const res = await appWith(SUPABASE, down).request("/api/data", bearer("valid-token"));
+    const res = await appWith(FIREBASE, down).request("/api/data", bearer("valid-token"));
     expect(res.status).toBe(503);
   });
 
   it("exposes only the public config", async () => {
-    const res = await appWith(SUPABASE).request("/api/auth/config");
+    const res = await appWith(FIREBASE).request("/api/auth/config");
     expect(await res.json()).toEqual({
       enabled: true,
-      url: SUPABASE.SUPABASE_URL,
-      publishableKey: SUPABASE.SUPABASE_PUBLISHABLE_KEY,
+      apiKey: FIREBASE.FIREBASE_API_KEY,
+      projectId: FIREBASE.FIREBASE_PROJECT_ID,
+      authDomain: "solar-fixture.firebaseapp.com",
     });
   });
 
-  it("fails CLOSED in production when Supabase is missing", async () => {
+  it("fails CLOSED in production when Firebase is missing", async () => {
     const app = new Hono();
     registerAuth(app, loadEnv({ ...BASE, NODE_ENV: "production" } as NodeJS.ProcessEnv));
     app.get("/api/data", (c) => c.text("datos"));
