@@ -11,6 +11,7 @@ import { TtlCache } from "./solax/cache";
 import { SolaxEndpoints } from "./solax/endpoints";
 import { SolaxHttpClient } from "./solax/http-client";
 import { RateLimiter } from "./solax/rate-limiter";
+import { SharedBudget } from "./solax/shared-budget";
 import { TokenStore } from "./solax/token-store";
 import { createUpstashStore } from "./storage/kv";
 
@@ -38,7 +39,13 @@ export function createServer(env: Env): Hono {
     maxPerMinute: env.SOLAX_MAX_CALLS_PER_MINUTE,
     maxPerDay: env.SOLAX_MAX_CALLS_PER_DAY,
   });
-  const http = new SolaxHttpClient({ baseUrl: env.SOLAX_BASE_URL, tokenStore, rateLimiter });
+  const http = new SolaxHttpClient({
+    baseUrl: env.SOLAX_BASE_URL,
+    tokenStore,
+    rateLimiter,
+    sharedBudget: kv ? new SharedBudget(kv, env.SOLAX_MAX_CALLS_PER_MINUTE) : null,
+    minGapMs: 250,
+  });
   const readings: ReadingsRepository = kv ? new KvReadingsStore(kv) : new ReadingsStore("data");
 
   const app = new Hono();

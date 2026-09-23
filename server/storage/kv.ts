@@ -11,6 +11,8 @@ import { Redis } from "@upstash/redis";
 export interface KeyValueStore {
   get<T>(key: string): Promise<T | null>;
   set<T>(key: string, value: T, ttlMs?: number): Promise<void>;
+  /** Atomically adds one and returns the new count; the key expires after `ttlMs`. */
+  incr(key: string, ttlMs: number): Promise<number>;
 }
 
 const PREFIX = "solar:";
@@ -28,6 +30,16 @@ export class UpstashStore implements KeyValueStore {
     } else {
       await this.redis.set(PREFIX + key, value);
     }
+  }
+
+  async incr(key: string, ttlMs: number): Promise<number> {
+    // One round trip for both commands.
+    const [count] = await this.redis
+      .pipeline()
+      .incr(PREFIX + key)
+      .pexpire(PREFIX + key, Math.max(1, Math.round(ttlMs)))
+      .exec<[number, number]>();
+    return count;
   }
 }
 
