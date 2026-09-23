@@ -30,14 +30,46 @@ const LEVELS = [
   "hsl(142 72% 45%)",
 ] as const;
 
-/** Quartiles of the best day: 0 (nothing produced) to 4 (near the best). */
-const levelOf = (kwh: number | undefined, max: number) =>
-  kwh === undefined || kwh <= 0 || max <= 0 ? 0 : Math.min(4, Math.max(1, Math.ceil((kwh / max) * 4)));
+/**
+ * Level thresholds in kWh per installed kWp — equivalent peak-sun hours, the
+ * standard measure of how good a solar day was.
+ *
+ * Fixed rather than relative to the best day: quarters of 0..best put
+ * everything above ~75% of the best into the top shade, and a solar day
+ * rarely falls below 30 kWh, so 35 and 46 kWh looked identical. Fixed
+ * thresholds also keep a colour meaning the same thing all year; winter days
+ * are paler because they genuinely produce less.
+ */
+const YIELD_THRESHOLDS = [3.5, 4.75, 5.55] as const;
+
+/** Relative fallback when the installed capacity is unknown. */
+const RELATIVE_THRESHOLDS = [0.55, 0.75, 0.87] as const;
+
+function levelOf(kwh: number | undefined, capacityKwp: number | null, max: number): number {
+  if (kwh === undefined || kwh <= 0) return 0;
+  const [value, thresholds] =
+    capacityKwp && capacityKwp > 0
+      ? [kwh / capacityKwp, YIELD_THRESHOLDS]
+      : [max > 0 ? kwh / max : 0, RELATIVE_THRESHOLDS];
+  return 1 + thresholds.filter((threshold) => value >= threshold).length;
+}
 
 const pad = (n: number) => String(n).padStart(2, "0");
 const isoDay = (d: Date) => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
 const monthName = (iso: string) => MONTHS[Number(iso.slice(5, 7)) - 1] ?? "";
 const shortDate = (iso: string) => `${Number(iso.slice(8, 10))} ${monthName(iso)}`;
+
+/** What each legend square stands for, in kWh, when the capacity is known. */
+function legendRange(level: number, capacityKwp: number | null): string | undefined {
+  if (!capacityKwp) return undefined;
+  if (level === 0) return "sin producción";
+  const kwh = (hours: number) => Math.round(hours * capacityKwp);
+  const lower = level === 1 ? null : YIELD_THRESHOLDS[level - 2]!;
+  const upper = level === 4 ? null : YIELD_THRESHOLDS[level - 1]!;
+  if (lower === null) return `menos de ${kwh(upper!)} kWh`;
+  if (upper === null) return `${kwh(lower)} kWh o más`;
+  return `${kwh(lower)}–${kwh(upper)} kWh`;
+}
 
 interface Day {
   date: string;
@@ -56,7 +88,13 @@ function Summary({ label, value, unit }: { label: string; value: string; unit?: 
   );
 }
 
-export function ProductionHeatmap({ installedAt }: { installedAt: string | null }) {
+export function ProductionHeatmap({
+  installedAt,
+  capacityKwp,
+}: {
+  installedAt: string | null;
+  capacityKwp: number | null;
+}) {
   const firstDay = installedAt && /^\d{4}-\d{2}-\d{2}/.test(installedAt) ? installedAt.slice(0, 10) : null;
 
   /** 53 weeks × 7 days, Sunday first, ending with the current week. */
@@ -168,7 +206,7 @@ export function ProductionHeatmap({ installedAt }: { installedAt: string | null 
                           className={`rounded-[2px] outline-offset-[-1px] ${loading ? "skeleton" : ""} ${
                             selected === day.date ? "outline outline-1 outline-ink/70" : ""
                           }`}
-                          style={loading ? undefined : { background: LEVELS[levelOf(byDay.get(day.date), max)] }}
+                          style={loading ? undefined : { background: LEVELS[levelOf(byDay.get(day.date), capacityKwp, max)] }}
                         />
                       );
                     })}
@@ -182,8 +220,13 @@ export function ProductionHeatmap({ installedAt }: { installedAt: string | null 
             <span className="tnum text-ink-dim">{selected ? describe(selected) : "Pasa o toca un día"}</span>
             <span className="flex items-center gap-[3px]">
               <span className="mr-1">Menos</span>
-              {LEVELS.map((color) => (
-                <span key={color} className="inline-block rounded-[2px]" style={{ width: CELL, height: CELL, background: color }} />
+              {LEVELS.map((color, level) => (
+                <span
+                  key={color}
+                  title={legendRange(level, capacityKwp)}
+                  className="inline-block rounded-[2px]"
+                  style={{ width: CELL, height: CELL, background: color }}
+                />
               ))}
               <span className="ml-1">Más</span>
             </span>
