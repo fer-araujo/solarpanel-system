@@ -393,7 +393,10 @@ export function App() {
             {/* One chart with Día / Mes / Año / Todo — no separate history tab. */}
             <EnergyAnalysis installedAt={topology?.installedAt ?? null} />
 
-            <ProductionHeatmap installedAt={topology?.installedAt ?? null} />
+            <ProductionHeatmap
+              installedAt={topology?.installedAt ?? null}
+              capacityKwp={topology?.pvCapacityKwp ?? null}
+            />
 
             <div className="grid gap-5 lg:grid-cols-2">
               <WeatherCard
