@@ -1,5 +1,6 @@
 import { SolaxError, unwrapEnvelope } from "@core/solax/dto/envelope";
 import { RateLimiter, RateLimitExceededError } from "./rate-limiter";
+import type { SharedBudget } from "./shared-budget";
 import type { TokenStore } from "./token-store";
 
 /**
@@ -28,6 +29,14 @@ export interface SolaxHttpClientOptions {
   fetchImpl?: typeof fetch;
   /** Abort an individual request after this long. */
   timeoutMs?: number;
+  /** Budget shared across server instances (Upstash); absent locally. */
+  sharedBudget?: SharedBudget | null;
+  /**
+   * Minimum spacing between calls from this instance. Opening the dashboard
+   * fires ~20 calls from parallel routes; spread out, they stop tripping
+   * SolaX's burst limit (10406) and the 30-second backoff that follows.
+   */
+  minGapMs?: number;
 }
 
 export interface RequestOptions {
@@ -47,6 +56,10 @@ export class SolaxHttpClient {
   private readonly tokenStore: TokenStore;
   private readonly fetchImpl: typeof fetch;
   private readonly timeoutMs: number;
+  private readonly sharedBudget: SharedBudget | null;
+  private readonly minGapMs: number;
+  /** Earliest moment the next call may start. */
+  private nextSlot = 0;
 
   constructor(options: SolaxHttpClientOptions) {
     this.baseUrl = options.baseUrl;
@@ -54,6 +67,17 @@ export class SolaxHttpClient {
     this.rateLimiter = options.rateLimiter ?? new RateLimiter();
     this.fetchImpl = options.fetchImpl ?? fetch;
     this.timeoutMs = options.timeoutMs ?? DEFAULT_TIMEOUT_MS;
+    this.sharedBudget = options.sharedBudget ?? null;
+    this.minGapMs = options.minGapMs ?? 0;
+  }
+
+  /** Reserves the next start slot and waits for it, so calls go out spaced. */
+  private async pace(): Promise<void> {
+    if (this.minGapMs <= 0) return;
+    const now = Date.now();
+    const start = Math.max(now, this.nextSlot);
+    this.nextSlot = start + this.minGapMs;
+    if (start > now) await new Promise((resolve) => setTimeout(resolve, start - now));
   }
 
   async request(options: RequestOptions): Promise<unknown> {
@@ -74,6 +98,8 @@ export class SolaxHttpClient {
 
     // Budget is spent before the call, not after, so a refusal costs nothing.
     this.rateLimiter.take();
+    await this.pace();
+    await this.sharedBudget?.take();
 
     const token = await this.tokenStore.get();
     const url = new URL(this.baseUrl + path);
@@ -129,7 +155,10 @@ export class SolaxHttpClient {
       const where = `${method} ${url.pathname}${url.search}`;
 
       if (error instanceof SolaxError) {
-        if (error.isRateLimit) this.rateLimiter.penalise();
+        if (error.isRateLimit) {
+          this.rateLimiter.penalise();
+          void this.sharedBudget?.penalise();
+        }
         if (error.isQuotaExhausted) this.rateLimiter.markQuotaExhausted();
 
         // An auth failure on the retry attempt is terminal; let it through

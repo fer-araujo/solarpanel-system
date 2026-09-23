@@ -66,6 +66,12 @@ export interface AppDeps {
  */
 const TTL = {
   topology: 6 * 60 * 60 * 1000,
+  /**
+   * Optional hardware (battery, meter, EV charger). Absent hardware answers
+   * with a generic 10001, so probing it on every topology refresh spent three
+   * failing calls each time. What is fitted changes rarely; a day is plenty.
+   */
+  hardwareProbe: 24 * 60 * 60 * 1000,
   snapshot: 60 * 1000,
   history: 5 * 60 * 1000,
   /**
@@ -135,15 +141,11 @@ export function registerApiRoutes(app: Hono, deps: AppDeps): Hono {
       // Optional hardware. SolaX answers a query for a device class the plant
       // does not have with a generic failure rather than an empty list, so a
       // missing battery must not take the whole dashboard down with it.
-      const batteries = await optional("batteries", () =>
-        endpoints.listBatteries(plant.plantId),
-      );
-      const meters = await optional("meters", () =>
-        endpoints.listMeters(plant.plantId),
-      );
-      const evChargers = await optional("evChargers", () =>
-        endpoints.listEvChargers(plant.plantId),
-      );
+      const probe = async <T>(label: string, run: () => Promise<T[]>): Promise<T[]> =>
+        (await cache.fetch(`probe:${label}`, TTL.hardwareProbe, () => optional(label, run))).value;
+      const batteries = await probe("batteries", () => endpoints.listBatteries(plant.plantId));
+      const meters = await probe("meters", () => endpoints.listMeters(plant.plantId));
+      const evChargers = await probe("evChargers", () => endpoints.listEvChargers(plant.plantId));
 
       // EVERY inverter: a microinverter array reports one device per unit, and
       // sampling only the first undercounts both production and panels.
