@@ -2,7 +2,8 @@ import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 import { PersistQueryClientProvider } from "@tanstack/react-query-persist-client";
 import { App } from "./app/App";
-import { createQueryClient, persistOptions } from "./api/queries";
+import { persistOptions } from "./api/persist";
+import { createQueryClient } from "./api/queries";
 import { AuthGate } from "./features/auth/AuthGate";
 import "./ui/tokens/theme.css";
 

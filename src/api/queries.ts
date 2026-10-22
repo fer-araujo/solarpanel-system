@@ -7,10 +7,9 @@ import {
   useQueryClient,
   type UseQueryResult,
 } from "@tanstack/react-query";
-import { createSyncStoragePersister } from "@tanstack/query-sync-storage-persister";
-import type { PersistQueryClientOptions } from "@tanstack/react-query-persist-client";
 import type { MeterReading } from "@core/billing/model/meter-reading";
 import { signOut } from "./auth";
+import { clearPersistedCache, PERSIST_MAX_AGE_MS } from "./persist";
 import {
   ApiError,
   api,
@@ -39,21 +38,37 @@ const STALL_THRESHOLD = 2;
  */
 const MAX_RETRY_AFTER_MS = 70_000;
 
-/** How long a persisted cache may paint the dashboard after a reload. */
-const PERSIST_MAX_AGE_MS = 24 * 60 * 60 * 1000;
+/**
+ * Spread added to that wait. Every panel of a page load is refused at once;
+ * retrying them all at the same instant would spend the reopened window in
+ * one burst and trip the limit again.
+ */
+const RETRY_JITTER_MS = 20_000;
+
+/** Worth one retry: a per-minute refusal that says when the window reopens. */
+function isTransientRefusal(error: unknown): error is ApiError & { retryAfterMs: number } {
+  return (
+    error instanceof ApiError &&
+    error.isBudgetRefusal &&
+    error.retryAfterMs !== undefined &&
+    error.scope !== "day"
+  );
+}
+
 
 export function createQueryClient(): QueryClient {
   const client: QueryClient = new QueryClient({
     // Any 401 means the session expired mid-use: re-check it, which sends the
-    // gate back to the login screen instead of leaving broken panels.
+    // gate back to the login screen instead of leaving broken panels. Either
+    // way the cached panels go too, from memory and from disk.
     queryCache: new QueryCache({
       onError: (error, query) => {
         if (!(error instanceof ApiError) || query.queryKey[0] === "auth") return;
         if (error.status === 401) {
-          void client.invalidateQueries({ queryKey: authKey });
+          forgetSession(client);
         } else if (error.status === 403) {
           // Signed in, but not on the allow list: drop the session.
-          void signOut().finally(() => client.invalidateQueries({ queryKey: authKey }));
+          void signOut().finally(() => forgetSession(client));
         }
       },
     }),
@@ -63,12 +78,12 @@ export function createQueryClient(): QueryClient {
         // which is exactly what a quota-limited API wants.
         refetchOnWindowFocus: true,
         retry: (failureCount, error) => {
-          // A budget refusal is retried exactly ONCE, after the pause the
+          // A per-minute refusal is retried exactly ONCE, after the pause the
           // server asked for. Without it a panel stayed broken until its next
           // poll (minutes), while retrying sooner would only re-trip the limit.
-          // No `retryAfterMs` means the daily quota: nothing to wait out.
+          // A daily-quota refusal has nothing worth waiting out.
           if (error instanceof ApiError && error.isBudgetRefusal) {
-            return failureCount < 1 && error.retryAfterMs !== undefined;
+            return failureCount < 1 && isTransientRefusal(error);
           }
           if (error instanceof ApiError && !error.retryable && error.status < 500) {
             return false;
@@ -76,9 +91,10 @@ export function createQueryClient(): QueryClient {
           return failureCount < 2;
         },
         retryDelay: (failureCount, error) => {
-          if (error instanceof ApiError && error.isBudgetRefusal && error.retryAfterMs !== undefined) {
-            // A second past the window, so the retry lands after it reopens.
-            return Math.min(error.retryAfterMs + 1_000, MAX_RETRY_AFTER_MS);
+          if (isTransientRefusal(error)) {
+            return (
+              Math.min(error.retryAfterMs, MAX_RETRY_AFTER_MS) + Math.random() * RETRY_JITTER_MS
+            );
           }
           return Math.min(1_000 * 2 ** failureCount, 30_000);
         },
@@ -95,68 +111,17 @@ export function createQueryClient(): QueryClient {
 export const authKey = ["auth", "me"] as const;
 
 /**
- * Tags Dates so they survive the trip through JSON. Snapshots carry
- * `power.at` as a Date, and a restored string would break every component
- * that formats it.
+ * Drops every cached panel, in memory and on disk, then re-checks the session
+ * so the gate shows the login. Used whenever a session ends or is refused.
  */
-function serializeClient(client: unknown): string {
-  return JSON.stringify(client, function (this: Record<string, unknown>, key, value: unknown) {
-    const raw = this[key];
-    return raw instanceof Date ? { $date: raw.toISOString() } : value;
-  });
-}
-
-function deserializeClient<T>(text: string): T {
-  return JSON.parse(text, (_key, value: unknown) => {
-    if (typeof value === "object" && value !== null && "$date" in value) {
-      const tagged = value as { $date: unknown };
-      if (typeof tagged.$date === "string" && Object.keys(value).length === 1) {
-        return new Date(tagged.$date);
-      }
-    }
-    return value;
-  }) as T;
-}
-
-/** Null where storage is unavailable (private mode, blocked site data). */
-function browserStorage(): Storage | null {
-  try {
-    return typeof window === "undefined" ? null : window.localStorage;
-  } catch {
-    return null;
-  }
-}
-
-const persister = createSyncStoragePersister({
-  storage: browserStorage(),
-  key: "solar-dashboard-cache",
-  serialize: serializeClient,
-  deserialize: deserializeClient,
-});
-
-/**
- * Persists the query cache to localStorage, so a reload paints the last
- * values at once and refetches quietly instead of opening on skeletons while a
- * burst of SolaX calls goes out.
- *
- * The session is never persisted (Firebase owns it), nor are mutations. The
- * buster changes with every build, so a deploy that reshapes a response never
- * feeds the new code an old shape.
- */
-export const persistOptions: Omit<PersistQueryClientOptions, "queryClient"> = {
-  persister,
-  maxAge: PERSIST_MAX_AGE_MS,
-  buster: __APP_BUILD__,
-  dehydrateOptions: {
-    shouldDehydrateQuery: (query) =>
-      query.state.status === "success" && query.queryKey[0] !== "auth",
-    shouldDehydrateMutation: () => false,
-  },
-};
-
-/** Forgets the persisted copy, so nothing of a session outlives a sign-out. */
-export async function clearPersistedCache(): Promise<void> {
-  await persister.removeClient();
+export function forgetSession(client: QueryClient): void {
+  clearPersistedCache();
+  // Everything except the session query itself, which stays observed by the
+  // gate: removing it would leave the gate holding the old answer, while
+  // invalidating it refetches and lands on the login screen.
+  client.removeQueries({ predicate: (query) => query.queryKey[0] !== authKey[0] });
+  client.getMutationCache().clear();
+  void client.invalidateQueries({ queryKey: authKey });
 }
 
 /** A response the server answered from its cache because SolaX refused or failed. */
@@ -211,11 +176,7 @@ export function useLogout() {
     mutationFn: api.auth.logout,
     // Drop every cached panel so nothing from the session lingers in memory
     // or on disk.
-    onSettled: () => {
-      client.clear();
-      void clearPersistedCache();
-      void client.invalidateQueries({ queryKey: authKey });
-    },
+    onSettled: () => forgetSession(client),
   });
 }
 
