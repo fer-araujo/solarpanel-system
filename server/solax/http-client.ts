@@ -34,7 +34,7 @@ export interface SolaxHttpClientOptions {
   /**
    * Minimum spacing between calls from this instance. Opening the dashboard
    * fires ~20 calls from parallel routes; spread out, they stop tripping
-   * SolaX's burst limit (10406) and the 30-second backoff that follows.
+   * SolaX's burst limit (10406) and the backoff that follows.
    */
   minGapMs?: number;
 }

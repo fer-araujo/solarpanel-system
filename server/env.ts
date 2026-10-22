@@ -1,5 +1,8 @@
 import { z } from "zod";
 
+/** The most calls per minute SolaX tolerates without answering 10406. */
+export const SAFE_CALLS_PER_MINUTE = 9;
+
 /**
  * Server environment — the only place the SolaX credentials are read.
  *
@@ -40,15 +43,31 @@ const schema = z.object({
   }),
 
   /**
-   * Local call budget, kept comfortably under the account's real limits so a
-   * bug or a runaway loop cannot spend the quota.
+   * Local call budget, kept under the account's real limits so a bug or a
+   * runaway loop cannot spend the quota.
    *
-   * The plan on this account allows 100/min and 1,000,000/day. The defaults
-   * here are deliberately lower: the dashboard needs roughly 1,000 calls a day
-   * with the whole thing open continuously, so 20,000 leaves a 20x margin and
-   * still stops anything pathological long before it matters.
+   * The plan advertises 100/min, but SolaX's burst limit in practice is about
+   * 10/min: twenty calls spaced 250 ms apart still trip 10406. A higher local
+   * cap never stops a burst — SolaX does, with a backoff that blocks every
+   * panel — so anything above the safe value is clamped (with a warning) and a
+   * stale deployment variable cannot reintroduce the old 60.
+   *
+   * The daily cap is far above need: the dashboard uses roughly 1,000 calls a
+   * day with the whole thing open, so 20,000 still stops anything pathological.
    */
-  SOLAX_MAX_CALLS_PER_MINUTE: z.coerce.number().int().positive().default(60),
+  SOLAX_MAX_CALLS_PER_MINUTE: z.coerce
+    .number()
+    .int()
+    .positive()
+    .default(SAFE_CALLS_PER_MINUTE)
+    .transform((value) => {
+      if (value <= SAFE_CALLS_PER_MINUTE) return value;
+      console.warn(
+        `SOLAX_MAX_CALLS_PER_MINUTE=${value} exceeds SolaX's real burst limit; ` +
+          `using ${SAFE_CALLS_PER_MINUTE}. Remove the variable or lower it.`,
+      );
+      return SAFE_CALLS_PER_MINUTE;
+    }),
   SOLAX_MAX_CALLS_PER_DAY: z.coerce.number().int().positive().default(20_000),
 
   /**

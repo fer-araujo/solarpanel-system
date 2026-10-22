@@ -10,6 +10,9 @@ import {
 import { TokenStore } from "../../server/solax/token-store";
 import { ReadingsStore } from "../../server/billing/readings-store";
 import { loadEnv } from "../../server/env";
+import { optional } from "../../server/app";
+import type { KeyValueStore } from "../../server/storage/kv";
+import { SolaxError } from "@core/solax/dto/envelope";
 
 /** A controllable clock, so nothing here sleeps. */
 function clock(start = 1_000_000) {
@@ -18,6 +21,25 @@ function clock(start = 1_000_000) {
     now: () => now,
     advance: (ms: number) => {
       now += ms;
+    },
+  };
+}
+
+/** In-memory stand-in for Upstash that records each key's physical TTL. */
+function memoryKv(): KeyValueStore & { ttls: Map<string, number | undefined> } {
+  const values = new Map<string, unknown>();
+  const ttls = new Map<string, number | undefined>();
+  return {
+    ttls,
+    async get<T>(key: string) {
+      return (values.get(key) as T | undefined) ?? null;
+    },
+    async set<T>(key: string, value: T, ttlMs?: number) {
+      values.set(key, value);
+      ttls.set(key, ttlMs);
+    },
+    async incr() {
+      return 1;
     },
   };
 }
@@ -277,6 +299,32 @@ describe("TtlCache", () => {
     expect(cache.size).toBeLessThanOrEqual(3);
   });
 
+  it("serves an expired Upstash entry on a fresh instance when the load fails", async () => {
+    // A cold serverless instance has an empty memory. Before, the shared
+    // entry expired at its TTL, so a 10406 left nothing to show at all.
+    const time = clock();
+    const l2 = memoryKv();
+    const warm = new TtlCache({ now: time.now, l2 });
+    await warm.fetch("snapshot", 60_000, async () => "reading");
+    expect(l2.ttls.get("cache:v5:snapshot")).toBeGreaterThanOrEqual(7 * 24 * 60 * 60 * 1000);
+
+    time.advance(60 * 60 * 1000);
+    const cold = new TtlCache({ now: time.now, l2 });
+    const result = await cold.fetch("snapshot", 60_000, async () => {
+      throw new RateLimitExceededError("minute", 30_000);
+    });
+    expect(result).toMatchObject({ value: "reading", stale: true });
+  });
+
+  it("refreshes an expired Upstash entry when the load succeeds", async () => {
+    const time = clock();
+    const l2 = memoryKv();
+    await new TtlCache({ now: time.now, l2 }).fetch("k", 1000, async () => "old");
+    time.advance(1001);
+    const result = await new TtlCache({ now: time.now, l2 }).fetch("k", 1000, async () => "new");
+    expect(result).toMatchObject({ value: "new", stale: false });
+  });
+
   it("invalidates by prefix", async () => {
     const cache = new TtlCache();
     await cache.fetch("stats:1:2026", 10_000, async () => "a");
@@ -442,5 +490,51 @@ describe("loadEnv", () => {
     expect(() =>
       loadEnv({ ...valid, SOLAX_BUSINESS_TYPE: "2" } as NodeJS.ProcessEnv),
     ).toThrow(/1 \(Residential\) or 4/);
+  });
+
+  it("defaults the per-minute budget to what SolaX really tolerates", () => {
+    expect(loadEnv(valid as NodeJS.ProcessEnv).SOLAX_MAX_CALLS_PER_MINUTE).toBe(9);
+  });
+
+  it("clamps a stale, higher budget to 9 and says so", () => {
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => undefined);
+    const env = loadEnv({ ...valid, SOLAX_MAX_CALLS_PER_MINUTE: "60" } as NodeJS.ProcessEnv);
+    expect(env.SOLAX_MAX_CALLS_PER_MINUTE).toBe(9);
+    expect(warn).toHaveBeenCalledWith(expect.stringMatching(/SOLAX_MAX_CALLS_PER_MINUTE/));
+    warn.mockRestore();
+  });
+
+  it("keeps a lower budget as given", () => {
+    const env = loadEnv({ ...valid, SOLAX_MAX_CALLS_PER_MINUTE: "5" } as NodeJS.ProcessEnv);
+    expect(env.SOLAX_MAX_CALLS_PER_MINUTE).toBe(5);
+  });
+});
+
+describe("optional hardware probe", () => {
+  const quiet = () => vi.spyOn(console, "warn").mockImplementation(() => undefined);
+
+  it("reports absent hardware (10001) as none fitted", async () => {
+    const warn = quiet();
+    await expect(
+      optional("batteries", async () => {
+        throw new SolaxError({ code: 10001, message: "System exception" });
+      }),
+    ).resolves.toEqual([]);
+    warn.mockRestore();
+  });
+
+  it("rethrows budget refusals, which must not be cached as none fitted", async () => {
+    const refusals = [
+      new RateLimitExceededError("minute", 30_000),
+      new SolaxError({ code: 10406, message: "rate limited" }),
+      new SolaxError({ code: 10405, message: "quota" }),
+    ];
+    for (const refusal of refusals) {
+      await expect(
+        optional("batteries", async () => {
+          throw refusal;
+        }),
+      ).rejects.toBe(refusal);
+    }
   });
 });

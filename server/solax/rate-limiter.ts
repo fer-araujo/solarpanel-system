@@ -37,6 +37,15 @@ export class RateLimitExceededError extends Error {
 const MINUTE_MS = 60_000;
 const DAY_MS = 86_400_000;
 
+/**
+ * How long every caller holds off after SolaX answers 10406.
+ *
+ * Longer than SolaX's own one-minute window on purpose: a 30-second pause
+ * ended inside the window that was still full, so the very next call tripped
+ * 10406 again and the dashboard stayed blocked for minutes.
+ */
+export const RATE_LIMIT_PENALTY_MS = 65_000;
+
 export class RateLimiter {
   private readonly maxPerMinute: number;
   private readonly maxPerDay: number;
@@ -90,7 +99,7 @@ export class RateLimiter {
    * so the server's window disagrees with ours — stop sending for a while
    * instead of hammering into the limit.
    */
-  penalise(durationMs = 30_000): void {
+  penalise(durationMs = RATE_LIMIT_PENALTY_MS): void {
     this.backoffUntil = this.now() + durationMs;
   }
 
