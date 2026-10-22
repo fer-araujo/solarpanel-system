@@ -248,11 +248,17 @@ export function useStatsYear(year: number, enabled = true) {
  */
 const MANUAL_DATA_STALE_MS = 5 * 60_000;
 
+/** Just past SolaX's 65 s rate-limit penalty. */
+const PARTIAL_RETRY_MS = 70_000;
+
 export function useBillingSummary(basis: "gross" | "billed" = "billed") {
   return useQuery({
     queryKey: queryKeys.billing(basis),
     queryFn: () => api.billingSummary(basis),
     staleTime: MANUAL_DATA_STALE_MS,
+    // PV that SolaX refused is missing from the balance; ask again once the
+    // per-minute window has reopened rather than waiting for a reload.
+    refetchInterval: (query) => (query.state.data?.balance?.partial ? PARTIAL_RETRY_MS : false),
   });
 }
 
@@ -292,6 +298,10 @@ export function useDeleteReading() {
 
 export function useClosePeriod() {
   return useReadingsMutation<{ end: string; bill: PeriodBill }>(api.closePeriod);
+}
+
+export function useReopenPeriod() {
+  return useReadingsMutation<void>(() => api.reopenPeriod());
 }
 
 export function useSaveMeter() {

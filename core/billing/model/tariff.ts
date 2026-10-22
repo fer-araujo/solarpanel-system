@@ -45,9 +45,13 @@ export interface TariffSchedule {
 export interface TariffVersion extends TariffSchedule {
   /**
    * `YYYY-MM-DD`: first day of the billing period whose recibo printed these
-   * prices. They apply to every period cut AFTER this date.
+   * prices (the previous cut date).
+   *
+   * They apply to every period cut STRICTLY AFTER this day. Strict because
+   * a cut date is shared: the JUN–AGO bill is cut on 06 AGO, the very day the
+   * AGO–OCT period (and its prices) starts, and it was priced with the old ones.
    */
-  effectiveFrom: string;
+  periodStart: string;
 }
 
 export interface Tariff {
@@ -72,19 +76,29 @@ export interface Tariff {
   };
 }
 
+function byPeriodStart(versions: readonly TariffVersion[]): TariffVersion[] {
+  const sorted = [...versions].sort((a, b) => a.periodStart.localeCompare(b.periodStart));
+  if (sorted.length === 0) throw new Error("No tariff versions to choose from");
+  return sorted;
+}
+
+/** The most recent prices on record: what estimates of the future use. */
+export function latestVersion(versions: readonly TariffVersion[]): TariffVersion {
+  const sorted = byPeriodStart(versions);
+  return sorted[sorted.length - 1] as TariffVersion;
+}
+
 /**
  * The prices that applied to a period cut on `end` (`YYYY-MM-DD`): the latest
- * version that took effect before that date. A cut before every known version
- * falls back to the oldest, the closest thing on record.
+ * version whose period started strictly before that cut. A cut before every
+ * known version falls back to the oldest, the closest thing on record.
  */
 export function scheduleForPeriodEnd(
   versions: readonly TariffVersion[],
   end: string,
 ): TariffVersion {
-  const sorted = [...versions].sort((a, b) => a.effectiveFrom.localeCompare(b.effectiveFrom));
-  const oldest = sorted[0];
-  if (!oldest) throw new Error("No tariff versions to choose from");
-  return sorted.filter((version) => version.effectiveFrom < end).at(-1) ?? oldest;
+  const sorted = byPeriodStart(versions);
+  return sorted.filter((version) => version.periodStart < end).at(-1) ?? (sorted[0] as TariffVersion);
 }
 
 export function isBlockUnbounded(block: TariffBlock): boolean {

@@ -8,6 +8,7 @@ import {
   useClosePeriod,
   useDeleteReading,
   useReadings,
+  useReopenPeriod,
   useSaveMeter,
   useSaveReading,
 } from "@/api/queries";
@@ -73,6 +74,7 @@ export function ReadingsForm() {
   const saveReading = useSaveReading();
   const deleteReading = useDeleteReading();
   const closePeriod = useClosePeriod();
+  const reopenPeriod = useReopenPeriod();
   const saveMeter = useSaveMeter();
 
   const [draft, setDraft] = useState<Draft>(EMPTY);
@@ -85,6 +87,17 @@ export function ReadingsForm() {
   const readings = file?.readings ?? [];
   const periods = file?.periods ?? [];
   const open = periods.at(-1)?.end === null ? periods.at(-1) : undefined;
+  // Only the most recent close can be undone, and only from the open period.
+  const lastClosed = open ? periods.at(-2) : undefined;
+
+  function onReopen() {
+    if (!lastClosed?.end) return;
+    const confirmed = window.confirm(
+      `¿Deshacer el cierre del ${lastClosed.end}? El periodo ${periodLabel(lastClosed)} vuelve a ` +
+        `quedar abierto y se quita su recibo. Las lecturas no se borran.`,
+    );
+    if (confirmed) reopenPeriod.mutate();
+  }
   const cutDates = new Set(periods.map((p) => p.end).filter((end): end is string => end !== null));
 
   function validate(): MeterReading | string {
@@ -202,6 +215,11 @@ export function ReadingsForm() {
                     <td className="py-2 text-ink-dim">
                       {r.takenOn}
                       {isCut && <span className="ml-2 text-[11px] text-solar">corte</span>}
+                      {r.inferred && (
+                        <span className="ml-2 text-[11px] text-grid" title="El formato anterior no guardaba el día; edítala para fijarlo.">
+                          día estimado
+                        </span>
+                      )}
                     </td>
                     <td className="py-2 text-right text-ink">{r.importRegister}</td>
                     <td className="py-2 text-right text-ink">{r.exportRegister}</td>
@@ -258,6 +276,18 @@ export function ReadingsForm() {
             </div>
           </div>
           {closeError && <p role="alert" className="text-[12.5px] text-alert">{closeError}</p>}
+          {lastClosed && (
+            <div className="flex flex-wrap items-center gap-3">
+              <button type="button" onClick={onReopen} disabled={reopenPeriod.isPending}
+                className="inline-flex items-center gap-2 text-[12px] text-ink-faint hover:text-alert disabled:opacity-50">
+                {reopenPeriod.isPending && <Spinner />}
+                Deshacer último cierre ({lastClosed.end})
+              </button>
+              {reopenPeriod.isError && (
+                <p role="alert" className="text-[12.5px] text-alert">{reopenPeriod.error.message}</p>
+              )}
+            </div>
+          )}
           <p className="text-[12px] text-ink-faint">
             Usa la lectura del día de corte que trae el recibo. Al cerrar, el siguiente periodo empieza
             ese mismo día y el recibo se suma al historial.

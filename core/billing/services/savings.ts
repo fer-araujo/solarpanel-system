@@ -122,9 +122,6 @@ export function projectNextBill(input: NextBillInput): { kwh: number; amount: nu
   return { kwh, amount: priceEnergy(kwh, schedule) * (1 + IVA_RATE) };
 }
 
-/** Days in a CFE bimester, for scaling a daily figure to a billing period. */
-export { DAYS_PER_BIMESTER };
-
 export interface PricedBill {
   energyMxn: number;
   ivaMxn: number;

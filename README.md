@@ -34,7 +34,9 @@ self-sufficiency, the CFE *bolsa energética*, DAC risk and what the next bill w
 - **Meter readings** entered by hand, by day and as often as you like, including meter swaps and their carryover.
 - **Billing periods by cut date**: a period runs from one recibo's *fecha de corte* to the next (e.g. 06 AGO – 07 OCT),
   not by calendar month. Readings in between show the open period's progress; "Cerrar periodo con recibo" settles it
-  with the reading of the cut date and the billed kWh and total, then opens the next period.
+  with the reading of the cut date and the billed kWh and total, then opens the next period. "Deshacer último cierre"
+  undoes the latest close while the new period has no readings. Old month-keyed data (v1) is migrated when read, and
+  the untouched v1 document is backed up (`cfe-readings.v1.bak`) before the first write replaces it.
 - **Bolsa energética**: exported kWh banked FIFO per closed period and expiring on a rolling 12 months, as CFE applies it.
 - **DAC risk**: 12-month moving average against the tariff's limit, with each period spread over its real months.
 - **Bill history and projection**: tariff 1C blocks as dated versions copied from each recibo (every period priced with

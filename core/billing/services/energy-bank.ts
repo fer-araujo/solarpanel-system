@@ -1,7 +1,7 @@
+import { daysBetween } from "../model/calendar";
 import {
   assertPeriodsUsable,
   assertReadingsUsable,
-  daysBetween,
   expectedEnd,
   monthsBetween,
   periodLabel,

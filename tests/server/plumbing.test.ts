@@ -18,6 +18,7 @@ import {
 import { loadEnv } from "../../server/env";
 import { apiErrorHandler, optional, registerApiRoutes } from "../../server/app";
 import { runEnergyBank } from "@core/billing/services/energy-bank";
+import { billHistory } from "@core/billing/services/consumption";
 import type { KeyValueStore } from "../../server/storage/kv";
 import { SolaxError } from "@core/solax/dto/envelope";
 import { ZodError } from "zod";
@@ -463,7 +464,7 @@ describe("ReadingsStore", () => {
 
   it("stores the meter-swap carryover", async () => {
     const { store } = await freshStore();
-    await store.setCarryover(936);
+    await store.updateMeter({ carryoverKwh: 936 });
     expect((await store.load()).carryoverKwh).toBe(936);
   });
 
@@ -488,11 +489,20 @@ describe("ReadingsStore", () => {
     expect((await second.store.load()).readings).toHaveLength(1);
   });
 
-  it("rejects a malformed day instead of corrupting the series", async () => {
+  it.each(["18 sep", "2026-13-01", "2026-02-31"])(
+    "rejects %s instead of filing it under another day",
+    async (takenOn) => {
+      const { store } = await freshStore();
+      await expect(store.upsert({ takenOn, importRegister: 1, exportRegister: 2 })).rejects.toThrow();
+      expect((await store.load()).readings).toEqual([]);
+    },
+  );
+
+  it("rejects a reading from the future", async () => {
     const { store } = await freshStore();
     await expect(
-      store.upsert({ takenOn: "18 sep", importRegister: 1, exportRegister: 2 }),
-    ).rejects.toThrow();
+      store.upsert({ takenOn: "2999-01-01", importRegister: 1, exportRegister: 2 }),
+    ).rejects.toThrow(/futuro/);
   });
 
   it("refuses to silently accept a damaged file", async () => {
@@ -517,10 +527,10 @@ describe("readings file migration v1 → v2", () => {
   const v1 = {
     version: 1,
     carryoverKwh: 1701,
-    meterInstalledOn: "2026-09-15",
+    meterInstalledOn: "2026-08-01",
     readings: [
+      { period: "2026-08", importRegister: 10, exportRegister: 5 },
       { period: "2026-09", importRegister: 61, exportRegister: 14, takenOn: "2026-09-18" },
-      { period: "2026-10", importRegister: 400, exportRegister: 300 },
     ],
     history: [{ period: "2026-08", kwh: 2188, amountMxn: 7283 }],
   };
@@ -528,12 +538,12 @@ describe("readings file migration v1 → v2", () => {
   const expected = {
     version: 2,
     carryoverKwh: 1701,
-    meterInstalledOn: "2026-09-15",
-    periods: [{ start: "2026-09-15", end: null }],
+    meterInstalledOn: "2026-08-01",
+    periods: [{ start: "2026-08-01", end: null }],
     readings: [
-      { takenOn: "2026-09-18", importRegister: 61, exportRegister: 14 },
       // No day recorded: the last day of its month, the latest it can be.
-      { takenOn: "2026-10-31", importRegister: 400, exportRegister: 300 },
+      { takenOn: "2026-08-31", importRegister: 10, exportRegister: 5, inferred: true },
+      { takenOn: "2026-09-18", importRegister: 61, exportRegister: 14 },
     ],
     history: [{ period: "2026-08", kwh: 2188, amountMxn: 7283 }],
   };
@@ -550,23 +560,85 @@ describe("readings file migration v1 → v2", () => {
     expect(await new KvReadingsStore(kv).load()).toEqual(expected);
   });
 
+  it("never infers a day after today for the current month", () => {
+    const migrated = migrateReadingsFile(
+      { ...v1, readings: [{ period: "2026-10", importRegister: 1, exportRegister: 1 }] },
+      "2026-10-22",
+    ) as { readings: { takenOn: string; inferred?: boolean }[] };
+    expect(migrated.readings).toEqual([
+      { takenOn: "2026-10-22", importRegister: 1, exportRegister: 1, inferred: true },
+    ]);
+  });
+
+  it("lands an undated February reading on the 29th in a leap year", () => {
+    const migrated = migrateReadingsFile(
+      { ...v1, readings: [{ period: "2028-02", importRegister: 1, exportRegister: 1 }] },
+      "2028-06-01",
+    ) as { readings: { takenOn: string }[] };
+    expect(migrated.readings[0]?.takenOn).toBe("2028-02-29");
+  });
+
   it("opens the period at the earliest reading when no install date was saved", () => {
     const { meterInstalledOn: _, ...withoutDate } = v1;
     expect(migrateReadingsFile(withoutDate)).toMatchObject({
-      periods: [{ start: "2026-09-18", end: null }],
+      periods: [{ start: "2026-08-31", end: null }],
     });
   });
 
   it("leaves a v2 document alone", () => {
     expect(migrateReadingsFile(expected)).toBe(expected);
   });
+
+  it("backs up the v1 file once, before the first write replaces it", async () => {
+    const dir = await mkdtemp(join(tmpdir(), "solar-readings-"));
+    await writeFile(join(dir, "cfe-readings.json"), JSON.stringify(v1), "utf8");
+    const store = new ReadingsStore(dir);
+
+    await store.upsert({ takenOn: "2026-09-30", importRegister: 100, exportRegister: 50 });
+    const backup = join(dir, "cfe-readings.v1.bak.json");
+    expect(JSON.parse(await readFile(backup, "utf8"))).toEqual(v1);
+
+    // Later writes neither touch nor recreate it.
+    await writeFile(backup, "kept", "utf8");
+    await store.upsert({ takenOn: "2026-10-01", importRegister: 110, exportRegister: 60 });
+    expect(await readFile(backup, "utf8")).toBe("kept");
+  });
+
+  it("backs up the Upstash copy under its own key, once", async () => {
+    const kv = memoryKv();
+    await kv.set("cfe-readings", v1);
+    const store = new KvReadingsStore(kv);
+
+    await store.upsert({ takenOn: "2026-09-30", importRegister: 100, exportRegister: 50 });
+    expect(await kv.get("cfe-readings.v1.bak")).toEqual(v1);
+    expect(await kv.get("cfe-readings")).toMatchObject({ version: 2 });
+
+    await kv.set("cfe-readings.v1.bak", "kept");
+    await store.upsert({ takenOn: "2026-10-01", importRegister: 110, exportRegister: 60 });
+    expect(await kv.get("cfe-readings.v1.bak")).toBe("kept");
+  });
 });
 
 describe("closing a billing period", () => {
-  async function plantStore(): Promise<ReadingsStore> {
-    const store = new ReadingsStore(await mkdtemp(join(tmpdir(), "solar-readings-")));
+  async function plantStore(history: { period: string; kwh: number; amountMxn?: number }[] = []) {
+    const dir = await mkdtemp(join(tmpdir(), "solar-readings-"));
+    if (history.length > 0) {
+      await writeFile(
+        join(dir, "cfe-readings.json"),
+        JSON.stringify({ version: 2, carryoverKwh: 0, periods: [], readings: [], history }),
+        "utf8",
+      );
+    }
+    const store = new ReadingsStore(dir);
     await store.updateMeter({ meterInstalledOn: "2026-09-15", carryoverKwh: 1701 });
     await store.upsert({ takenOn: "2026-09-18", importRegister: 61, exportRegister: 14 });
+    return store;
+  }
+
+  async function closedStore() {
+    const store = await plantStore();
+    await store.upsert({ takenOn: "2026-10-07", importRegister: 435, exportRegister: 344 });
+    await store.closePeriod("2026-10-07", bill);
     return store;
   }
 
@@ -577,16 +649,18 @@ describe("closing a billing period", () => {
     await expect(store.closePeriod("2026-10-07", bill)).rejects.toThrow(/Falta la lectura/);
   });
 
-  it("closes the open period, opens the next and records the bill", async () => {
-    const store = await plantStore();
-    await store.upsert({ takenOn: "2026-10-07", importRegister: 435, exportRegister: 344 });
-    const file = await store.closePeriod("2026-10-07", bill);
+  it("closes the open period, opens the next and keeps the bill on it", async () => {
+    const file = await (await closedStore()).load();
 
     expect(file.periods).toEqual([
       { start: "2026-09-15", end: "2026-10-07", bill },
       { start: "2026-10-07", end: null },
     ]);
-    expect(file.history.at(-1)).toEqual({ period: "2026-10", kwh: 1792, amountMxn: 5472.38 });
+    // The recibo's history is left alone; the bill shows up derived from the period.
+    expect(file.history).toEqual([]);
+    expect(billHistory(file.history, file.periods)).toEqual([
+      { period: "2026-10", kwh: 1792, amountMxn: 5472.38 },
+    ]);
 
     // And the bank agrees with the recibo.
     const bank = runEnergyBank(file, { carryoverKwh: file.carryoverKwh });
@@ -594,23 +668,64 @@ describe("closing a billing period", () => {
     expect(bank.open?.start).toBe("2026-10-07");
   });
 
-  it("refuses to delete the reading that closed a period", async () => {
-    const store = await plantStore();
+  it("refuses a bill that contradicts the history for the same month", async () => {
+    const store = await plantStore([{ period: "2026-10", kwh: 1700, amountMxn: 5000 }]);
     await store.upsert({ takenOn: "2026-10-07", importRegister: 435, exportRegister: 344 });
-    await store.closePeriod("2026-10-07", bill);
-    await expect(store.remove("2026-10-07")).rejects.toBeInstanceOf(ReadingsError);
+    await expect(store.closePeriod("2026-10-07", bill)).rejects.toMatchObject({ status: 409 });
   });
 
-  it("refuses a cut date on or before the period start", async () => {
+  it("accepts a bill the history already agrees with", async () => {
+    const store = await plantStore([{ period: "2026-10", kwh: 1792, amountMxn: 5472.38 }]);
+    await store.upsert({ takenOn: "2026-10-07", importRegister: 435, exportRegister: 344 });
+    await expect(store.closePeriod("2026-10-07", bill)).resolves.toBeDefined();
+  });
+
+  it("refuses to delete the reading that closed a period", async () => {
+    const store = await closedStore();
+    await expect(store.remove("2026-10-07")).rejects.toMatchObject({ status: 409 });
+  });
+
+  it("refuses to change the registers of the reading that closed a period", async () => {
+    const store = await closedStore();
+    await expect(
+      store.upsert({ takenOn: "2026-10-07", importRegister: 436, exportRegister: 344 }),
+    ).rejects.toMatchObject({ status: 409 });
+    // Re-saving the same values is harmless.
+    await expect(
+      store.upsert({ takenOn: "2026-10-07", importRegister: 435, exportRegister: 344 }),
+    ).resolves.toBeDefined();
+  });
+
+  it("refuses a cut date on or before the period start, or in the future", async () => {
     const store = await plantStore();
     await expect(store.closePeriod("2026-09-15", bill)).rejects.toThrow(/posterior/);
+    await expect(store.closePeriod("2999-01-01", bill)).rejects.toThrow(/futuro/);
+  });
+
+  it("undoes the last close while the next period is empty", async () => {
+    const store = await closedStore();
+    const file = await store.reopenLastPeriod();
+    expect(file.periods).toEqual([{ start: "2026-09-15", end: null }]);
+    expect(billHistory(file.history, file.periods)).toEqual([]);
+    // The cut reading stays: it is just a reading again.
+    expect(file.readings.map((r) => r.takenOn)).toContain("2026-10-07");
+  });
+
+  it("refuses to undo a close once the next period has readings", async () => {
+    const store = await closedStore();
+    await store.upsert({ takenOn: "2026-10-20", importRegister: 500, exportRegister: 400 });
+    await expect(store.reopenLastPeriod()).rejects.toMatchObject({ status: 409 });
+  });
+
+  it("has nothing to undo before the first close", async () => {
+    const store = await plantStore();
+    await expect(store.reopenLastPeriod()).rejects.toMatchObject({ status: 409 });
   });
 });
 
 describe("billing routes", () => {
-  it("closes a period over HTTP and answers a bad request with 400", async () => {
-    const dir = await mkdtemp(join(tmpdir(), "solar-readings-"));
-    const store = new ReadingsStore(dir);
+  async function billingApp() {
+    const store = new ReadingsStore(await mkdtemp(join(tmpdir(), "solar-readings-")));
     await store.updateMeter({ meterInstalledOn: "2026-09-15" });
     const app = new Hono();
     registerApiRoutes(app, {
@@ -628,33 +743,61 @@ describe("billing routes", () => {
       readings: store,
     });
     app.onError(apiErrorHandler);
+    return app;
+  }
 
-    const json = (body: unknown) => ({
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(body),
-    });
+  const send = (method: string, body?: unknown) => ({
+    method,
+    headers: { "Content-Type": "application/json" },
+    ...(body === undefined ? {} : { body: JSON.stringify(body) }),
+  });
+  const bill = { kwh: 1792, totalMxn: 5472.38 };
+
+  it("closes and reopens a period over HTTP, with 400/409 for what it refuses", async () => {
+    const app = await billingApp();
 
     // No reading on the cut date yet: refused with the reason.
-    const early = await app.request(
-      "/api/billing/periods/close",
-      json({ end: "2026-10-07", bill: { kwh: 1792, totalMxn: 5472.38 } }),
-    );
+    const early = await app.request("/api/billing/periods/close", send("POST", { end: "2026-10-07", bill }));
     expect(early.status).toBe(400);
 
-    await app.request("/api/billing/readings", {
-      ...json({ takenOn: "2026-10-07", importRegister: 435, exportRegister: 344 }),
-      method: "PUT",
-    });
-    const closed = await app.request(
-      "/api/billing/periods/close",
-      json({ end: "2026-10-07", bill: { kwh: 1792, totalMxn: 5472.38 } }),
+    await app.request(
+      "/api/billing/readings",
+      send("PUT", { takenOn: "2026-10-07", importRegister: 435, exportRegister: 344 }),
     );
+    const closed = await app.request("/api/billing/periods/close", send("POST", { end: "2026-10-07", bill }));
     expect(closed.status).toBe(200);
     expect(((await closed.json()) as { periods: unknown[] }).periods).toHaveLength(2);
 
     const deleted = await app.request("/api/billing/readings/2026-10-07", { method: "DELETE" });
-    expect(deleted.status).toBe(400);
+    expect(deleted.status).toBe(409);
+
+    const reopened = await app.request("/api/billing/periods/reopen", send("POST"));
+    expect(reopened.status).toBe(200);
+    expect(((await reopened.json()) as { periods: unknown[] }).periods).toHaveLength(1);
+
+    const nothingLeft = await app.request("/api/billing/periods/reopen", send("POST"));
+    expect(nothingLeft.status).toBe(409);
+  });
+
+  it.each([
+    ["a reading on an impossible day", "/api/billing/readings", send("PUT", { takenOn: "2026-02-31", importRegister: 1, exportRegister: 1 })],
+    ["a reading in a month that does not exist", "/api/billing/readings", send("PUT", { takenOn: "2026-13-01", importRegister: 1, exportRegister: 1 })],
+    ["a cut on an impossible day", "/api/billing/periods/close", send("POST", { end: "2026-02-31", bill })],
+    ["a future install date", "/api/billing/meter", send("PUT", { meterInstalledOn: "2999-01-01" })],
+  ])("answers %s with 400", async (_label, path, init) => {
+    const app = await billingApp();
+    expect((await app.request(path, init)).status).toBe(400);
+  });
+
+  it("rejects an impossible day in the delete path", async () => {
+    const app = await billingApp();
+    expect((await app.request("/api/billing/readings/2026-02-31", { method: "DELETE" })).status).toBe(400);
+  });
+
+  it("no longer answers the old carryover alias", async () => {
+    const app = await billingApp();
+    app.all("/api/*", (c) => c.json({ error: "No such endpoint" }, 404));
+    expect((await app.request("/api/billing/carryover", send("PUT", { carryoverKwh: 1 }))).status).toBe(404);
   });
 });
 

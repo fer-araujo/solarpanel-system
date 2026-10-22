@@ -287,6 +287,9 @@ export const api = {
       body: JSON.stringify(close),
     }),
 
+  reopenPeriod: () =>
+    request<ReadingsResponse>("/api/billing/periods/reopen", { method: "POST" }),
+
   saveMeter: (patch: { carryoverKwh?: number; meterInstalledOn?: string }) =>
     request<ReadingsResponse>("/api/billing/meter", {
       method: "PUT",

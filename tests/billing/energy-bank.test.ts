@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
+import { addDays } from "@core/billing/model/calendar";
 import {
-  addDays,
   periodLabel,
   type BillingPeriod,
   type MeterReading,

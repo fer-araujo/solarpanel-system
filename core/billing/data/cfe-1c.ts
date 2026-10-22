@@ -1,5 +1,6 @@
 import {
   assertScheduleWellFormed,
+  latestVersion,
   type Tariff,
   type TariffVersion,
 } from "../model/tariff";
@@ -29,7 +30,7 @@ import {
  */
 export const SUMMER_JUN_AGO_26: TariffVersion = {
   label: "1C verano",
-  effectiveFrom: "2026-06-08",
+  periodStart: "2026-06-08",
   fixedCharge: 0,
   verified: true,
   source: "Recibo CFE, periodo 08 JUN 26 – 06 AGO 26",
@@ -52,7 +53,7 @@ export const SUMMER_JUN_AGO_26: TariffVersion = {
  */
 export const SUMMER_AGO_OCT_26: TariffVersion = {
   label: "1C verano",
-  effectiveFrom: "2026-08-06",
+  periodStart: "2026-08-06",
   fixedCharge: 0,
   verified: true,
   source: "Recibo CFE, periodo 06 AGO 26 – 07 OCT 26",
@@ -70,7 +71,7 @@ export const CFE_1C: Tariff = {
   code: "1C",
   currency: "MXN",
 
-  summer: SUMMER_VERSIONS[SUMMER_VERSIONS.length - 1] ?? SUMMER_AGO_OCT_26,
+  summer: latestVersion(SUMMER_VERSIONS),
   summerVersions: SUMMER_VERSIONS,
 
   /** NOT yet verified: needs a bill from outside the summer season. */

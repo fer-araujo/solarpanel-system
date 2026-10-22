@@ -1,3 +1,5 @@
+import { addDays } from "./calendar";
+
 /**
  * A reading off the CFE bidirectional meter.
  *
@@ -17,6 +19,11 @@ export interface MeterReading {
   importRegister: number;
   /** Cumulative kWh returned to the grid ("retorno"). */
   exportRegister: number;
+  /**
+   * True when the day was not recorded and had to be inferred (a reading
+   * migrated from the month-keyed format). Re-saving the reading clears it.
+   */
+  inferred?: boolean;
 }
 
 /** What CFE printed on the recibo that closed a period. */
@@ -51,17 +58,7 @@ export interface BillingPeriod {
 /** Nominal length of a CFE bimester, for an open period's expected cut date. */
 export const DAYS_PER_BIMESTER = 61;
 
-const DAY_MS = 86_400_000;
 const MONTHS = ["ene", "feb", "mar", "abr", "may", "jun", "jul", "ago", "sep", "oct", "nov", "dic"];
-
-export function addDays(date: string, days: number): string {
-  return new Date(Date.parse(`${date}T00:00:00Z`) + days * DAY_MS).toISOString().slice(0, 10);
-}
-
-/** Whole days from `from` to `to`, both `YYYY-MM-DD`. */
-export function daysBetween(from: string, to: string): number {
-  return Math.round((Date.parse(`${to}T00:00:00Z`) - Date.parse(`${from}T00:00:00Z`)) / DAY_MS);
-}
 
 /** The cut date to expect for a period: the real one, or start + one bimester. */
 export function expectedEnd(period: BillingPeriod): string {

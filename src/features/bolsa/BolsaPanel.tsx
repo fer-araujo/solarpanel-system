@@ -19,6 +19,9 @@ const CONFIDENCE_LABEL: Record<string, string> = {
   good: "sólido · 6+ bimestres",
 };
 
+/** SolaX refused some daily PV: those figures are a floor, and the panel refetches. */
+const PARTIAL_NOTE = "Generación incompleta: SolaX no respondió; se recalcula sola.";
+
 /**
  * The metrics that are impossible instantaneously without a meter, but exact
  * once a period closes: `load = PV + imported - exported`.
@@ -98,7 +101,11 @@ function BalanceSummary({
               <dd className="text-ink">{latest.loadKwh.toFixed(1)} kWh</dd>
             </div>
           </dl>
-          {latest.note && <p className="mt-2 text-[11.5px] leading-relaxed text-ink-faint">{latest.note}</p>}
+          {latest.partial ? (
+            <p className="mt-2 text-[11.5px] leading-relaxed text-grid">{PARTIAL_NOTE}</p>
+          ) : (
+            latest.note && <p className="mt-2 text-[11.5px] leading-relaxed text-ink-faint">{latest.note}</p>
+          )}
         </div>
       )}
 
@@ -110,6 +117,10 @@ function BalanceSummary({
         . Sin batería el balance cierra exacto, así que estas tres cifras son reales pese a
         no haber medidor. Lo que un recibo no puede decir es el reparto momento a momento.
       </p>
+
+      {balance.partial && !latest?.partial && (
+        <p className="mt-2 text-[12px] leading-relaxed text-grid">{PARTIAL_NOTE}</p>
+      )}
 
       {broken.length > 0 && (
         <p className="mt-2 text-[12px] leading-relaxed text-grid">

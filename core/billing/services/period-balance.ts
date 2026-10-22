@@ -23,6 +23,8 @@
  * of extra periods lets a bimonthly total reveal what happened at 17:15.
  */
 
+import { DAYS_PER_BIMESTER } from "../model/meter-reading";
+
 export interface PeriodBalanceInput {
   period: string;
   /** kWh generated, measured by the inverters over the same period. */
@@ -35,6 +37,11 @@ export interface PeriodBalanceInput {
   days?: number;
   /** True for the open period, balanced only up to its latest reading. */
   open?: boolean;
+  /**
+   * True when some of the window's daily PV could not be loaded. The PV
+   * figure is then a floor, not a measurement, so nothing is concluded from it.
+   */
+  partial?: boolean;
 }
 
 export interface PeriodBalance {
@@ -62,6 +69,11 @@ export interface PeriodBalance {
   days: number | null;
   /** Running figures of the open period, not a settled one. */
   open: boolean;
+  /**
+   * Some daily PV is missing (SolaX did not answer). Not judged consistent or
+   * not, and left out of every average until a later request completes it.
+   */
+  partial: boolean;
 }
 
 function round(value: number, places = 2): number {
@@ -74,12 +86,16 @@ const TOLERANCE_KWH = 1;
 
 export function balancePeriod(input: PeriodBalanceInput): PeriodBalance {
   const { period, pvGeneratedKwh, importedKwh, exportedKwh } = input;
+  const partial = input.partial ?? false;
 
   const loadKwh = pvGeneratedKwh + importedKwh - exportedKwh;
   const selfConsumedKwh = pvGeneratedKwh - exportedKwh;
 
+  // Missing PV would read as "exported more than generated": no verdict then.
   let inconsistency: string | null = null;
-  if (exportedKwh > pvGeneratedKwh + TOLERANCE_KWH) {
+  if (partial) {
+    inconsistency = null;
+  } else if (exportedKwh > pvGeneratedKwh + TOLERANCE_KWH) {
     inconsistency =
       `Exportaste ${round(exportedKwh)} kWh pero solo generaste ` +
       `${round(pvGeneratedKwh)} kWh. Sin batería eso es imposible: revisa que el ` +
@@ -100,11 +116,11 @@ export function balancePeriod(input: PeriodBalanceInput): PeriodBalance {
     loadKwh: round(loadKwh),
     selfConsumedKwh: round(selfConsumedKwh),
     selfSufficiency:
-      consistent && loadKwh > 0
+      consistent && !partial && loadKwh > 0
         ? round(Math.min(100, ((loadKwh - importedKwh) / loadKwh) * 100), 1)
         : null,
     selfConsumption:
-      consistent && pvGeneratedKwh > 0
+      consistent && !partial && pvGeneratedKwh > 0
         ? round(Math.min(100, (selfConsumedKwh / pvGeneratedKwh) * 100), 1)
         : null,
     consistent,
@@ -112,13 +128,20 @@ export function balancePeriod(input: PeriodBalanceInput): PeriodBalance {
     note: null,
     days: input.days ?? null,
     open: input.open ?? false,
+    partial,
   };
 }
 
+/** Closed periods needed before the averages are called fair, then good. */
+export const FAIR_CONFIDENCE_PERIODS = 3;
+export const GOOD_CONFIDENCE_PERIODS = 6;
+
 export interface BalanceTrend {
   periods: PeriodBalance[];
-  /** CLOSED periods that balanced consistently. */
+  /** CLOSED periods that balanced consistently with complete PV. */
   usablePeriods: number;
+  /** True when some period's PV is incomplete and was left out. */
+  partial: boolean;
   averageSelfSufficiency: number | null;
   averageSelfConsumption: number | null;
   /**
@@ -148,8 +171,9 @@ export function summarizeBalances(
   balances: readonly PeriodBalance[],
   options: { daysPerPeriod?: number } = {},
 ): BalanceTrend {
-  const { daysPerPeriod = 61 } = options;
-  const consistent = balances.filter((balance) => balance.consistent);
+  const { daysPerPeriod = DAYS_PER_BIMESTER } = options;
+  const partial = balances.some((balance) => balance.partial);
+  const consistent = balances.filter((balance) => balance.consistent && !balance.partial);
   const closed = consistent.filter((balance) => !balance.open);
   const usable = closed.length > 0 ? closed : consistent;
 
@@ -157,6 +181,7 @@ export function summarizeBalances(
     return {
       periods: [...balances],
       usablePeriods: 0,
+      partial,
       averageSelfSufficiency: null,
       averageSelfConsumption: null,
       averageDailyLoadKwh: null,
@@ -175,11 +200,16 @@ export function summarizeBalances(
   );
 
   const confidence =
-    closed.length >= 6 ? "good" : closed.length >= 3 ? "fair" : "provisional";
+    closed.length >= GOOD_CONFIDENCE_PERIODS
+      ? "good"
+      : closed.length >= FAIR_CONFIDENCE_PERIODS
+        ? "fair"
+        : "provisional";
 
   return {
     periods: [...balances],
     usablePeriods: closed.length,
+    partial,
     averageSelfSufficiency:
       totals.load > 0
         ? round(Math.min(100, ((totals.load - totals.imported) / totals.load) * 100), 1)

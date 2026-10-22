@@ -1,9 +1,9 @@
 import { useState } from "react";
 import { scaleLinear } from "d3-scale";
 import { CFE_1C } from "@core/billing/data/cfe-1c";
-import { monthsBetween } from "@core/billing/model/meter-reading";
+import { DAYS_PER_BIMESTER, monthsBetween } from "@core/billing/model/meter-reading";
+import { billHistory, BIMESTERS_PER_YEAR } from "@core/billing/services/consumption";
 import {
-  DAYS_PER_BIMESTER,
   expectedBimonthlySolarKwh,
   projectBill,
   projectNextBill,
@@ -63,7 +63,8 @@ export function BillHistory() {
   const readingsQuery = useReadings();
   const readings = readingsQuery.data;
   const billing = useBillingSummary().data;
-  const history = readings?.history ?? [];
+  // The recibo's history plus every bill captured when closing a period.
+  const history = readings ? billHistory(readings.history, readings.periods) : [];
   const plant = usePlantRealtime().data;
   const capacity = useTopology().data?.pvCapacityKwp ?? null;
   const [hover, setHover] = useState<number | null>(null);
@@ -77,7 +78,7 @@ export function BillHistory() {
   }
   if (history.length === 0) return null;
 
-  const last12 = history.slice(-6);
+  const last12 = history.slice(-BIMESTERS_PER_YEAR);
   const paid12 = last12.reduce((s, b) => s + (b.amountMxn ?? 0), 0);
   const kwh12 = last12.reduce((s, b) => s + b.kwh, 0);
   const avgGross = kwh12 / last12.length;
