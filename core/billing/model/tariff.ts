@@ -38,10 +38,29 @@ export interface TariffSchedule {
   source?: string;
 }
 
+/**
+ * A schedule as printed on one recibo. CFE adjusts prices every period, so a
+ * bill must be priced with the prices in force when it was cut, not today's.
+ */
+export interface TariffVersion extends TariffSchedule {
+  /**
+   * `YYYY-MM-DD`: first day of the billing period whose recibo printed these
+   * prices (the previous cut date).
+   *
+   * They apply to every period cut STRICTLY AFTER this day. Strict because
+   * a cut date is shared: the JUN–AGO bill is cut on 06 AGO, the very day the
+   * AGO–OCT period (and its prices) starts, and it was priced with the old ones.
+   */
+  periodStart: string;
+}
+
 export interface Tariff {
   code: string;
   currency: string;
+  /** The latest summer prices: what forward-looking estimates use. */
   summer: TariffSchedule;
+  /** Every captured summer price set, oldest first. */
+  summerVersions: readonly TariffVersion[];
   nonSummer: TariffSchedule;
   /**
    * Trailing 12-month average consumption, in kWh per month, above which CFE
@@ -55,6 +74,31 @@ export interface Tariff {
     note: string;
     verified: boolean;
   };
+}
+
+function byPeriodStart(versions: readonly TariffVersion[]): TariffVersion[] {
+  const sorted = [...versions].sort((a, b) => a.periodStart.localeCompare(b.periodStart));
+  if (sorted.length === 0) throw new Error("No tariff versions to choose from");
+  return sorted;
+}
+
+/** The most recent prices on record: what estimates of the future use. */
+export function latestVersion(versions: readonly TariffVersion[]): TariffVersion {
+  const sorted = byPeriodStart(versions);
+  return sorted[sorted.length - 1] as TariffVersion;
+}
+
+/**
+ * The prices that applied to a period cut on `end` (`YYYY-MM-DD`): the latest
+ * version whose period started strictly before that cut. A cut before every
+ * known version falls back to the oldest, the closest thing on record.
+ */
+export function scheduleForPeriodEnd(
+  versions: readonly TariffVersion[],
+  end: string,
+): TariffVersion {
+  const sorted = byPeriodStart(versions);
+  return sorted.filter((version) => version.periodStart < end).at(-1) ?? (sorted[0] as TariffVersion);
 }
 
 export function isBlockUnbounded(block: TariffBlock): boolean {

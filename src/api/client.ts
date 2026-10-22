@@ -6,10 +6,10 @@ import type {
   SystemTopology,
 } from "@core/energy/model/power";
 import type { AlarmDto } from "@core/solax/dto/device";
-import type { BankPeriod, BankProjection } from "@core/billing/services/energy-bank";
+import type { BankPeriod, BankProjection, OpenPeriod } from "@core/billing/services/energy-bank";
 import type { DacRisk } from "@core/billing/services/dac-risk";
 import type { BalanceTrend } from "@core/billing/services/period-balance";
-import type { MeterReading } from "@core/billing/model/meter-reading";
+import type { BillingPeriod, MeterReading, PeriodBill } from "@core/billing/model/meter-reading";
 import { accessToken, getAuthClient, signOut } from "./auth";
 
 /**
@@ -155,7 +155,10 @@ export interface StatsResponse {
 }
 
 export interface BillingSummaryResponse {
+  /** Closed periods only, oldest first. */
   periods: BankPeriod[];
+  /** The period still accumulating: running figures, nothing settled. */
+  open: OpenPeriod | null;
   projection: BankProjection | null;
   dac: DacRisk | null;
   savings: { period: string; amount: number }[] | null;
@@ -172,9 +175,12 @@ export interface BillingSummaryResponse {
 }
 
 export interface ReadingsResponse {
-  version: 1;
+  version: 2;
   carryoverKwh: number;
   meterInstalledOn?: string;
+  /** By CFE cut date, oldest first; only the last may be open. */
+  periods: BillingPeriod[];
+  /** Keyed by day, oldest first. */
   readings: MeterReading[];
   history: { period: string; kwh: number; amountMxn?: number }[];
 }
@@ -271,8 +277,18 @@ export const api = {
       body: JSON.stringify(reading),
     }),
 
-  deleteReading: (period: string) =>
-    request<ReadingsResponse>(`/api/billing/readings/${period}`, { method: "DELETE" }),
+  deleteReading: (takenOn: string) =>
+    request<ReadingsResponse>(`/api/billing/readings/${takenOn}`, { method: "DELETE" }),
+
+  closePeriod: (close: { end: string; bill: PeriodBill }) =>
+    request<ReadingsResponse>("/api/billing/periods/close", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(close),
+    }),
+
+  reopenPeriod: () =>
+    request<ReadingsResponse>("/api/billing/periods/reopen", { method: "POST" }),
 
   saveMeter: (patch: { carryoverKwh?: number; meterInstalledOn?: string }) =>
     request<ReadingsResponse>("/api/billing/meter", {

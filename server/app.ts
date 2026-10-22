@@ -14,15 +14,19 @@ import { effectivePvKwh, normalizeStatEntries } from "@core/solax/mappers/stats"
 import { plantDayBoundsFor, plantLocalDayBounds } from "@core/solax/mappers/units";
 import type { SystemTopology } from "@core/energy/model/power";
 import { CFE_1C } from "@core/billing/data/cfe-1c";
+import { daysBetween, isIsoDate } from "@core/billing/model/calendar";
+import { scheduleForPeriodEnd } from "@core/billing/model/tariff";
 import {
   projectBankDepletion,
   runEnergyBank,
 } from "@core/billing/services/energy-bank";
+import { assessDacRisk, type DacBasis } from "@core/billing/services/dac-risk";
 import {
-  assessDacRisk,
-  bimonthlyToMonthly,
-  type DacBasis,
-} from "@core/billing/services/dac-risk";
+  averageBimonthlyKwh,
+  billHistory,
+  monthlyConsumption,
+  monthsSpanned,
+} from "@core/billing/services/consumption";
 import { savingsFromOffset } from "@core/billing/services/price-energy";
 import {
   balancePeriod,
@@ -39,7 +43,13 @@ import {
 import { RateLimitExceededError, type SolaxHttpClient } from "./solax/http-client";
 import { RATE_LIMIT_PENALTY_MS } from "./solax/rate-limiter";
 import type { TokenStore } from "./solax/token-store";
-import { readingSchema, type ReadingsRepository } from "./billing/readings-store";
+import {
+  billSchema,
+  isoDateSchema,
+  readingInputSchema,
+  ReadingsError,
+  type ReadingsRepository,
+} from "./billing/readings-store";
 
 /**
  * The HTTP surface.
@@ -132,9 +142,10 @@ export async function optional<T>(label: string, run: () => Promise<T[]>): Promi
 }
 
 /**
- * For extras whose absence only thins a response (alarms, PV for the CFE
- * balance) and whose empty result is never cached: any failure, budget
- * refusals included, degrades to an empty list instead of failing the route.
+ * For extras whose absence only thins a response (alarms) and whose empty
+ * result is never cached: any failure, budget refusals included, degrades to
+ * an empty list instead of failing the route. Not for data a calculation
+ * depends on — an empty list there would read as zero, not as unknown.
  */
 async function bestEffort<T>(label: string, run: () => Promise<T[]>): Promise<T[]> {
   try {
@@ -570,8 +581,9 @@ export function registerApiRoutes(app: Hono, deps: AppDeps): Hono {
     return context.json(await readings.load());
   });
 
+  // Upserts by day: any number of readings per period, one per date.
   app.put("/api/billing/readings", async (context) => {
-    const parsed = readingSchema.safeParse(await context.req.json());
+    const parsed = readingInputSchema.safeParse(await context.req.json());
     if (!parsed.success) {
       return context.json(
         {
@@ -587,24 +599,47 @@ export function registerApiRoutes(app: Hono, deps: AppDeps): Hono {
     return context.json(await readings.upsert(parsed.data));
   });
 
-  app.delete("/api/billing/readings/:period", async (context) => {
-    return context.json(await readings.remove(context.req.param("period")));
+  app.delete("/api/billing/readings/:takenOn", async (context) => {
+    const takenOn = context.req.param("takenOn");
+    if (!isIsoDate(takenOn)) {
+      return context.json({ error: "takenOn must be a real date, YYYY-MM-DD" }, 400);
+    }
+    return context.json(await readings.remove(takenOn));
+  });
+
+  /**
+   * Closes the open period with the recibo in hand. The cut date's reading must
+   * already be saved: it is what the period's figures are computed from.
+   */
+  app.post("/api/billing/periods/close", async (context) => {
+    const parsed = z
+      .object({ end: isoDateSchema, bill: billSchema })
+      .safeParse(await context.req.json());
+    if (!parsed.success) {
+      return context.json(
+        { error: "end must be a real date (YYYY-MM-DD) and bill needs kwh and totalMxn >= 0" },
+        400,
+      );
+    }
+    return context.json(await readings.closePeriod(parsed.data.end, parsed.data.bill));
+  });
+
+  /** Undoes the most recent close, while the period it opened is still empty. */
+  app.post("/api/billing/periods/reopen", async (context) => {
+    return context.json(await readings.reopenLastPeriod());
   });
 
   // Meter-swap facts: unbilled carryover and the day the new meter went in.
-  app.on("PUT", ["/api/billing/carryover", "/api/billing/meter"], async (context) => {
+  app.put("/api/billing/meter", async (context) => {
     const parsed = z
       .object({
         carryoverKwh: z.number().nonnegative().optional(),
-        meterInstalledOn: z
-          .string()
-          .regex(/^\d{4}-\d{2}-\d{2}$/)
-          .optional(),
+        meterInstalledOn: isoDateSchema.optional(),
       })
       .safeParse(await context.req.json());
     if (!parsed.success) {
       return context.json(
-        { error: "carryoverKwh must be >= 0 and meterInstalledOn YYYY-MM-DD" },
+        { error: "carryoverKwh must be >= 0 and meterInstalledOn a real date, YYYY-MM-DD" },
         400,
       );
     }
@@ -618,194 +653,173 @@ export function registerApiRoutes(app: Hono, deps: AppDeps): Hono {
    * billed consumption for the DAC test is unconfirmed, and the answer changes
    * whether solar shields the account at all. The response echoes the basis
    * used so a reader knows which assumption produced the number.
+   *
+   * The arithmetic lives in core/billing; this only fetches PV and assembles.
    */
   app.get("/api/billing/summary", async (context) => {
     const file = await readings.load();
+    const latestPrices = CFE_1C.summer;
+    const bills = billHistory(file.history, file.periods);
     // Bill history alone is enough for the DAC assessment, so only bail out
     // when there is nothing at all.
-    if (file.readings.length === 0 && file.history.length === 0) {
+    if (file.readings.length === 0 && bills.length === 0) {
       return context.json({
         periods: [],
+        open: null,
         projection: null,
         dac: null,
         savings: null,
         balance: null,
-        tariff: { code: CFE_1C.code, verified: CFE_1C.provenance.verified },
+        tariff: { code: CFE_1C.code, verified: latestPrices.verified ?? false },
       });
     }
 
-    const periods = runEnergyBank(file.readings, {
+    // One entry per CLOSED period; the open one only reports running figures.
+    const bank = runEnergyBank(file, {
       carryoverKwh: file.carryoverKwh,
       firstReadingIsFreshMeter: true,
     });
+    const periods = bank.periods;
+    const firstStart = file.periods[0]?.start ?? null;
 
     /**
-     * Closes the energy balance per period.
-     *
-     * With no battery, `load = PV + imported - exported`, and PV is measured by
-     * the inverters. So self-sufficiency, self-consumption and the true house
-     * consumption — all uncomputable instantaneously without a meter — are
-     * EXACT once a period closes.
-     *
-     * One `get_stat_data` call returns a whole year of monthly PV, so covering
-     * every period costs one call per distinct year, cached for an hour.
+     * Daily PV from `get_stat_data`, one call per month (closed months are
+     * cached for a month). A month counts as loaded only once it actually
+     * loaded: when SolaX refuses, the windows that need it are reported
+     * `partial` instead of being balanced against a hole that would read as
+     * "exported more than generated". Not retried within the request — a
+     * second try would spend more of the budget the refusal is protecting.
      */
     const system = await topology();
+    const pvByDay = new Map<string, number>();
+    const loadedMonths = new Set<string>();
+    const missingMonths = new Set<string>();
+    async function ensureMonth(month: string): Promise<void> {
+      if (loadedMonths.has(month) || missingMonths.has(month)) return;
+      try {
+        const cached = await cache.fetch(
+          `stats:2:${month}`,
+          statsTtl(month, system.utcOffsetMinutes),
+          () => endpoints.getPlantStats({ plantId: system.plantId, dateType: 2, date: month }),
+        );
+        for (const entry of cached.value.plantEnergyStatDataList ?? []) {
+          const kwh = effectivePvKwh(entry);
+          if (kwh !== null) pvByDay.set(entry.date, kwh);
+        }
+        loadedMonths.add(month);
+      } catch (error) {
+        missingMonths.add(month);
+        console.warn(
+          `[api] PV for ${month} unavailable, balance marked partial: ` +
+            `${error instanceof Error ? error.name : String(error)}`,
+        );
+      }
+    }
+
     /**
-     * PV is summed DAY BY DAY between the exact dates of consecutive readings,
-     * so generation and meter cover the same window. The first version summed
-     * whole months against a bimonthly label, which compared weeks of meter
-     * against the two days SolaX happened to have data for.
+     * Closes the energy balance for one window: `load = PV + imported -
+     * exported`, exact with no battery.
      *
      * The meter-swap carryover is excluded: it is old-meter consumption from
      * before solar, relevant to the bill and the bolsa, not to this balance.
-     * Periods without dates are skipped rather than guessed.
+     * The first period counts its start day (the meter went in that morning);
+     * later ones start the day after the previous cut, which closed that day.
      */
-    const pvByDay = new Map<string, number>();
-    const loadedMonths = new Set<string>();
-    async function ensureMonth(month: string): Promise<void> {
-      if (loadedMonths.has(month)) return;
-      loadedMonths.add(month);
-      const entries = await bestEffort(`stats:2:${month}`, async () => {
-        const cached = await cache.fetch(`stats:2:${month}`, statsTtl(month, system.utcOffsetMinutes), () =>
-          endpoints.getPlantStats({ plantId: system.plantId, dateType: 2, date: month }),
-        );
-        return cached.value.plantEnergyStatDataList ?? [];
-      });
-      for (const entry of entries) {
-        const kwh = effectivePvKwh(entry);
-        if (kwh !== null) pvByDay.set(entry.date, kwh);
+    async function balanceWindow(window: {
+      label: string;
+      start: string;
+      end: string;
+      importedKwh: number;
+      exportedKwh: number;
+      open: boolean;
+    }): Promise<PeriodBalance> {
+      const first = window.start === firstStart;
+      const months = monthsSpanned(window.start, window.end);
+      for (const month of months) await ensureMonth(month);
+      const partial = months.some((month) => missingMonths.has(month));
+
+      let pv = 0;
+      for (const [day, kwh] of pvByDay) {
+        const inRange = first
+          ? day >= window.start && day <= window.end
+          : day > window.start && day <= window.end;
+        if (inRange) pv += kwh;
       }
+      const balance = balancePeriod({
+        period: window.label,
+        pvGeneratedKwh: pv,
+        importedKwh: window.importedKwh - (first ? file.carryoverKwh : 0),
+        exportedKwh: window.exportedKwh,
+        days: daysBetween(window.start, window.end) + (first ? 1 : 0),
+        open: window.open,
+        partial,
+      });
+      if (partial) return balance;
+
+      // Days before the first day SolaX recorded production count as zero:
+      // on a new install the panels simply were not on yet. Said next to the
+      // numbers, so a dongle that joined late would still be noticed.
+      const firstDataDay = [...pvByDay.entries()]
+        .filter(([, kwh]) => kwh > 0)
+        .map(([day]) => day)
+        .sort()[0];
+      return firstDataDay && window.start < firstDataDay
+        ? {
+            ...balance,
+            note:
+              `Generación contada desde el ${firstDataDay}, primer día con datos de ` +
+              `SolaX; los días anteriores del periodo cuentan como 0 kWh.`,
+          }
+        : balance;
     }
 
     const balances: PeriodBalance[] = [];
-    let previous: string | null = file.meterInstalledOn ?? null;
-    for (let index = 0; index < periods.length; index++) {
-      const period = periods[index];
-      const end = file.readings[index]?.takenOn ?? null;
-      if (period && previous && end && end >= previous) {
-        for (const month of monthsSpanned(previous, end)) await ensureMonth(month);
-        const start = previous;
-        let pv = 0;
-        for (const [day, kwh] of pvByDay) {
-          const inRange =
-            index === 0 ? day >= start && day <= end : day > start && day <= end;
-          if (inRange) pv += kwh;
-        }
-        const balance = balancePeriod({
-          period: period.period,
-          pvGeneratedKwh: pv,
-          importedKwh: period.importedKwh - (index === 0 ? file.carryoverKwh : 0),
-          exportedKwh: period.exportedKwh,
-          days: daysBetween(start, end) + (index === 0 ? 1 : 0),
-        });
-
-        // Days before the first day SolaX recorded production count as zero:
-        // on a new install the panels simply were not on yet. Said next to the
-        // numbers, so a dongle that joined late would still be noticed.
-        const firstDataDay = [...pvByDay.entries()]
-          .filter(([, kwh]) => kwh > 0)
-          .map(([day]) => day)
-          .sort()[0];
-        balances.push(
-          firstDataDay && start < firstDataDay
-            ? {
-                ...balance,
-                note:
-                  `Generación contada desde el ${firstDataDay}, primer día con datos de ` +
-                  `SolaX; los días anteriores del periodo cuentan como 0 kWh.`,
-              }
-            : balance,
-        );
-      }
-      previous = end;
+    for (const period of periods) {
+      balances.push(await balanceWindow({ ...period, open: false }));
     }
-
-    const trend = summarizeBalances(balances);
+    // The open period, up to its latest reading: the only estimate of the
+    // house's consumption until the first bill closes.
+    const open = bank.open;
+    if (open?.lastReadingOn && open.lastReadingOn > open.start) {
+      balances.push(await balanceWindow({ ...open, end: open.lastReadingOn, open: true }));
+    }
 
     const basis: DacBasis = context.req.query("dacBasis") === "gross" ? "gross" : "billed";
+    const monthly = monthlyConsumption({ history: file.history, periods, basis });
 
-    /**
-     * DAC averages the trailing 12 months, so it needs history from BEFORE the
-     * new meter. The recibo's "consumo histórico" supplies it; the new meter's
-     * periods extend it forward.
-     *
-     * Merged by month with the bill winning where both cover the same month:
-     * the history is what CFE actually billed, while a spread bank period is an
-     * even split of a bimonthly figure. Without the de-duplication the month
-     * the meter was swapped would be counted twice.
-     *
-     * Pre-solar history is the same under both bases — with no solar there was
-     * nothing to net against.
-     */
-    const byMonth = new Map<string, number>();
-    for (const entry of bimonthlyToMonthly(file.history)) {
-      byMonth.set(entry.period, entry.kwh);
-    }
-    for (const entry of bimonthlyToMonthly(
-      periods.map((period) => ({
-        period: period.period,
-        kwh: basis === "gross" ? period.importedKwh : period.billedKwh,
-      })),
-    )) {
-      if (!byMonth.has(entry.period)) byMonth.set(entry.period, entry.kwh);
-    }
-    const monthly = [...byMonth.entries()]
-      .sort(([a], [b]) => a.localeCompare(b))
-      .map(([period, kwh]) => ({ period, kwh }));
-
-    const schedule = CFE_1C.summer;
+    // Each bill priced with the prices printed on it, not today's.
     const savings = periods.map((period) => ({
       period: period.period,
       // What the bill would have been without the array, minus what it was.
-      amount: savingsFromOffset(period.importedKwh, period.billedKwh, schedule),
+      amount: savingsFromOffset(
+        period.importedKwh,
+        period.billedKwh,
+        scheduleForPeriodEnd(CFE_1C.summerVersions, period.end),
+      ),
     }));
 
     return context.json({
       periods,
+      open,
       projection: projectBankDepletion(periods),
       dac: assessDacRisk(monthly, CFE_1C.dacLimitKwhPerMonth, basis),
       savings,
-      balance: trend,
+      balance: summarizeBalances(balances),
       // Typical gross consumption per bimester from the last year of bills —
       // what solar displaces from, and so what prices each displaced kWh.
-      averageBimonthlyKwh:
-        file.history.length > 0
-          ? file.history.slice(-6).reduce((sum, entry) => sum + entry.kwh, 0) /
-            Math.min(6, file.history.length)
-          : null,
+      averageBimonthlyKwh: averageBimonthlyKwh(bills),
       currency: CFE_1C.currency,
       tariff: {
         code: CFE_1C.code,
-        // Savings are priced on the summer schedule, so that schedule's
+        // Savings and projections use the summer prices, so their
         // verification is what decides whether the peso figures are provisional.
-        verified: schedule.verified ?? false,
-        note: schedule.source ?? CFE_1C.provenance.note,
+        verified: latestPrices.verified ?? false,
+        note: latestPrices.source ?? CFE_1C.provenance.note,
       },
     });
   });
 
   return app;
-}
-
-/** `YYYY-MM` months touched by an inclusive `YYYY-MM-DD` range. */
-function monthsSpanned(from: string, to: string): string[] {
-  const out: string[] = [];
-  let [y, m] = from.split("-").map(Number) as [number, number];
-  const [ey, em] = to.split("-").map(Number) as [number, number];
-  while (y < ey || (y === ey && m <= em)) {
-    out.push(`${y}-${String(m).padStart(2, "0")}`);
-    m += 1;
-    if (m > 12) {
-      m = 1;
-      y += 1;
-    }
-  }
-  return out;
-}
-
-function daysBetween(from: string, to: string): number {
-  return Math.round((Date.parse(to) - Date.parse(from)) / 86_400_000);
 }
 
 /**
@@ -818,6 +832,12 @@ function daysBetween(from: string, to: string): number {
  * names — "Internal error" is useless for all three.
  */
 export function apiErrorHandler(error: Error, context: Context) {
+  // A reading or a period close the stored data cannot accept: the message is
+  // written for the person filling in the form.
+  if (error instanceof ReadingsError) {
+    return context.json({ error: error.message }, error.status);
+  }
+
   if (error instanceof RateLimitExceededError) {
     return context.json(
       { error: error.message, scope: error.scope, retryAfterMs: error.retryAfterMs },

@@ -1,3 +1,4 @@
+import { DAYS_PER_BIMESTER } from "../model/meter-reading";
 import type { TariffSchedule } from "../model/tariff";
 import { priceEnergy } from "./price-energy";
 
@@ -121,8 +122,28 @@ export function projectNextBill(input: NextBillInput): { kwh: number; amount: nu
   return { kwh, amount: priceEnergy(kwh, schedule) * (1 + IVA_RATE) };
 }
 
-/** Days in a CFE bimester, for scaling a daily figure to a billing period. */
-export const DAYS_PER_BIMESTER = 61;
+export interface PricedBill {
+  energyMxn: number;
+  ivaMxn: number;
+  totalMxn: number;
+}
+
+const cents = (value: number) => Math.round(value * 100) / 100;
+
+/**
+ * A bill as the recibo prints it: energy rounded to the centavo, IVA computed
+ * on that rounded subtotal, total the sum of the two. Rounding in the same
+ * order CFE does is what makes the figure match the paper to the centavo.
+ */
+export function priceBill(
+  kwh: number,
+  schedule: TariffSchedule,
+  ivaRate: number = IVA_RATE,
+): PricedBill {
+  const energyMxn = cents(priceEnergy(kwh, schedule));
+  const ivaMxn = cents(energyMxn * ivaRate);
+  return { energyMxn, ivaMxn, totalMxn: cents(energyMxn + ivaMxn) };
+}
 
 /**
  * Estimated savings for a day's production, assuming the day is typical of its
