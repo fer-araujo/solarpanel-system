@@ -1,3 +1,4 @@
+import { useCallback, useSyncExternalStore } from "react";
 import {
   QueryCache,
   QueryClient,
@@ -6,6 +7,8 @@ import {
   useQueryClient,
   type UseQueryResult,
 } from "@tanstack/react-query";
+import { createSyncStoragePersister } from "@tanstack/query-sync-storage-persister";
+import type { PersistQueryClientOptions } from "@tanstack/react-query-persist-client";
 import type { MeterReading } from "@core/billing/model/meter-reading";
 import { signOut } from "./auth";
 import {
@@ -30,6 +33,15 @@ const SLOW_POLL_MS = 5 * 60_000;
 /** Consecutive identical timestamps before we accept the dongle is idle. */
 const STALL_THRESHOLD = 2;
 
+/**
+ * Upper bound on waiting out a 429 before the single retry. The server's
+ * 10406 penalty is 65 s; anything longer is a daily-quota answer, not a pause.
+ */
+const MAX_RETRY_AFTER_MS = 70_000;
+
+/** How long a persisted cache may paint the dashboard after a reload. */
+const PERSIST_MAX_AGE_MS = 24 * 60 * 60 * 1000;
+
 export function createQueryClient(): QueryClient {
   const client: QueryClient = new QueryClient({
     // Any 401 means the session expired mid-use: re-check it, which sends the
@@ -51,15 +63,29 @@ export function createQueryClient(): QueryClient {
         // which is exactly what a quota-limited API wants.
         refetchOnWindowFocus: true,
         retry: (failureCount, error) => {
-          // Never retry a budget refusal — that is the server protecting the
-          // daily quota, and hammering it defeats the purpose.
-          if (error instanceof ApiError && error.isBudgetRefusal) return false;
+          // A budget refusal is retried exactly ONCE, after the pause the
+          // server asked for. Without it a panel stayed broken until its next
+          // poll (minutes), while retrying sooner would only re-trip the limit.
+          // No `retryAfterMs` means the daily quota: nothing to wait out.
+          if (error instanceof ApiError && error.isBudgetRefusal) {
+            return failureCount < 1 && error.retryAfterMs !== undefined;
+          }
           if (error instanceof ApiError && !error.retryable && error.status < 500) {
             return false;
           }
           return failureCount < 2;
         },
+        retryDelay: (failureCount, error) => {
+          if (error instanceof ApiError && error.isBudgetRefusal && error.retryAfterMs !== undefined) {
+            // A second past the window, so the retry lands after it reopens.
+            return Math.min(error.retryAfterMs + 1_000, MAX_RETRY_AFTER_MS);
+          }
+          return Math.min(1_000 * 2 ** failureCount, 30_000);
+        },
         staleTime: 30_000,
+        // Must outlive the persisted copy, or restored queries are collected
+        // before anything observes them.
+        gcTime: PERSIST_MAX_AGE_MS,
       },
     },
   });
@@ -67,6 +93,98 @@ export function createQueryClient(): QueryClient {
 }
 
 export const authKey = ["auth", "me"] as const;
+
+/**
+ * Tags Dates so they survive the trip through JSON. Snapshots carry
+ * `power.at` as a Date, and a restored string would break every component
+ * that formats it.
+ */
+function serializeClient(client: unknown): string {
+  return JSON.stringify(client, function (this: Record<string, unknown>, key, value: unknown) {
+    const raw = this[key];
+    return raw instanceof Date ? { $date: raw.toISOString() } : value;
+  });
+}
+
+function deserializeClient<T>(text: string): T {
+  return JSON.parse(text, (_key, value: unknown) => {
+    if (typeof value === "object" && value !== null && "$date" in value) {
+      const tagged = value as { $date: unknown };
+      if (typeof tagged.$date === "string" && Object.keys(value).length === 1) {
+        return new Date(tagged.$date);
+      }
+    }
+    return value;
+  }) as T;
+}
+
+/** Null where storage is unavailable (private mode, blocked site data). */
+function browserStorage(): Storage | null {
+  try {
+    return typeof window === "undefined" ? null : window.localStorage;
+  } catch {
+    return null;
+  }
+}
+
+const persister = createSyncStoragePersister({
+  storage: browserStorage(),
+  key: "solar-dashboard-cache",
+  serialize: serializeClient,
+  deserialize: deserializeClient,
+});
+
+/**
+ * Persists the query cache to localStorage, so a reload paints the last
+ * values at once and refetches quietly instead of opening on skeletons while a
+ * burst of SolaX calls goes out.
+ *
+ * The session is never persisted (Firebase owns it), nor are mutations. The
+ * buster changes with every build, so a deploy that reshapes a response never
+ * feeds the new code an old shape.
+ */
+export const persistOptions: Omit<PersistQueryClientOptions, "queryClient"> = {
+  persister,
+  maxAge: PERSIST_MAX_AGE_MS,
+  buster: __APP_BUILD__,
+  dehydrateOptions: {
+    shouldDehydrateQuery: (query) =>
+      query.state.status === "success" && query.queryKey[0] !== "auth",
+    shouldDehydrateMutation: () => false,
+  },
+};
+
+/** Forgets the persisted copy, so nothing of a session outlives a sign-out. */
+export async function clearPersistedCache(): Promise<void> {
+  await persister.removeClient();
+}
+
+/** A response the server answered from its cache because SolaX refused or failed. */
+function isServedStale(data: unknown): boolean {
+  return typeof data === "object" && data !== null && (data as { stale?: unknown }).stale === true;
+}
+
+/**
+ * True while any panel on screen shows data the server flagged `stale`. Only
+ * observed queries count, so a cached response for a view that is not open
+ * does not keep the badge lit.
+ */
+export function useServedStale(): boolean {
+  const client = useQueryClient();
+  const subscribe = useCallback(
+    (onChange: () => void) => client.getQueryCache().subscribe(onChange),
+    [client],
+  );
+  const read = useCallback(
+    () =>
+      client
+        .getQueryCache()
+        .getAll()
+        .some((query) => query.getObserversCount() > 0 && isServedStale(query.state.data)),
+    [client],
+  );
+  return useSyncExternalStore(subscribe, read, read);
+}
 
 /** Who is logged in. A 401 here is the signal to show the login screen. */
 export function useMe() {
@@ -91,9 +209,11 @@ export function useLogout() {
   const client = useQueryClient();
   return useMutation({
     mutationFn: api.auth.logout,
-    // Drop every cached panel so nothing from the session lingers in memory.
+    // Drop every cached panel so nothing from the session lingers in memory
+    // or on disk.
     onSettled: () => {
       client.clear();
+      void clearPersistedCache();
       void client.invalidateQueries({ queryKey: authKey });
     },
   });
@@ -151,20 +271,27 @@ export function useToday(interval = 5) {
   });
 }
 
-export function useStatsYear(year: number) {
+export function useStatsYear(year: number, enabled = true) {
   return useQuery({
     queryKey: queryKeys.statsYear(year),
     queryFn: () => api.statsYear(year),
     staleTime: 60 * 60 * 1000,
+    enabled,
   });
 }
+
+/**
+ * Billing data is driven by manual input, so there is nothing to poll for.
+ * Not cached forever, though: the cache is persisted, and a reading saved on
+ * another device must still show up on the next reload.
+ */
+const MANUAL_DATA_STALE_MS = 5 * 60_000;
 
 export function useBillingSummary(basis: "gross" | "billed" = "billed") {
   return useQuery({
     queryKey: queryKeys.billing(basis),
     queryFn: () => api.billingSummary(basis),
-    // Driven by manual bimonthly input, so there is nothing to poll for.
-    staleTime: Number.POSITIVE_INFINITY,
+    staleTime: MANUAL_DATA_STALE_MS,
   });
 }
 
@@ -172,7 +299,7 @@ export function useReadings() {
   return useQuery({
     queryKey: queryKeys.readings,
     queryFn: api.readings,
-    staleTime: Number.POSITIVE_INFINITY,
+    staleTime: MANUAL_DATA_STALE_MS,
   });
 }
 
@@ -213,12 +340,13 @@ export function useSaveMeter() {
  * still "today" is partial, so past days go stale after an hour rather than
  * never (the server keeps closed windows cached, so a refetch is cheap).
  */
-export function useDay(date: string, isToday: boolean) {
+export function useDay(date: string, isToday: boolean, enabled = true) {
   return useQuery({
     queryKey: ["day", date],
     queryFn: () => api.day(date, 5),
     refetchInterval: isToday ? 5 * 60_000 : false,
     staleTime: isToday ? 150_000 : 60 * 60 * 1000,
+    enabled,
   });
 }
 

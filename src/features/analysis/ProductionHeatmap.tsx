@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useQueries } from "@tanstack/react-query";
 import { api } from "@/api/client";
 import { queryKeys, statsStaleTime } from "@/api/queries";
@@ -11,9 +11,38 @@ import { Card } from "@/ui/primitives/Card";
  * The calendar keeps that fixed size; the rest of the card holds a summary,
  * the way GitHub puts the year list beside it.
  *
- * Only months since installation are fetched (1 stats call each, cached for an
- * hour and shared with the Mes view).
+ * Only months since installation are fetched (1 stats call each, shared with
+ * the Mes view; the server keeps closed months for a month), and only once the
+ * card scrolls into view: it sits below the fold, and fetching a year of
+ * months on mount was the biggest single burst of a cold load.
  */
+
+/** Becomes true the first time the element nears the viewport, and stays true. */
+function useSeenOnce<T extends Element>(): [React.RefObject<T | null>, boolean] {
+  const ref = useRef<T | null>(null);
+  const [seen, setSeen] = useState(false);
+  useEffect(() => {
+    const element = ref.current;
+    if (seen || !element) return;
+    if (typeof IntersectionObserver === "undefined") {
+      setSeen(true);
+      return;
+    }
+    const observer = new IntersectionObserver(
+      (records) => {
+        if (records.some((record) => record.isIntersecting)) {
+          setSeen(true);
+          observer.disconnect();
+        }
+      },
+      // Starts a little before the card shows, so it rarely opens on skeletons.
+      { rootMargin: "200px 0px" },
+    );
+    observer.observe(element);
+    return () => observer.disconnect();
+  }, [seen]);
+  return [ref, seen];
+}
 
 const WEEKS = 53;
 const CELL = 12;
@@ -136,11 +165,14 @@ export function ProductionHeatmap({
     return [...keys];
   }, [weeks, firstDay]);
 
+  const [cardRef, inView] = useSeenOnce<HTMLDivElement>();
+
   const queries = useQueries({
     queries: months.map((month) => ({
       queryKey: queryKeys.statsMonth(month),
       queryFn: () => api.statsMonth(month),
       staleTime: statsStaleTime(month),
+      enabled: inView,
     })),
   });
 
@@ -172,74 +204,76 @@ export function ProductionHeatmap({
   const columns = `28px repeat(${WEEKS}, ${CELL}px)`;
 
   return (
-    <Card title={`${total.toFixed(0)} kWh generados en el último año`}>
-      <div className="flex flex-col gap-6 lg:flex-row lg:items-start">
-        <div className="min-w-0">
-          <div ref={scrollToEnd} className="overflow-x-auto">
-            <div className="w-max" onMouseLeave={() => setSelected(null)}>
-              <div className="grid" style={{ gridTemplateColumns: columns, columnGap: GAP }}>
-                <span />
-                {monthLabels.map((label, w) => (
-                  <span key={w} className="overflow-visible whitespace-nowrap text-[12px] leading-[18px] text-ink-dim">
-                    {label}
-                  </span>
-                ))}
-              </div>
+    <div ref={cardRef}>
+      <Card title={`${total.toFixed(0)} kWh generados en el último año`}>
+        <div className="flex flex-col gap-6 lg:flex-row lg:items-start">
+          <div className="min-w-0">
+            <div ref={scrollToEnd} className="overflow-x-auto">
+              <div className="w-max" onMouseLeave={() => setSelected(null)}>
+                <div className="grid" style={{ gridTemplateColumns: columns, columnGap: GAP }}>
+                  <span />
+                  {monthLabels.map((label, w) => (
+                    <span key={w} className="overflow-visible whitespace-nowrap text-[12px] leading-[18px] text-ink-dim">
+                      {label}
+                    </span>
+                  ))}
+                </div>
 
-              <div
-                className="grid"
-                style={{ gridTemplateColumns: columns, gridAutoRows: `${CELL}px`, gap: GAP }}
-              >
-                {WEEKDAYS.map((weekday, d) => (
-                  <div key={d} className="contents">
-                    <span className="self-center text-[12px] leading-none text-ink-dim">{weekday}</span>
-                    {weeks.map((week) => {
-                      const day = week[d]!;
-                      if (day.future) return <span key={day.date} />;
-                      return (
-                        <button
-                          key={day.date}
-                          type="button"
-                          aria-label={describe(day.date)}
-                          onMouseEnter={() => setSelected(day.date)}
-                          onClick={() => setSelected(day.date)}
-                          className={`rounded-[2px] outline-offset-[-1px] ${loading ? "skeleton" : ""} ${
-                            selected === day.date ? "outline outline-1 outline-ink/70" : ""
-                          }`}
-                          style={loading ? undefined : { background: LEVELS[levelOf(byDay.get(day.date), capacityKwp, max)] }}
-                        />
-                      );
-                    })}
-                  </div>
-                ))}
+                <div
+                  className="grid"
+                  style={{ gridTemplateColumns: columns, gridAutoRows: `${CELL}px`, gap: GAP }}
+                >
+                  {WEEKDAYS.map((weekday, d) => (
+                    <div key={d} className="contents">
+                      <span className="self-center text-[12px] leading-none text-ink-dim">{weekday}</span>
+                      {weeks.map((week) => {
+                        const day = week[d]!;
+                        if (day.future) return <span key={day.date} />;
+                        return (
+                          <button
+                            key={day.date}
+                            type="button"
+                            aria-label={describe(day.date)}
+                            onMouseEnter={() => setSelected(day.date)}
+                            onClick={() => setSelected(day.date)}
+                            className={`rounded-[2px] outline-offset-[-1px] ${loading ? "skeleton" : ""} ${
+                              selected === day.date ? "outline outline-1 outline-ink/70" : ""
+                            }`}
+                            style={loading ? undefined : { background: LEVELS[levelOf(byDay.get(day.date), capacityKwp, max)] }}
+                          />
+                        );
+                      })}
+                    </div>
+                  ))}
+                </div>
               </div>
+            </div>
+
+            <div className="mt-2 flex items-center justify-between gap-4 text-[12px] text-ink-faint">
+              <span className="tnum text-ink-dim">{selected ? describe(selected) : "Pasa o toca un día"}</span>
+              <span className="flex items-center gap-[3px]">
+                <span className="mr-1">Menos</span>
+                {LEVELS.map((color, level) => (
+                  <span
+                    key={color}
+                    title={legendRange(level, capacityKwp)}
+                    className="inline-block rounded-[2px]"
+                    style={{ width: CELL, height: CELL, background: color }}
+                  />
+                ))}
+                <span className="ml-1">Más</span>
+              </span>
             </div>
           </div>
 
-          <div className="mt-2 flex items-center justify-between gap-4 text-[12px] text-ink-faint">
-            <span className="tnum text-ink-dim">{selected ? describe(selected) : "Pasa o toca un día"}</span>
-            <span className="flex items-center gap-[3px]">
-              <span className="mr-1">Menos</span>
-              {LEVELS.map((color, level) => (
-                <span
-                  key={color}
-                  title={legendRange(level, capacityKwp)}
-                  className="inline-block rounded-[2px]"
-                  style={{ width: CELL, height: CELL, background: color }}
-                />
-              ))}
-              <span className="ml-1">Más</span>
-            </span>
+          <div className="grid flex-1 grid-cols-2 gap-x-6 gap-y-5 border-line/50 lg:border-l lg:pl-6">
+            <Summary label="Mejor día" value={max > 0 ? max.toFixed(1) : "—"} unit={best ? `kWh · ${shortDate(best)}` : undefined} />
+            <Summary label="Promedio" value={values.length > 0 ? (total / values.length).toFixed(1) : "—"} unit="kWh/día" />
+            <Summary label="Días generando" value={String(values.length)} />
+            <Summary label="Total" value={total.toFixed(0)} unit="kWh" />
           </div>
         </div>
-
-        <div className="grid flex-1 grid-cols-2 gap-x-6 gap-y-5 border-line/50 lg:border-l lg:pl-6">
-          <Summary label="Mejor día" value={max > 0 ? max.toFixed(1) : "—"} unit={best ? `kWh · ${shortDate(best)}` : undefined} />
-          <Summary label="Promedio" value={values.length > 0 ? (total / values.length).toFixed(1) : "—"} unit="kWh/día" />
-          <Summary label="Días generando" value={String(values.length)} />
-          <Summary label="Total" value={total.toFixed(0)} unit="kWh" />
-        </div>
-      </div>
-    </Card>
+      </Card>
+    </div>
   );
 }
