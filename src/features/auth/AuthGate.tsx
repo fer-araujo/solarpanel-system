@@ -3,7 +3,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { getAuthClient } from "@/api/auth";
 import { AnimatePresence, motion } from "motion/react";
 import { ApiError } from "@/api/client";
-import { authKey, useMe } from "@/api/queries";
+import { authKey, forgetSession, useMe } from "@/api/queries";
 import { LoginScreen } from "./LoginScreen";
 
 /**
@@ -49,8 +49,11 @@ export function AuthGate({ children }: { children: ReactNode }) {
       .then(async (auth) => {
         if (!auth || cancelled) return;
         const { onAuthStateChanged } = await import("firebase/auth");
-        unsubscribe = onAuthStateChanged(auth, () => {
-          void client.invalidateQueries({ queryKey: authKey });
+        unsubscribe = onAuthStateChanged(auth, (user) => {
+          // Signed out (here or in another tab): nothing of the session may
+          // stay cached, on screen or on disk.
+          if (!user) forgetSession(client);
+          else void client.invalidateQueries({ queryKey: authKey });
         });
       })
       .catch(() => undefined);

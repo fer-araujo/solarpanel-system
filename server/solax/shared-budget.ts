@@ -1,5 +1,5 @@
 import type { KeyValueStore } from "../storage/kv";
-import { RateLimitExceededError } from "./rate-limiter";
+import { RATE_LIMIT_PENALTY_MS, RateLimitExceededError } from "./rate-limiter";
 
 /**
  * The SolaX call budget shared by every server instance.
@@ -48,7 +48,7 @@ export class SharedBudget {
   }
 
   /** SolaX said 10406: every instance holds off, not just the one that heard it. */
-  async penalise(durationMs = 30_000): Promise<void> {
+  async penalise(durationMs = RATE_LIMIT_PENALTY_MS): Promise<void> {
     try {
       await this.store.set(BACKOFF_KEY, this.now() + durationMs, durationMs);
     } catch {

@@ -9,6 +9,7 @@ import {
   useMe,
   usePlantRealtime,
   useReadings,
+  useServedStale,
   useSnapshot,
   useToday,
   useTopology,
@@ -113,17 +114,25 @@ function LogoutButton() {
 function ErrorPanel({ error }: { error: Error }) {
   const api = error instanceof ApiError ? error : null;
 
+  // Only shown once the single automatic retry has also failed, so the copy
+  // says when trying again can work rather than promising another retry.
+  const waitSeconds = api?.retryAfterMs !== undefined ? Math.ceil(api.retryAfterMs / 1000) : null;
+
   let hint: string | null = null;
-  if (api?.isBudgetRefusal) {
+  if (api?.solaxCode === 10405) {
+    hint = "Se agotó la cuota diaria de llamadas. Se restablece mañana.";
+  } else if (api?.isBudgetRefusal && waitSeconds !== null && waitSeconds > 90) {
+    hint = `Se agotó el presupuesto de llamadas a SolaX. Se restablece en unos ${Math.ceil(waitSeconds / 60)} min.`;
+  } else if (api?.isBudgetRefusal) {
     hint =
-      "El servidor frenó la llamada para proteger la cuota diaria de SolaX. " +
-      "Se reintenta solo; no hace falta recargar.";
+      "SolaX pidió una pausa por exceso de llamadas y no había datos guardados que mostrar. " +
+      (waitSeconds !== null
+        ? `Ya se reintentó una vez; vuelve a intentarlo en ${waitSeconds} s.`
+        : "Vuelve a intentarlo en un minuto.");
   } else if (api?.solaxCode === 10401 || api?.solaxCode === 10402) {
     hint = "Revisa SOLAX_CLIENT_ID y SOLAX_CLIENT_SECRET en el .env.";
   } else if (api?.solaxCode === 10403) {
     hint = "Ese endpoint no está en el paquete de servicios API de tu cuenta del Developer Portal.";
-  } else if (api?.solaxCode === 10405) {
-    hint = "Se agotó la cuota diaria de llamadas. Se restablece mañana.";
   } else if (api?.status === 502) {
     hint = "SolaX respondió mal. Suele ser temporal.";
   } else if (!api) {
@@ -137,6 +146,17 @@ function ErrorPanel({ error }: { error: Error }) {
       {hint && <p className="mt-2 text-[12.5px] text-ink-faint">{hint}</p>}
     </div>
   );
+}
+
+/**
+ * "14:05" for a reading from today, "21 oct 14:05" otherwise: data served from
+ * cache can be days old, and a bare time would pass it off as today's.
+ */
+function readingTime(at: Date): string {
+  const time = at.toLocaleTimeString("es-MX", { hour: "2-digit", minute: "2-digit", hourCycle: "h23" });
+  if (at.toDateString() === new Date().toDateString()) return time;
+  const day = at.toLocaleDateString("es-MX", { day: "numeric", month: "short" }).replace(".", "");
+  return `${day} ${time}`;
 }
 
 function MeteringNotice({ topology }: { topology: SystemTopology }) {
@@ -184,6 +204,8 @@ export function App() {
 
   const topology = topologyQuery.data;
   const snapshot = snapshotQuery.data;
+  // Any panel on screen answered from the server's cache, not only the snapshot.
+  const servedStale = useServedStale();
   const today = todayQuery.data;
   /**
    * The day's energy from SolaX's own counter — the figure its app and the
@@ -285,20 +307,24 @@ export function App() {
             )}
             {snapshot && (
               <span
+                title={
+                  servedStale
+                    ? "No se pudieron obtener datos nuevos de SolaX; se muestran los últimos guardados."
+                    : undefined
+                }
                 className={`flex shrink-0 items-center gap-2 whitespace-nowrap rounded-full border px-3 py-1 text-[12px] ${
-                  snapshot.stale ? "border-grid/25 bg-grid/8 text-grid" : "border-solar/25 bg-solar/8 text-solar"
+                  servedStale ? "border-grid/25 bg-grid/8 text-grid" : "border-solar/25 bg-solar/8 text-solar"
                 }`}
               >
                 <span className="relative flex h-1.5 w-1.5">
-                  {!snapshot.stale && (
+                  {!servedStale && (
                     <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-solar opacity-70" />
                   )}
-                  <span className={`relative inline-flex h-1.5 w-1.5 rounded-full ${snapshot.stale ? "bg-grid" : "bg-solar"}`} />
+                  <span className={`relative inline-flex h-1.5 w-1.5 rounded-full ${servedStale ? "bg-grid" : "bg-solar"}`} />
                 </span>
-                <span className="hidden sm:inline">{snapshot.stale ? "Datos en caché" : "En línea"}</span>
-                <span className="tnum">
-                  {snapshot.power.at.toLocaleTimeString("es-MX", { hour: "2-digit", minute: "2-digit", hourCycle: "h23" })}
-                </span>
+                <span className="hidden sm:inline">{servedStale ? "Datos en caché" : "En línea"}</span>
+                {servedStale && <span className="sm:hidden">caché</span>}
+                <span className="tnum">{readingTime(snapshot.power.at)}</span>
               </span>
             )}
             <Nav tab={tab} onChange={setTab} />

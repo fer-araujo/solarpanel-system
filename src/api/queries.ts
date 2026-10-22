@@ -1,3 +1,4 @@
+import { useCallback, useSyncExternalStore } from "react";
 import {
   QueryCache,
   QueryClient,
@@ -8,6 +9,7 @@ import {
 } from "@tanstack/react-query";
 import type { MeterReading } from "@core/billing/model/meter-reading";
 import { signOut } from "./auth";
+import { clearPersistedCache, PERSIST_MAX_AGE_MS } from "./persist";
 import {
   ApiError,
   api,
@@ -30,18 +32,43 @@ const SLOW_POLL_MS = 5 * 60_000;
 /** Consecutive identical timestamps before we accept the dongle is idle. */
 const STALL_THRESHOLD = 2;
 
+/**
+ * Upper bound on waiting out a 429 before the single retry. The server's
+ * 10406 penalty is 65 s; anything longer is a daily-quota answer, not a pause.
+ */
+const MAX_RETRY_AFTER_MS = 70_000;
+
+/**
+ * Spread added to that wait. Every panel of a page load is refused at once;
+ * retrying them all at the same instant would spend the reopened window in
+ * one burst and trip the limit again.
+ */
+const RETRY_JITTER_MS = 20_000;
+
+/** Worth one retry: a per-minute refusal that says when the window reopens. */
+function isTransientRefusal(error: unknown): error is ApiError & { retryAfterMs: number } {
+  return (
+    error instanceof ApiError &&
+    error.isBudgetRefusal &&
+    error.retryAfterMs !== undefined &&
+    error.scope !== "day"
+  );
+}
+
+
 export function createQueryClient(): QueryClient {
   const client: QueryClient = new QueryClient({
     // Any 401 means the session expired mid-use: re-check it, which sends the
-    // gate back to the login screen instead of leaving broken panels.
+    // gate back to the login screen instead of leaving broken panels. Either
+    // way the cached panels go too, from memory and from disk.
     queryCache: new QueryCache({
       onError: (error, query) => {
         if (!(error instanceof ApiError) || query.queryKey[0] === "auth") return;
         if (error.status === 401) {
-          void client.invalidateQueries({ queryKey: authKey });
+          forgetSession(client);
         } else if (error.status === 403) {
           // Signed in, but not on the allow list: drop the session.
-          void signOut().finally(() => client.invalidateQueries({ queryKey: authKey }));
+          void signOut().finally(() => forgetSession(client));
         }
       },
     }),
@@ -51,15 +78,30 @@ export function createQueryClient(): QueryClient {
         // which is exactly what a quota-limited API wants.
         refetchOnWindowFocus: true,
         retry: (failureCount, error) => {
-          // Never retry a budget refusal — that is the server protecting the
-          // daily quota, and hammering it defeats the purpose.
-          if (error instanceof ApiError && error.isBudgetRefusal) return false;
+          // A per-minute refusal is retried exactly ONCE, after the pause the
+          // server asked for. Without it a panel stayed broken until its next
+          // poll (minutes), while retrying sooner would only re-trip the limit.
+          // A daily-quota refusal has nothing worth waiting out.
+          if (error instanceof ApiError && error.isBudgetRefusal) {
+            return failureCount < 1 && isTransientRefusal(error);
+          }
           if (error instanceof ApiError && !error.retryable && error.status < 500) {
             return false;
           }
           return failureCount < 2;
         },
+        retryDelay: (failureCount, error) => {
+          if (isTransientRefusal(error)) {
+            return (
+              Math.min(error.retryAfterMs, MAX_RETRY_AFTER_MS) + Math.random() * RETRY_JITTER_MS
+            );
+          }
+          return Math.min(1_000 * 2 ** failureCount, 30_000);
+        },
         staleTime: 30_000,
+        // Must outlive the persisted copy, or restored queries are collected
+        // before anything observes them.
+        gcTime: PERSIST_MAX_AGE_MS,
       },
     },
   });
@@ -67,6 +109,47 @@ export function createQueryClient(): QueryClient {
 }
 
 export const authKey = ["auth", "me"] as const;
+
+/**
+ * Drops every cached panel, in memory and on disk, then re-checks the session
+ * so the gate shows the login. Used whenever a session ends or is refused.
+ */
+export function forgetSession(client: QueryClient): void {
+  clearPersistedCache();
+  // Everything except the session query itself, which stays observed by the
+  // gate: removing it would leave the gate holding the old answer, while
+  // invalidating it refetches and lands on the login screen.
+  client.removeQueries({ predicate: (query) => query.queryKey[0] !== authKey[0] });
+  client.getMutationCache().clear();
+  void client.invalidateQueries({ queryKey: authKey });
+}
+
+/** A response the server answered from its cache because SolaX refused or failed. */
+function isServedStale(data: unknown): boolean {
+  return typeof data === "object" && data !== null && (data as { stale?: unknown }).stale === true;
+}
+
+/**
+ * True while any panel on screen shows data the server flagged `stale`. Only
+ * observed queries count, so a cached response for a view that is not open
+ * does not keep the badge lit.
+ */
+export function useServedStale(): boolean {
+  const client = useQueryClient();
+  const subscribe = useCallback(
+    (onChange: () => void) => client.getQueryCache().subscribe(onChange),
+    [client],
+  );
+  const read = useCallback(
+    () =>
+      client
+        .getQueryCache()
+        .getAll()
+        .some((query) => query.getObserversCount() > 0 && isServedStale(query.state.data)),
+    [client],
+  );
+  return useSyncExternalStore(subscribe, read, read);
+}
 
 /** Who is logged in. A 401 here is the signal to show the login screen. */
 export function useMe() {
@@ -91,11 +174,9 @@ export function useLogout() {
   const client = useQueryClient();
   return useMutation({
     mutationFn: api.auth.logout,
-    // Drop every cached panel so nothing from the session lingers in memory.
-    onSettled: () => {
-      client.clear();
-      void client.invalidateQueries({ queryKey: authKey });
-    },
+    // Drop every cached panel so nothing from the session lingers in memory
+    // or on disk.
+    onSettled: () => forgetSession(client),
   });
 }
 
@@ -151,20 +232,27 @@ export function useToday(interval = 5) {
   });
 }
 
-export function useStatsYear(year: number) {
+export function useStatsYear(year: number, enabled = true) {
   return useQuery({
     queryKey: queryKeys.statsYear(year),
     queryFn: () => api.statsYear(year),
     staleTime: 60 * 60 * 1000,
+    enabled,
   });
 }
+
+/**
+ * Billing data is driven by manual input, so there is nothing to poll for.
+ * Not cached forever, though: the cache is persisted, and a reading saved on
+ * another device must still show up on the next reload.
+ */
+const MANUAL_DATA_STALE_MS = 5 * 60_000;
 
 export function useBillingSummary(basis: "gross" | "billed" = "billed") {
   return useQuery({
     queryKey: queryKeys.billing(basis),
     queryFn: () => api.billingSummary(basis),
-    // Driven by manual bimonthly input, so there is nothing to poll for.
-    staleTime: Number.POSITIVE_INFINITY,
+    staleTime: MANUAL_DATA_STALE_MS,
   });
 }
 
@@ -172,7 +260,7 @@ export function useReadings() {
   return useQuery({
     queryKey: queryKeys.readings,
     queryFn: api.readings,
-    staleTime: Number.POSITIVE_INFINITY,
+    staleTime: MANUAL_DATA_STALE_MS,
   });
 }
 
@@ -213,12 +301,13 @@ export function useSaveMeter() {
  * still "today" is partial, so past days go stale after an hour rather than
  * never (the server keeps closed windows cached, so a refetch is cheap).
  */
-export function useDay(date: string, isToday: boolean) {
+export function useDay(date: string, isToday: boolean, enabled = true) {
   return useQuery({
     queryKey: ["day", date],
     queryFn: () => api.day(date, 5),
     refetchInterval: isToday ? 5 * 60_000 : false,
     staleTime: isToday ? 150_000 : 60 * 60 * 1000,
+    enabled,
   });
 }
 

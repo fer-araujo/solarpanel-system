@@ -37,6 +37,7 @@ import {
   type SolaxEndpoints,
 } from "./solax/endpoints";
 import { RateLimitExceededError, type SolaxHttpClient } from "./solax/http-client";
+import { RATE_LIMIT_PENALTY_MS } from "./solax/rate-limiter";
 import type { TokenStore } from "./solax/token-store";
 import { readingSchema, type ReadingsRepository } from "./billing/readings-store";
 
@@ -83,12 +84,84 @@ const TTL = {
   stats: 60 * 60 * 1000,
   /** The current month or year still gains today's production; refresh it sooner. */
   currentStats: 10 * 60 * 1000,
+  /**
+   * A month or year that ended is final. The heatmap and the CFE balance read
+   * up to a year of them, so re-fetching every hour spent a dozen calls on
+   * numbers that cannot change.
+   */
+  closedStats: 30 * 24 * 60 * 60 * 1000,
   alarms: 5 * 60 * 1000,
 } as const;
 
 const historyIntervalSchema = z
   .enum(["5", "10", "15", "30", "60"])
   .transform((value) => Number(value) as HistoryInterval);
+
+/**
+ * True for a refusal of the call itself rather than an answer about the
+ * plant: the local budget, SolaX's 10406 burst limit or its 10405 daily quota.
+ */
+function isBudgetError(error: unknown): boolean {
+  if (error instanceof RateLimitExceededError) return true;
+  return error instanceof SolaxError && (error.isRateLimit || error.isQuotaExhausted);
+}
+
+/**
+ * Runs a probe for OPTIONAL hardware, treating a failure as "none fitted".
+ *
+ * Querying `page_device_info` for a device class the plant does not have can
+ * come back as a generic 10001 rather than an empty list. Letting that
+ * propagate would mean a plant with no battery cannot load its dashboard at
+ * all, so the failure is logged and reported as absence.
+ *
+ * A budget refusal is NOT absence: the question was never answered. Swallowing
+ * it cached "no battery" for a day after a single 10406, so it propagates and
+ * the cache falls back to the last real answer instead.
+ */
+export async function optional<T>(label: string, run: () => Promise<T[]>): Promise<T[]> {
+  try {
+    return await run();
+  } catch (error) {
+    if (isBudgetError(error)) throw error;
+    console.warn(
+      `[api] optional probe "${label}" failed, treating as none fitted: ` +
+        `${error instanceof Error ? error.message : String(error)}`,
+    );
+    return [];
+  }
+}
+
+/**
+ * For extras whose absence only thins a response (alarms, PV for the CFE
+ * balance) and whose empty result is never cached: any failure, budget
+ * refusals included, degrades to an empty list instead of failing the route.
+ */
+async function bestEffort<T>(label: string, run: () => Promise<T[]>): Promise<T[]> {
+  try {
+    return await run();
+  } catch (error) {
+    console.warn(
+      `[api] "${label}" unavailable, continuing without it: ` +
+        `${error instanceof Error ? error.message : String(error)}`,
+    );
+    return [];
+  }
+}
+
+/**
+ * Cache lifetime for a `get_stat_data` period (`YYYY` or `YYYY-MM`), judged
+ * in plant-local time so the current period is recognised on a UTC server.
+ *
+ * The current period still grows. One that ended in the last two days may
+ * still receive the dongle's late uploads, so it keeps the hourly TTL; older
+ * periods are final.
+ */
+function statsTtl(date: string, utcOffsetMinutes: number | null): number {
+  const plantNow = Date.now() + (utcOffsetMinutes ?? 0) * 60_000;
+  if (new Date(plantNow).toISOString().startsWith(date)) return TTL.currentStats;
+  const twoDaysAgo = new Date(plantNow - 2 * 86_400_000).toISOString();
+  return twoDaysAgo.startsWith(date) ? TTL.stats : TTL.closedStats;
+}
 
 /**
  * Registers the API on an EXISTING app rather than building its own.
@@ -103,23 +176,21 @@ export function registerApiRoutes(app: Hono, deps: AppDeps): Hono {
   const businessType = env.SOLAX_BUSINESS_TYPE as 1 | 4;
 
   /**
-   * Runs a probe for OPTIONAL hardware, treating any failure as "none fitted".
+   * One realtime call serves both the topology's samples and the snapshot: on
+   * a cold load they are requested within seconds of each other, and the
+   * second call would buy identical numbers.
    *
-   * Querying `page_device_info` for a device class the plant does not have can
-   * come back as a generic 10001 rather than an empty list. Letting that
-   * propagate would mean a plant with no battery cannot load its dashboard at
-   * all, so the failure is logged and reported as absence.
+   * No stale fallback here — the caller's own cache decides that, so a stale
+   * reading is never re-cached as a fresh snapshot.
    */
-  async function optional<T>(label: string, run: () => Promise<T[]>): Promise<T[]> {
-    try {
-      return await run();
-    } catch (error) {
-      console.warn(
-        `[api] optional probe "${label}" failed, treating as none fitted: ` +
-          `${error instanceof Error ? error.message : String(error)}`,
-      );
-      return [];
-    }
+  async function realtime(serials: string[]): Promise<InverterRealtimeDto[]> {
+    const cached = await cache.fetch(
+      `realtime:${serials.join(",")}`,
+      TTL.snapshot,
+      () => endpoints.getInverterRealtime(serials),
+      { serveStaleOnError: false },
+    );
+    return cached.value;
   }
 
   /** Resolves and caches what the plant actually has fitted. */
@@ -150,8 +221,7 @@ export function registerApiRoutes(app: Hono, deps: AppDeps): Hono {
       // EVERY inverter: a microinverter array reports one device per unit, and
       // sampling only the first undercounts both production and panels.
       const serials = inverters.map((inverter) => inverter.deviceSn).slice(0, 10);
-      const samples =
-        serials.length > 0 ? await endpoints.getInverterRealtime(serials) : [];
+      const samples = serials.length > 0 ? await realtime(serials) : [];
 
       return mapTopology({
         plant,
@@ -280,7 +350,7 @@ export function registerApiRoutes(app: Hono, deps: AppDeps): Hono {
 
     // Alarms come from their own endpoint, cached at their own rate. See the
     // note below for why they are not taken from the realtime call.
-    const alarms = await optional("alarms", async () => {
+    const alarms = await bestEffort("alarms", async () => {
       const cached = await cache.fetch(`alarms:1`, TTL.alarms, () =>
         endpoints.listAlarms({ plantId: system.plantId, alarmState: 1 }),
       );
@@ -298,7 +368,7 @@ export function registerApiRoutes(app: Hono, deps: AppDeps): Hono {
        * unreliable. `alarm/page_alarm_info` is a documented, working endpoint
        * and its data changes slowly enough to cache separately.
        */
-      const inverters = await endpoints.getInverterRealtime(serials);
+      const inverters = await realtime(serials);
       if (inverters.length === 0) {
         throw new SolaxError({ code: -1, message: "Inverters returned no data" });
       }
@@ -456,12 +526,9 @@ export function registerApiRoutes(app: Hono, deps: AppDeps): Hono {
       );
     }
 
-    // Plant-local "now", so the current period is recognised on a UTC server.
-    const plantNow = new Date(Date.now() + (system.utcOffsetMinutes ?? 0) * 60_000).toISOString();
-    const isCurrent = plantNow.startsWith(date);
     const result = await cache.fetch(
       `stats:${dateType}:${date}`,
-      isCurrent ? TTL.currentStats : TTL.stats,
+      statsTtl(date, system.utcOffsetMinutes),
       async () =>
         endpoints.getPlantStats({
           plantId: system.plantId,
@@ -599,8 +666,8 @@ export function registerApiRoutes(app: Hono, deps: AppDeps): Hono {
     async function ensureMonth(month: string): Promise<void> {
       if (loadedMonths.has(month)) return;
       loadedMonths.add(month);
-      const entries = await optional(`stats:2:${month}`, async () => {
-        const cached = await cache.fetch(`stats:2:${month}`, TTL.stats, () =>
+      const entries = await bestEffort(`stats:2:${month}`, async () => {
+        const cached = await cache.fetch(`stats:2:${month}`, statsTtl(month, system.utcOffsetMinutes), () =>
           endpoints.getPlantStats({ plantId: system.plantId, dateType: 2, date: month }),
         );
         return cached.value.plantEnergyStatDataList ?? [];
@@ -745,7 +812,8 @@ function daysBetween(from: string, to: string): number {
  * The one error handler, registered by the entrypoint on the one app.
  *
  * Each failure mode gets a distinguishable response because they need different
- * responses from the client: a budget refusal should not be retried, a bad
+ * responses from the client: a budget refusal is retried once its
+ * `retryAfterMs` has passed, a bad
  * credential needs a .env fix, and a schema mismatch needs the offending field
  * names — "Internal error" is useless for all three.
  */
@@ -766,6 +834,9 @@ export function apiErrorHandler(error: Error, context: Context) {
         solaxCode: error.code,
         traceId: error.traceId,
         retryable: error.retryable,
+        // Every caller holds off this long after a 10406, so the client knows
+        // when a retry can actually get through.
+        ...(error.isRateLimit ? { retryAfterMs: RATE_LIMIT_PENALTY_MS } : {}),
       },
       status,
     );

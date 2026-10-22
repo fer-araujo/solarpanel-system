@@ -1,7 +1,8 @@
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
-import { QueryClientProvider } from "@tanstack/react-query";
+import { PersistQueryClientProvider } from "@tanstack/react-query-persist-client";
 import { App } from "./app/App";
+import { persistOptions } from "./api/persist";
 import { createQueryClient } from "./api/queries";
 import { AuthGate } from "./features/auth/AuthGate";
 import "./ui/tokens/theme.css";
@@ -16,10 +17,10 @@ if (!host) throw new Error("Root element #root not found");
 
 createRoot(host).render(
   <StrictMode>
-    <QueryClientProvider client={createQueryClient()}>
+    <PersistQueryClientProvider client={createQueryClient()} persistOptions={persistOptions}>
       <AuthGate>
         <App />
       </AuthGate>
-    </QueryClientProvider>
+    </PersistQueryClientProvider>
   </StrictMode>,
 );

@@ -47,6 +47,16 @@ describe("shared SolaX budget", () => {
     await expect(b.take()).rejects.toMatchObject({ retryAfterMs: 30_000 });
   });
 
+  it("holds off past SolaX's one-minute window by default", async () => {
+    // 30 s ended inside the window that was still full, so the next call
+    // re-tripped 10406.
+    const store = memoryStore();
+    await new SharedBudget(store, 100, now).penalise();
+    await expect(new SharedBudget(store, 100, now).take()).rejects.toMatchObject({
+      retryAfterMs: 65_000,
+    });
+  });
+
   it("fails open when Upstash is unreachable", async () => {
     const store = memoryStore();
     store.failing = true;

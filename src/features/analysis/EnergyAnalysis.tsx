@@ -1,7 +1,14 @@
 import { useMemo, useState } from "react";
 import { useQueries } from "@tanstack/react-query";
 import { api, type PlantStatEntry } from "@/api/client";
-import { queryKeys, useBillingSummary, useDay, useStatsMonth, useStatsYear } from "@/api/queries";
+import {
+  queryKeys,
+  useBillingSummary,
+  useDay,
+  useStatsMonth,
+  useStatsYear,
+  useToday,
+} from "@/api/queries";
 import { Card } from "@/ui/primitives/Card";
 import { ProductionCurve } from "@/ui/charts/ProductionCurve";
 import { MonthlyEnergy } from "@/ui/charts/MonthlyEnergy";
@@ -11,7 +18,8 @@ import { ChartSkeleton } from "@/ui/primitives/Skeleton";
  * Day / Month / Year / All with date navigation.
  *
  * Call cost per view, which is why each is fetched lazily:
- * - Day: 2 history calls, and past days are cached forever (they cannot change)
+ * - Day: today reuses the Hoy curve (no extra calls); a past day costs its
+ *   history calls once, then stays cached (it cannot change)
  * - Month: 1 stats call  ·  Year: 1  ·  All: 1 per year since installation
  */
 
@@ -53,9 +61,15 @@ export function EnergyAnalysis({ installedAt }: { installedAt: string | null }) 
   const isToday = dayKey === iso(now);
   const firstYear = installedAt ? Number(installedAt.slice(0, 4)) : now.getFullYear();
 
-  const dayQuery = useDay(dayKey, isToday);
+  // Today's curve is the same data the Hoy cards already poll: share that
+  // query instead of a second `useDay(today)` that spent the same history
+  // calls again on every refresh.
+  const todayQuery = useToday(5);
+  const pastDayQuery = useDay(dayKey, false, mode === "day" && !isToday);
+  const dayQuery = isToday ? todayQuery : pastDayQuery;
   const monthQuery = useStatsMonth(monthKey, mode === "month");
-  const yearQuery = useStatsYear(year);
+  // The "Todo" view reads the same keys, so the year is only fetched for those two.
+  const yearQuery = useStatsYear(year, mode === "year" || mode === "all");
 
   const years = useMemo(() => {
     const list: number[] = [];

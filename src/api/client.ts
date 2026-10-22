@@ -26,6 +26,8 @@ export class ApiError extends Error {
   readonly solaxCode: number | undefined;
   readonly retryable: boolean;
   readonly retryAfterMs: number | undefined;
+  /** For a local budget refusal: the per-minute window or the daily quota. */
+  readonly scope: "minute" | "day" | undefined;
 
   constructor(options: {
     status: number;
@@ -33,6 +35,7 @@ export class ApiError extends Error {
     solaxCode?: number;
     retryable?: boolean;
     retryAfterMs?: number;
+    scope?: "minute" | "day";
   }) {
     super(options.message);
     this.name = "ApiError";
@@ -40,6 +43,7 @@ export class ApiError extends Error {
     this.solaxCode = options.solaxCode;
     this.retryable = options.retryable ?? false;
     this.retryAfterMs = options.retryAfterMs;
+    this.scope = options.scope;
   }
 
   /** The server refused locally to protect the daily SolaX quota. */
@@ -78,6 +82,7 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
       ...(typeof payload.retryAfterMs === "number"
         ? { retryAfterMs: payload.retryAfterMs }
         : {}),
+      ...(payload.scope === "minute" || payload.scope === "day" ? { scope: payload.scope } : {}),
     });
   }
 
