@@ -148,6 +148,17 @@ function ErrorPanel({ error }: { error: Error }) {
   );
 }
 
+/**
+ * "14:05" for a reading from today, "21 oct 14:05" otherwise: data served from
+ * cache can be days old, and a bare time would pass it off as today's.
+ */
+function readingTime(at: Date): string {
+  const time = at.toLocaleTimeString("es-MX", { hour: "2-digit", minute: "2-digit", hourCycle: "h23" });
+  if (at.toDateString() === new Date().toDateString()) return time;
+  const day = at.toLocaleDateString("es-MX", { day: "numeric", month: "short" }).replace(".", "");
+  return `${day} ${time}`;
+}
+
 function MeteringNotice({ topology }: { topology: SystemTopology }) {
   if (topology.hasGridMetering) return null;
   return (
@@ -298,7 +309,7 @@ export function App() {
               <span
                 title={
                   servedStale
-                    ? "SolaX no respondió a tiempo; se muestran los últimos datos guardados."
+                    ? "No se pudieron obtener datos nuevos de SolaX; se muestran los últimos guardados."
                     : undefined
                 }
                 className={`flex shrink-0 items-center gap-2 whitespace-nowrap rounded-full border px-3 py-1 text-[12px] ${
@@ -313,9 +324,7 @@ export function App() {
                 </span>
                 <span className="hidden sm:inline">{servedStale ? "Datos en caché" : "En línea"}</span>
                 {servedStale && <span className="sm:hidden">caché</span>}
-                <span className="tnum">
-                  {snapshot.power.at.toLocaleTimeString("es-MX", { hour: "2-digit", minute: "2-digit", hourCycle: "h23" })}
-                </span>
+                <span className="tnum">{readingTime(snapshot.power.at)}</span>
               </span>
             )}
             <Nav tab={tab} onChange={setTab} />
