@@ -14,6 +14,8 @@ import { effectivePvKwh, normalizeStatEntries } from "@core/solax/mappers/stats"
 import { plantDayBoundsFor, plantLocalDayBounds } from "@core/solax/mappers/units";
 import type { SystemTopology } from "@core/energy/model/power";
 import { CFE_1C } from "@core/billing/data/cfe-1c";
+import { addDays, daysBetween } from "@core/billing/model/meter-reading";
+import { scheduleForPeriodEnd } from "@core/billing/model/tariff";
 import {
   projectBankDepletion,
   runEnergyBank,
@@ -39,7 +41,12 @@ import {
 import { RateLimitExceededError, type SolaxHttpClient } from "./solax/http-client";
 import { RATE_LIMIT_PENALTY_MS } from "./solax/rate-limiter";
 import type { TokenStore } from "./solax/token-store";
-import { readingSchema, type ReadingsRepository } from "./billing/readings-store";
+import {
+  billSchema,
+  readingSchema,
+  ReadingsError,
+  type ReadingsRepository,
+} from "./billing/readings-store";
 
 /**
  * The HTTP surface.
@@ -570,6 +577,7 @@ export function registerApiRoutes(app: Hono, deps: AppDeps): Hono {
     return context.json(await readings.load());
   });
 
+  // Upserts by day: any number of readings per period, one per date.
   app.put("/api/billing/readings", async (context) => {
     const parsed = readingSchema.safeParse(await context.req.json());
     if (!parsed.success) {
@@ -587,8 +595,29 @@ export function registerApiRoutes(app: Hono, deps: AppDeps): Hono {
     return context.json(await readings.upsert(parsed.data));
   });
 
-  app.delete("/api/billing/readings/:period", async (context) => {
-    return context.json(await readings.remove(context.req.param("period")));
+  app.delete("/api/billing/readings/:takenOn", async (context) => {
+    const takenOn = context.req.param("takenOn");
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(takenOn)) {
+      return context.json({ error: "takenOn must be YYYY-MM-DD" }, 400);
+    }
+    return context.json(await readings.remove(takenOn));
+  });
+
+  /**
+   * Closes the open period with the recibo in hand. The cut date's reading must
+   * already be saved: it is what the period's figures are computed from.
+   */
+  app.post("/api/billing/periods/close", async (context) => {
+    const parsed = z
+      .object({ end: z.string().regex(/^\d{4}-\d{2}-\d{2}$/), bill: billSchema })
+      .safeParse(await context.req.json());
+    if (!parsed.success) {
+      return context.json(
+        { error: "end must be YYYY-MM-DD and bill needs kwh and totalMxn >= 0" },
+        400,
+      );
+    }
+    return context.json(await readings.closePeriod(parsed.data.end, parsed.data.bill));
   });
 
   // Meter-swap facts: unbilled carryover and the day the new meter went in.
@@ -621,23 +650,28 @@ export function registerApiRoutes(app: Hono, deps: AppDeps): Hono {
    */
   app.get("/api/billing/summary", async (context) => {
     const file = await readings.load();
+    const latestPrices = CFE_1C.summer;
     // Bill history alone is enough for the DAC assessment, so only bail out
     // when there is nothing at all.
     if (file.readings.length === 0 && file.history.length === 0) {
       return context.json({
         periods: [],
+        open: null,
         projection: null,
         dac: null,
         savings: null,
         balance: null,
-        tariff: { code: CFE_1C.code, verified: CFE_1C.provenance.verified },
+        tariff: { code: CFE_1C.code, verified: latestPrices.verified ?? false },
       });
     }
 
-    const periods = runEnergyBank(file.readings, {
+    // One entry per CLOSED period; the open one only reports running figures.
+    const bank = runEnergyBank(file, {
       carryoverKwh: file.carryoverKwh,
       firstReadingIsFreshMeter: true,
     });
+    const periods = bank.periods;
+    const firstStart = file.periods[0]?.start ?? null;
 
     /**
      * Closes the energy balance per period.
@@ -647,20 +681,12 @@ export function registerApiRoutes(app: Hono, deps: AppDeps): Hono {
      * consumption — all uncomputable instantaneously without a meter — are
      * EXACT once a period closes.
      *
-     * One `get_stat_data` call returns a whole year of monthly PV, so covering
-     * every period costs one call per distinct year, cached for an hour.
+     * PV is summed DAY BY DAY between the period's own dates, so generation and
+     * meter cover the same window. One `get_stat_data` call returns a month of
+     * daily PV; closed months are cached for a month, so this costs a call only
+     * for the current month.
      */
     const system = await topology();
-    /**
-     * PV is summed DAY BY DAY between the exact dates of consecutive readings,
-     * so generation and meter cover the same window. The first version summed
-     * whole months against a bimonthly label, which compared weeks of meter
-     * against the two days SolaX happened to have data for.
-     *
-     * The meter-swap carryover is excluded: it is old-meter consumption from
-     * before solar, relevant to the bill and the bolsa, not to this balance.
-     * Periods without dates are skipped rather than guessed.
-     */
     const pvByDay = new Map<string, number>();
     const loadedMonths = new Set<string>();
     async function ensureMonth(month: string): Promise<void> {
@@ -678,47 +704,64 @@ export function registerApiRoutes(app: Hono, deps: AppDeps): Hono {
       }
     }
 
-    const balances: PeriodBalance[] = [];
-    let previous: string | null = file.meterInstalledOn ?? null;
-    for (let index = 0; index < periods.length; index++) {
-      const period = periods[index];
-      const end = file.readings[index]?.takenOn ?? null;
-      if (period && previous && end && end >= previous) {
-        for (const month of monthsSpanned(previous, end)) await ensureMonth(month);
-        const start = previous;
-        let pv = 0;
-        for (const [day, kwh] of pvByDay) {
-          const inRange =
-            index === 0 ? day >= start && day <= end : day > start && day <= end;
-          if (inRange) pv += kwh;
-        }
-        const balance = balancePeriod({
-          period: period.period,
-          pvGeneratedKwh: pv,
-          importedKwh: period.importedKwh - (index === 0 ? file.carryoverKwh : 0),
-          exportedKwh: period.exportedKwh,
-          days: daysBetween(start, end) + (index === 0 ? 1 : 0),
-        });
-
-        // Days before the first day SolaX recorded production count as zero:
-        // on a new install the panels simply were not on yet. Said next to the
-        // numbers, so a dongle that joined late would still be noticed.
-        const firstDataDay = [...pvByDay.entries()]
-          .filter(([, kwh]) => kwh > 0)
-          .map(([day]) => day)
-          .sort()[0];
-        balances.push(
-          firstDataDay && start < firstDataDay
-            ? {
-                ...balance,
-                note:
-                  `Generación contada desde el ${firstDataDay}, primer día con datos de ` +
-                  `SolaX; los días anteriores del periodo cuentan como 0 kWh.`,
-              }
-            : balance,
-        );
+    /**
+     * The meter-swap carryover is excluded: it is old-meter consumption from
+     * before solar, relevant to the bill and the bolsa, not to this balance.
+     * The first period counts its start day (the meter went in that morning);
+     * later ones start the day after the previous cut, which closed that day.
+     */
+    async function balanceWindow(window: {
+      label: string;
+      start: string;
+      end: string;
+      importedKwh: number;
+      exportedKwh: number;
+      open: boolean;
+    }): Promise<PeriodBalance> {
+      const first = window.start === firstStart;
+      for (const month of monthsSpanned(window.start, window.end)) await ensureMonth(month);
+      let pv = 0;
+      for (const [day, kwh] of pvByDay) {
+        const inRange = first
+          ? day >= window.start && day <= window.end
+          : day > window.start && day <= window.end;
+        if (inRange) pv += kwh;
       }
-      previous = end;
+      const balance = balancePeriod({
+        period: window.label,
+        pvGeneratedKwh: pv,
+        importedKwh: window.importedKwh - (first ? file.carryoverKwh : 0),
+        exportedKwh: window.exportedKwh,
+        days: daysBetween(window.start, window.end) + (first ? 1 : 0),
+        open: window.open,
+      });
+
+      // Days before the first day SolaX recorded production count as zero:
+      // on a new install the panels simply were not on yet. Said next to the
+      // numbers, so a dongle that joined late would still be noticed.
+      const firstDataDay = [...pvByDay.entries()]
+        .filter(([, kwh]) => kwh > 0)
+        .map(([day]) => day)
+        .sort()[0];
+      return firstDataDay && window.start < firstDataDay
+        ? {
+            ...balance,
+            note:
+              `Generación contada desde el ${firstDataDay}, primer día con datos de ` +
+              `SolaX; los días anteriores del periodo cuentan como 0 kWh.`,
+          }
+        : balance;
+    }
+
+    const balances: PeriodBalance[] = [];
+    for (const period of periods) {
+      balances.push(await balanceWindow({ ...period, open: false }));
+    }
+    // The open period, up to its latest reading: the only estimate of the
+    // house's consumption until the first bill closes.
+    const open = bank.open;
+    if (open?.lastReadingOn && open.lastReadingOn > open.start) {
+      balances.push(await balanceWindow({ ...open, end: open.lastReadingOn, open: true }));
     }
 
     const trend = summarizeBalances(balances);
@@ -727,13 +770,13 @@ export function registerApiRoutes(app: Hono, deps: AppDeps): Hono {
 
     /**
      * DAC averages the trailing 12 months, so it needs history from BEFORE the
-     * new meter. The recibo's "consumo histórico" supplies it; the new meter's
-     * periods extend it forward.
+     * new meter. The recibo's "consumo histórico" supplies it; the meter's
+     * closed periods extend it forward, each spread over the calendar months
+     * its real dates cover, in proportion to the days in each.
      *
      * Merged by month with the bill winning where both cover the same month:
-     * the history is what CFE actually billed, while a spread bank period is an
-     * even split of a bimonthly figure. Without the de-duplication the month
-     * the meter was swapped would be counted twice.
+     * the history is what CFE actually billed. Without the de-duplication the
+     * month the meter was swapped would be counted twice.
      *
      * Pre-solar history is the same under both bases — with no solar there was
      * nothing to net against.
@@ -742,27 +785,30 @@ export function registerApiRoutes(app: Hono, deps: AppDeps): Hono {
     for (const entry of bimonthlyToMonthly(file.history)) {
       byMonth.set(entry.period, entry.kwh);
     }
-    for (const entry of bimonthlyToMonthly(
-      periods.map((period) => ({
-        period: period.period,
-        kwh: basis === "gross" ? period.importedKwh : period.billedKwh,
-      })),
-    )) {
-      if (!byMonth.has(entry.period)) byMonth.set(entry.period, entry.kwh);
+    for (const period of periods) {
+      const kwh = basis === "gross" ? period.importedKwh : period.billedKwh;
+      for (const entry of spreadOverMonths(period.start, period.end, kwh)) {
+        if (!byMonth.has(entry.period)) byMonth.set(entry.period, entry.kwh);
+      }
     }
     const monthly = [...byMonth.entries()]
       .sort(([a], [b]) => a.localeCompare(b))
       .map(([period, kwh]) => ({ period, kwh }));
 
-    const schedule = CFE_1C.summer;
+    // Each bill priced with the prices printed on it, not today's.
     const savings = periods.map((period) => ({
       period: period.period,
       // What the bill would have been without the array, minus what it was.
-      amount: savingsFromOffset(period.importedKwh, period.billedKwh, schedule),
+      amount: savingsFromOffset(
+        period.importedKwh,
+        period.billedKwh,
+        scheduleForPeriodEnd(CFE_1C.summerVersions, period.end),
+      ),
     }));
 
     return context.json({
       periods,
+      open,
       projection: projectBankDepletion(periods),
       dac: assessDacRisk(monthly, CFE_1C.dacLimitKwhPerMonth, basis),
       savings,
@@ -777,10 +823,10 @@ export function registerApiRoutes(app: Hono, deps: AppDeps): Hono {
       currency: CFE_1C.currency,
       tariff: {
         code: CFE_1C.code,
-        // Savings are priced on the summer schedule, so that schedule's
+        // Savings and projections use the summer prices, so their
         // verification is what decides whether the peso figures are provisional.
-        verified: schedule.verified ?? false,
-        note: schedule.source ?? CFE_1C.provenance.note,
+        verified: latestPrices.verified ?? false,
+        note: latestPrices.source ?? CFE_1C.provenance.note,
       },
     });
   });
@@ -804,8 +850,20 @@ function monthsSpanned(from: string, to: string): string[] {
   return out;
 }
 
-function daysBetween(from: string, to: string): number {
-  return Math.round((Date.parse(to) - Date.parse(from)) / 86_400_000);
+/**
+ * Splits a period's kWh over the calendar months of its days (`start`
+ * exclusive, `end` inclusive), so a 06 AGO – 07 OCT bill weighs on August,
+ * September and October as it really did.
+ */
+function spreadOverMonths(start: string, end: string, kwh: number): { period: string; kwh: number }[] {
+  const days = daysBetween(start, end);
+  if (days <= 0) return [];
+  const perMonth = new Map<string, number>();
+  for (let offset = 1; offset <= days; offset++) {
+    const month = addDays(start, offset).slice(0, 7);
+    perMonth.set(month, (perMonth.get(month) ?? 0) + 1);
+  }
+  return [...perMonth.entries()].map(([period, count]) => ({ period, kwh: (kwh * count) / days }));
 }
 
 /**
@@ -818,6 +876,12 @@ function daysBetween(from: string, to: string): number {
  * names — "Internal error" is useless for all three.
  */
 export function apiErrorHandler(error: Error, context: Context) {
+  // A reading or a period close the stored data cannot accept: the message is
+  // written for the person filling in the form.
+  if (error instanceof ReadingsError) {
+    return context.json({ error: error.message }, 400);
+  }
+
   if (error instanceof RateLimitExceededError) {
     return context.json(
       { error: error.message, scope: error.scope, retryAfterMs: error.retryAfterMs },

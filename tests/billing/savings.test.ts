@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { CFE_1C } from "@core/billing/data/cfe-1c";
+import { CFE_1C, SUMMER_JUN_AGO_26 } from "@core/billing/data/cfe-1c";
 import {
   MIN_BILLABLE_KWH_PER_BIMESTER,
   projectBill,
@@ -8,7 +8,7 @@ import {
 
 describe("CFE minimum charge", () => {
   it("never projects a zero bill, even when solar covers everything", () => {
-    const bill = projectBill(1663, 2500, CFE_1C.summer);
+    const bill = projectBill(1663, 2500, SUMMER_JUN_AGO_26);
     // 50 kWh at básico 1.010 = $50.50, plus 16% IVA.
     expect(bill.withSolar).toBeCloseTo(50 * 1.01 * 1.16, 2);
     expect(bill.withSolar).toBeGreaterThan(0);

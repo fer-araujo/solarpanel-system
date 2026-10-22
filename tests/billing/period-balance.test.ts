@@ -143,6 +143,27 @@ describe("summarizeBalances", () => {
     expect(trend.averageSelfSufficiency).toBeCloseTo(57.1, 1);
   });
 
+  it("uses the open period only until one has closed, and never counts it as confidence", () => {
+    const running = balancePeriod({
+      period: "oct–dic 26",
+      pvGeneratedKwh: 300,
+      importedKwh: 100,
+      exportedKwh: 150,
+      days: 10,
+      open: true,
+    });
+
+    const alone = summarizeBalances([running]);
+    expect(alone.usablePeriods).toBe(0);
+    expect(alone.confidence).toBe("provisional");
+    expect(alone.averageDailyLoadKwh).toBe(25);
+
+    // Once closed periods exist, the averages and the confidence are theirs.
+    const withClosed = summarizeBalances([...periods, running]);
+    expect(withClosed.usablePeriods).toBe(3);
+    expect(withClosed.averageSelfSufficiency).toBe(summarizeBalances(periods).averageSelfSufficiency);
+  });
+
   it("returns nulls rather than guesses with nothing usable", () => {
     const trend = summarizeBalances([]);
     expect(trend.averageSelfSufficiency).toBeNull();

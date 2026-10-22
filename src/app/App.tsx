@@ -194,13 +194,9 @@ export function App() {
   const billingQuery = useBillingSummary();
   const health = useHealth(tab === "sistema").data;
   const readingsFile = useReadings().data;
-  // Most recent dated reading, shown on the grid node of the flow diagram.
-  const lastReading = useMemo(() => {
-    const dated = (readingsFile?.readings ?? []).filter(
-      (r): r is typeof r & { takenOn: string } => typeof r.takenOn === "string",
-    );
-    return dated.sort((a, b) => b.takenOn.localeCompare(a.takenOn))[0] ?? null;
-  }, [readingsFile]);
+  // Most recent reading (the server keeps them by date), shown on the grid
+  // node of the flow diagram.
+  const lastReading = readingsFile?.readings.at(-1) ?? null;
 
   const topology = topologyQuery.data;
   const snapshot = snapshotQuery.data;

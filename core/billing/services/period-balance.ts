@@ -33,6 +33,8 @@ export interface PeriodBalanceInput {
   exportedKwh: number;
   /** Days the period spans, when the reading dates are known. */
   days?: number;
+  /** True for the open period, balanced only up to its latest reading. */
+  open?: boolean;
 }
 
 export interface PeriodBalance {
@@ -58,6 +60,8 @@ export interface PeriodBalance {
   /** Context that does not invalidate the numbers, shown next to them. */
   note: string | null;
   days: number | null;
+  /** Running figures of the open period, not a settled one. */
+  open: boolean;
 }
 
 function round(value: number, places = 2): number {
@@ -107,12 +111,13 @@ export function balancePeriod(input: PeriodBalanceInput): PeriodBalance {
     inconsistency,
     note: null,
     days: input.days ?? null,
+    open: input.open ?? false,
   };
 }
 
 export interface BalanceTrend {
   periods: PeriodBalance[];
-  /** Periods that closed consistently, and so contribute to the averages. */
+  /** CLOSED periods that balanced consistently. */
   usablePeriods: number;
   averageSelfSufficiency: number | null;
   averageSelfConsumption: number | null;
@@ -124,13 +129,16 @@ export interface BalanceTrend {
   averageDailyLoadKwh: number | null;
   /**
    * How much to trust it. One period is a guess, several is a pattern, and the
-   * caller should say which.
+   * caller should say which. Counts closed periods only: the open period's
+   * running figures feed the averages until something better exists, but
+   * cover an arbitrary stretch of days.
    */
   confidence: "none" | "provisional" | "fair" | "good";
 }
 
 /**
- * Aggregates the closed periods.
+ * Aggregates the closed periods — or, until one has closed, the open period's
+ * running balance, which is better than no estimate at all.
  *
  * Averages are weighted by energy rather than by period, so a long or sunny
  * bimester counts for what it actually contributed instead of being one vote
@@ -141,7 +149,9 @@ export function summarizeBalances(
   options: { daysPerPeriod?: number } = {},
 ): BalanceTrend {
   const { daysPerPeriod = 61 } = options;
-  const usable = balances.filter((balance) => balance.consistent);
+  const consistent = balances.filter((balance) => balance.consistent);
+  const closed = consistent.filter((balance) => !balance.open);
+  const usable = closed.length > 0 ? closed : consistent;
 
   if (usable.length === 0) {
     return {
@@ -165,11 +175,11 @@ export function summarizeBalances(
   );
 
   const confidence =
-    usable.length >= 6 ? "good" : usable.length >= 3 ? "fair" : "provisional";
+    closed.length >= 6 ? "good" : closed.length >= 3 ? "fair" : "provisional";
 
   return {
     periods: [...balances],
-    usablePeriods: usable.length,
+    usablePeriods: closed.length,
     averageSelfSufficiency:
       totals.load > 0
         ? round(Math.min(100, ((totals.load - totals.imported) / totals.load) * 100), 1)

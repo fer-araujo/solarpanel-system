@@ -14,7 +14,7 @@ import { RowsSkeleton, StatSkeleton } from "@/ui/primitives/Skeleton";
 
 const CONFIDENCE_LABEL: Record<string, string> = {
   none: "esperando datos",
-  provisional: "provisional · 1 bimestre",
+  provisional: "provisional · 1–2 bimestres",
   fair: "razonable · 3+ bimestres",
   good: "sólido · 6+ bimestres",
 };
@@ -40,7 +40,9 @@ function BalanceSummary({
           Balance real del periodo
         </p>
         <span className="text-[11px] text-ink-faint">
-          {CONFIDENCE_LABEL[balance.confidence] ?? balance.confidence}
+          {balance.confidence === "provisional" && balance.usablePeriods === 0
+            ? "provisional · periodo en curso"
+            : (CONFIDENCE_LABEL[balance.confidence] ?? balance.confidence)}
         </span>
       </div>
 
@@ -75,7 +77,8 @@ function BalanceSummary({
         <div className="mt-3 rounded-lg border border-line/50 bg-void/40 px-3 py-2.5">
           <p className="text-[11.5px] text-ink-faint">
             {latest.period}
-            {latest.days !== null && ` · ${latest.days} días hasta tu última lectura`}
+            {latest.days !== null &&
+              (latest.open ? ` · en curso, ${latest.days} días hasta tu última lectura` : ` · ${latest.days} días`)}
           </p>
           <dl className="tnum mt-2 grid grid-cols-2 gap-x-4 gap-y-2.5 text-center text-[12.5px] sm:grid-cols-4 sm:gap-y-1.5 sm:text-left">
             <div>
@@ -116,6 +119,28 @@ function BalanceSummary({
         </p>
       )}
     </div>
+  );
+}
+
+/**
+ * The period still running. Nothing is settled until the cut date, so these
+ * are progress figures — what CFE would bill if the period closed today.
+ */
+function OpenPeriodRow({ open }: { open: NonNullable<BillingSummaryResponse["open"]> }) {
+  return (
+    <tr className="border-b border-line/30 text-ink-faint">
+      <td className="py-2">
+        {open.label} <span className="text-[11px]">· abierto</span>
+      </td>
+      <td className="py-2 text-right">{open.importedKwh.toFixed(0)}</td>
+      <td className="py-2 text-right">{open.exportedKwh.toFixed(0)}</td>
+      <td className="py-2 text-right">
+        {open.netKwh > 0 ? "+" : ""}
+        {open.netKwh.toFixed(0)}
+      </td>
+      <td className="py-2 text-right">—</td>
+      <td className="py-2 text-right">{open.billedSoFarKwh.toFixed(0)}</td>
+    </tr>
   );
 }
 
@@ -197,7 +222,7 @@ export function BolsaPanel({
     );
   }
 
-  if (data.periods.length === 0) {
+  if (data.periods.length === 0 && !data.open) {
     return (
       <Card title="Bolsa energética CFE" hint="Se alimenta de tus lecturas del recibo">
         <p className="py-6 text-center text-[13px] leading-relaxed text-ink-faint">
@@ -211,6 +236,7 @@ export function BolsaPanel({
   }
 
   const last = data.periods[data.periods.length - 1];
+  const open = data.open;
   const projection = data.projection;
   /** No credit and something being billed: this is a warning, not a balance. */
   const empty = (last?.bankKwh ?? 0) <= 0 && (last?.billedKwh ?? 0) > 0;
@@ -226,7 +252,7 @@ export function BolsaPanel({
   return (
     <Card
       title="Bolsa energética CFE"
-      hint={`Tarifa ${data.tariff.code} · lecturas bimestrales del medidor`}
+      hint={`Tarifa ${data.tariff.code} · periodos por fecha de corte del recibo`}
     >
       <div className="grid grid-cols-1 gap-5 lg:grid-cols-[minmax(0,280px)_minmax(0,1fr)]">
         <div className="space-y-4">
@@ -240,16 +266,34 @@ export function BolsaPanel({
                   empty ? "text-alert" : "text-solar"
                 }`}
               >
-                {last?.bankKwh.toFixed(0) ?? "0"}
+                {(last?.bankKwh ?? open?.bankKwh ?? 0).toFixed(0)}
               </span>
               <span className="text-[13px] text-ink-dim">kWh</span>
             </p>
             <p className="mt-1.5 text-[12px] text-ink-faint">
-              al cierre de {last?.period}
+              {last ? `al cierre de ${last.label}` : "ningún periodo cerrado todavía"}
             </p>
           </div>
 
-          {empty ? (
+          {open && (
+            <div className="rounded-lg border border-line/60 bg-void/40 px-3.5 py-3">
+              <p className="text-[12.5px] leading-relaxed text-ink-dim">
+                Periodo <span className="text-ink">{open.label}</span> en curso
+                {open.lastReadingOn ? `, hasta tu lectura del ${open.lastReadingOn}` : ", sin lecturas aún"}:{" "}
+                {open.billedSoFarKwh > 0 ? (
+                  <>
+                    si cerrara hoy CFE cobraría{" "}
+                    <span className="tnum text-grid">{open.billedSoFarKwh.toFixed(0)} kWh</span>
+                  </>
+                ) : (
+                  <>neto <span className="tnum text-solar">{open.netKwh.toFixed(0)} kWh</span>, sin cobro por ahora</>
+                )}
+                . Corte esperado alrededor del <span className="tnum">{open.expectedEnd}</span>.
+              </p>
+            </div>
+          )}
+
+          {!last ? null : empty ? (
             // Already empty: a "runs out on…" projection is meaningless here.
             <div className="rounded-lg border border-alert/30 bg-alert/5 px-3.5 py-3">
               <p className="text-[12.5px] leading-relaxed text-ink-dim">
@@ -319,8 +363,8 @@ export function BolsaPanel({
               </thead>
               <tbody className="tnum">
                 {data.periods.map((period) => (
-                  <tr key={period.period} className="border-b border-line/30">
-                    <td className="py-2 text-ink-dim">{period.period}</td>
+                  <tr key={period.end} className="border-b border-line/30">
+                    <td className="py-2 text-ink-dim">{period.label}</td>
                     <td className="py-2 text-right text-ink-dim">
                       {period.importedKwh.toFixed(0)}
                     </td>
@@ -347,6 +391,7 @@ export function BolsaPanel({
                     </td>
                   </tr>
                 ))}
+                {open && <OpenPeriodRow open={open} />}
               </tbody>
             </table>
           </div>

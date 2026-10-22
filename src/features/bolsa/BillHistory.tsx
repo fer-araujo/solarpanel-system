@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { scaleLinear } from "d3-scale";
 import { CFE_1C } from "@core/billing/data/cfe-1c";
+import { monthsBetween } from "@core/billing/model/meter-reading";
 import {
   DAYS_PER_BIMESTER,
   expectedBimonthlySolarKwh,
@@ -34,6 +35,18 @@ function addMonths(period: string, months: number): string {
   const [y, m] = period.split("-").map(Number) as [number, number];
   const z = y * 12 + (m - 1) + months;
   return `${Math.floor(z / 12)}-${String((z % 12) + 1).padStart(2, "0")}`;
+}
+
+/**
+ * The bill from about a year before `month`. Bills are labelled by their cut
+ * month, and cut dates drift by a few days, so the closest bill within a month
+ * either side counts.
+ */
+function sameBimesterLastYear<T extends { period: string }>(history: T[], month: string): T | undefined {
+  const target = addMonths(month, -12);
+  return history
+    .filter((bill) => Math.abs(monthsBetween(target, bill.period)) <= 1)
+    .sort((a, b) => Math.abs(monthsBetween(target, a.period)) - Math.abs(monthsBetween(target, b.period)))[0];
 }
 
 function Stat({ title, value, tone, note }: { title: string; value: string; tone: string; note?: string }) {
@@ -76,22 +89,24 @@ export function BillHistory() {
   const perKwh = solarBimester === null ? null : valuePerSolarKwh(avgGross, solarBimester, CFE_1C.summer);
   const savedSoFar = perKwh !== null && plant?.totalYield != null ? plant.totalYield * perKwh : null;
 
-  // Same bimester one year earlier: the seasonal baseline.
+  // The period being billed next: the open one, cut around its expected date.
+  const open = billing?.open ?? null;
   const lastPeriod = history[history.length - 1]?.period ?? "";
-  const nextPeriod = addMonths(lastPeriod, 2);
-  const baseline = history.find((b) => b.period === addMonths(nextPeriod, -12));
+  const nextPeriod = open ? open.expectedEnd.slice(0, 7) : addMonths(lastPeriod, 2);
+  // Same bimester one year earlier: the seasonal baseline.
+  const baseline = sameBimesterLastYear(history, nextPeriod);
   const typical =
     baseline && solarBimester !== null ? projectBill(baseline.kwh, solarBimester, CFE_1C.summer) : null;
 
-  // The bill actually coming: what the meter already owes, plus the days left.
-  // Bills close on the 6th (per the recibo: 08 JUN – 06 AGO).
-  const billedSoFar = billing?.periods.at(-1)?.billedKwh ?? null;
-  const lastReadingDay = readings?.readings.at(-1)?.takenOn ?? null;
+  // The bill actually coming: the open period's running net (less the credit
+  // the bolsa can still cover), plus the days left to its expected cut date.
+  // A surplus so far stays negative, so it offsets the days still to come.
+  const firstPeriod = (billing?.periods.length ?? 0) === 0;
   const next =
-    billedSoFar !== null && lastReadingDay && baseline && solarBimester !== null
+    open && baseline && solarBimester !== null
       ? projectNextBill({
-          billedSoFarKwh: billedSoFar,
-          remainingDays: Math.round((Date.parse(`${nextPeriod}-06`) - Date.parse(lastReadingDay)) / 86_400_000),
+          billedSoFarKwh: -open.netKwh - open.bankKwh,
+          remainingDays: open.remainingDays,
           grossDailyKwh: baseline.kwh / DAYS_PER_BIMESTER,
           solarDailyKwh: solarBimester / DAYS_PER_BIMESTER,
           schedule: CFE_1C.summer,
@@ -126,10 +141,11 @@ export function BillHistory() {
             note={`vs los ${money.format(paid12)} que pagaste`} />
           {next && (
             <div>
-              <p className="text-[11px] tracking-[0.07em] text-ink-faint uppercase">Próximo recibo · {label(nextPeriod)}</p>
+              <p className="text-[11px] tracking-[0.07em] text-ink-faint uppercase">Próximo recibo · {open?.label}</p>
               <p className="tnum mt-1.5 text-[18px] font-medium text-alert">~{money.format(next.amount)}</p>
               <p className="mt-0.5 text-[11.5px] text-ink-faint">
-                {next.kwh.toFixed(0)} kWh · casi todo es el arrastre · sin incluir la instalación del medidor
+                {next.kwh.toFixed(0)} kWh · {open?.remainingDays ?? 0} días por delante
+                {firstPeriod && (readings?.carryoverKwh ?? 0) > 0 ? " · incluye el arrastre del medidor anterior" : ""}
               </p>
             </div>
           )}

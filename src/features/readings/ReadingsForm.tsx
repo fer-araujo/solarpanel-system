@@ -1,6 +1,11 @@
 import { useState } from "react";
-import type { MeterReading } from "@core/billing/model/meter-reading";
 import {
+  periodLabel,
+  type BillingPeriod,
+  type MeterReading,
+} from "@core/billing/model/meter-reading";
+import {
+  useClosePeriod,
   useDeleteReading,
   useReadings,
   useSaveMeter,
@@ -13,9 +18,11 @@ import { Spinner } from "@/ui/primitives/Skeleton";
  * Capture for the CFE meter — the one data source the SolaX API cannot supply
  * on a plant with no meter or CT.
  *
- * Each reading carries the exact DAY it was taken, because the energy balance
- * sums daily PV between consecutive readings; a month label alone lined up
- * weeks of meter against whatever days SolaX happened to have.
+ * Readings are keyed by the DAY they were taken, and there can be as many per
+ * billing period as anyone cares to take: they show how the open period is
+ * going. Only the reading on the cut date settles a period, and that happens
+ * explicitly, with the recibo in hand ("Cerrar periodo con recibo"), because
+ * the cut date is CFE's, not the calendar's.
  *
  * Values are CUMULATIVE registers, so a late entry loses nothing.
  */
@@ -26,7 +33,14 @@ interface Draft {
   exportRegister: string;
 }
 
+interface CloseDraft {
+  end: string;
+  kwh: string;
+  totalMxn: string;
+}
+
 const EMPTY: Draft = { takenOn: "", importRegister: "", exportRegister: "" };
+const EMPTY_CLOSE: CloseDraft = { end: "", kwh: "", totalMxn: "" };
 const today = () => new Date().toISOString().slice(0, 10);
 
 const inputClass =
@@ -34,18 +48,44 @@ const inputClass =
 const labelClass =
   "block text-[11px] font-medium tracking-[0.07em] text-ink-faint uppercase";
 
+/**
+ * Readings grouped under the period they belong to, newest period first. A
+ * cut-date reading belongs to the period it closes; the first period also owns
+ * a reading taken on its start day.
+ */
+function groupByPeriod(periods: BillingPeriod[], readings: MeterReading[]) {
+  return periods
+    .map((period, index) => ({
+      period,
+      readings: readings
+        .filter(
+          (r) =>
+            (index === 0 ? r.takenOn >= period.start : r.takenOn > period.start) &&
+            (period.end === null || r.takenOn <= period.end),
+        )
+        .reverse(),
+    }))
+    .reverse();
+}
+
 export function ReadingsForm() {
   const { data: file } = useReadings();
   const saveReading = useSaveReading();
   const deleteReading = useDeleteReading();
+  const closePeriod = useClosePeriod();
   const saveMeter = useSaveMeter();
 
   const [draft, setDraft] = useState<Draft>(EMPTY);
   const [error, setError] = useState<string | null>(null);
+  const [closeDraft, setCloseDraft] = useState<CloseDraft>(EMPTY_CLOSE);
+  const [closeError, setCloseError] = useState<string | null>(null);
   const [installed, setInstalled] = useState<string | null>(null);
   const [carryover, setCarryover] = useState<string | null>(null);
 
   const readings = file?.readings ?? [];
+  const periods = file?.periods ?? [];
+  const open = periods.at(-1)?.end === null ? periods.at(-1) : undefined;
+  const cutDates = new Set(periods.map((p) => p.end).filter((end): end is string => end !== null));
 
   function validate(): MeterReading | string {
     if (!/^\d{4}-\d{2}-\d{2}$/.test(draft.takenOn)) return "Elige el día en que leíste el medidor.";
@@ -54,13 +94,16 @@ export function ReadingsForm() {
     if (!draft.importRegister.trim() || !(importRegister >= 0)) return "Consumo debe ser ≥ 0.";
     if (!draft.exportRegister.trim() || !(exportRegister >= 0)) return "Retorno debe ser ≥ 0.";
 
-    const earlier = readings
-      .filter((r) => (r.takenOn ?? r.period) < draft.takenOn)
-      .at(-1);
+    // Cumulative registers: the new value must sit between both neighbours.
+    const earlier = readings.filter((r) => r.takenOn < draft.takenOn).at(-1);
     if (earlier && (importRegister < earlier.importRegister || exportRegister < earlier.exportRegister)) {
-      return `Las lecturas son acumuladas y no pueden bajar respecto a ${earlier.takenOn ?? earlier.period}.`;
+      return `Las lecturas son acumuladas y no pueden bajar respecto al ${earlier.takenOn}.`;
     }
-    return { period: draft.takenOn.slice(0, 7), importRegister, exportRegister, takenOn: draft.takenOn };
+    const later = readings.find((r) => r.takenOn > draft.takenOn);
+    if (later && (importRegister > later.importRegister || exportRegister > later.exportRegister)) {
+      return `Las lecturas son acumuladas y no pueden superar las del ${later.takenOn}.`;
+    }
+    return { takenOn: draft.takenOn, importRegister, exportRegister };
   }
 
   function onSubmit(event: React.FormEvent) {
@@ -74,8 +117,31 @@ export function ReadingsForm() {
     });
   }
 
+  function onClose(event: React.FormEvent) {
+    event.preventDefault();
+    if (!open) return;
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(closeDraft.end)) return setCloseError("Elige la fecha de corte del recibo.");
+    if (closeDraft.end <= open.start) {
+      return setCloseError(`La fecha de corte debe ser posterior al ${open.start}.`);
+    }
+    if (!readings.some((r) => r.takenOn === closeDraft.end)) {
+      return setCloseError(
+        `Primero guarda la lectura del ${closeDraft.end} (los registros que trae el recibo).`,
+      );
+    }
+    const kwh = Number(closeDraft.kwh);
+    const totalMxn = Number(closeDraft.totalMxn);
+    if (!closeDraft.kwh.trim() || !(kwh >= 0)) return setCloseError("kWh facturados debe ser ≥ 0.");
+    if (!closeDraft.totalMxn.trim() || !(totalMxn >= 0)) return setCloseError("El total debe ser ≥ 0.");
+    setCloseError(null);
+    closePeriod.mutate(
+      { end: closeDraft.end, bill: { kwh, totalMxn } },
+      { onSuccess: () => setCloseDraft(EMPTY_CLOSE), onError: (e) => setCloseError(e.message) },
+    );
+  }
+
   return (
-    <Card title="Lecturas del medidor CFE" hint="Cuando llegue el recibo o cuando quieras · el orden no importa">
+    <Card title="Lecturas del medidor CFE" hint="Las que quieras por periodo · el orden no importa">
       <form onSubmit={onSubmit} className="space-y-3">
         <div className="grid items-end gap-3 sm:grid-cols-[minmax(0,170px)_minmax(0,1fr)_minmax(0,1fr)_auto]">
           <div>
@@ -116,28 +182,87 @@ export function ReadingsForm() {
               <th />
             </tr>
           </thead>
-          <tbody>
-            {readings.map((r) => (
-              <tr key={r.period} className="border-t border-line/30">
-                <td className={`py-2 ${r.takenOn ? "text-ink-dim" : "text-grid"}`}>
-                  {r.takenOn ?? `${r.period} · sin día`}
-                </td>
-                <td className="py-2 text-right text-ink">{r.importRegister}</td>
-                <td className="py-2 text-right text-ink">{r.exportRegister}</td>
-                <td className="py-2 text-right">
-                  <button type="button" className="mr-3 text-[12px] text-ink-dim hover:text-ink"
-                    onClick={() => setDraft({ takenOn: r.takenOn ?? "", importRegister: String(r.importRegister), exportRegister: String(r.exportRegister) })}>
-                    Editar
-                  </button>
-                  <button type="button" className="text-[12px] text-ink-faint hover:text-alert"
-                    onClick={() => deleteReading.mutate(r.period)}>
-                    Borrar
-                  </button>
-                </td>
+          {groupByPeriod(periods, readings).map(({ period, readings: rows }) => (
+            <tbody key={period.start}>
+              <tr className="border-t border-line/50">
+                <th colSpan={4} className="pt-3 pb-1 text-left text-[11px] font-medium tracking-[0.07em] text-ink-faint uppercase">
+                  {periodLabel(period)} · {period.end === null ? "abierto" : `corte ${period.end}`}
+                  {period.bill && ` · ${period.bill.kwh} kWh facturados`}
+                </th>
               </tr>
-            ))}
-          </tbody>
+              {rows.length === 0 && (
+                <tr>
+                  <td colSpan={4} className="py-2 text-ink-faint">Sin lecturas en este periodo.</td>
+                </tr>
+              )}
+              {rows.map((r) => {
+                const isCut = cutDates.has(r.takenOn);
+                return (
+                  <tr key={r.takenOn} className="border-t border-line/30">
+                    <td className="py-2 text-ink-dim">
+                      {r.takenOn}
+                      {isCut && <span className="ml-2 text-[11px] text-solar">corte</span>}
+                    </td>
+                    <td className="py-2 text-right text-ink">{r.importRegister}</td>
+                    <td className="py-2 text-right text-ink">{r.exportRegister}</td>
+                    <td className="py-2 text-right">
+                      <button type="button" className="mr-3 text-[12px] text-ink-dim hover:text-ink"
+                        onClick={() => setDraft({ takenOn: r.takenOn, importRegister: String(r.importRegister), exportRegister: String(r.exportRegister) })}>
+                        Editar
+                      </button>
+                      <button type="button" disabled={isCut}
+                        title={isCut ? "Cierra un periodo facturado" : undefined}
+                        className="text-[12px] text-ink-faint hover:text-alert disabled:opacity-30 disabled:hover:text-ink-faint"
+                        onClick={() => deleteReading.mutate(r.takenOn)}>
+                        Borrar
+                      </button>
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          ))}
         </table>
+      )}
+      {deleteReading.isError && (
+        <p role="alert" className="mt-2 text-[12.5px] text-alert">{deleteReading.error.message}</p>
+      )}
+
+      {open && (
+        <form onSubmit={onClose} className="mt-4 space-y-3 border-t border-line/50 pt-4">
+          <p className="text-[12.5px] text-ink-dim">
+            Cerrar periodo con recibo <span className="text-ink-faint">· {periodLabel(open)}, desde el {open.start}</span>
+          </p>
+          <div className="grid items-end gap-3 sm:grid-cols-[minmax(0,170px)_minmax(0,1fr)_minmax(0,1fr)_auto]">
+            <div>
+              <label htmlFor="c-end" className={labelClass}>Fecha de corte</label>
+              <input id="c-end" type="date" min={open.start} max={today()} value={closeDraft.end}
+                onChange={(e) => setCloseDraft((d) => ({ ...d, end: e.target.value }))} className={inputClass} />
+            </div>
+            <div>
+              <label htmlFor="c-kwh" className={labelClass}>kWh facturados</label>
+              <input id="c-kwh" type="number" min="0" step="1" inputMode="decimal" value={closeDraft.kwh}
+                onChange={(e) => setCloseDraft((d) => ({ ...d, kwh: e.target.value }))} className={inputClass} />
+            </div>
+            <div>
+              <label htmlFor="c-total" className={labelClass}>Total a pagar ($)</label>
+              <input id="c-total" type="number" min="0" step="0.01" inputMode="decimal" value={closeDraft.totalMxn}
+                onChange={(e) => setCloseDraft((d) => ({ ...d, totalMxn: e.target.value }))} className={inputClass} />
+            </div>
+            <div>
+              <button type="submit" disabled={closePeriod.isPending}
+                className="inline-flex w-full items-center justify-center gap-2 rounded-lg border border-line px-4 py-2 text-[13px] text-ink-dim hover:text-ink disabled:opacity-50 sm:w-auto">
+                {closePeriod.isPending && <Spinner />}
+                Cerrar periodo
+              </button>
+            </div>
+          </div>
+          {closeError && <p role="alert" className="text-[12.5px] text-alert">{closeError}</p>}
+          <p className="text-[12px] text-ink-faint">
+            Usa la lectura del día de corte que trae el recibo. Al cerrar, el siguiente periodo empieza
+            ese mismo día y el recibo se suma al historial.
+          </p>
+        </form>
       )}
 
       <div className="mt-4 grid items-end gap-3 border-t border-line/50 pt-4 sm:grid-cols-[minmax(0,200px)_minmax(0,200px)_auto]">

@@ -1,9 +1,15 @@
 import { describe, expect, it } from "vitest";
-import { CFE_1C } from "@core/billing/data/cfe-1c";
+import {
+  CFE_1C,
+  SUMMER_AGO_OCT_26,
+  SUMMER_JUN_AGO_26,
+} from "@core/billing/data/cfe-1c";
 import {
   assertScheduleWellFormed,
+  scheduleForPeriodEnd,
   type TariffSchedule,
 } from "@core/billing/model/tariff";
+import { priceBill } from "@core/billing/services/savings";
 import {
   breakdownByBlock,
   marginalPricePerKwh,
@@ -124,7 +130,7 @@ describe("CFE_1C schedules", () => {
   });
 
   it("prices DAC above even the subsidised excedente", () => {
-    // The real 1C excedente is 4.016, so DAC is not "double" it — but every
+    // The real 1C excedente is ~4 pesos, so DAC is not "double" it — but every
     // kWh still costs more, and the lower blocks disappear entirely.
     const subsidised = marginalPricePerKwh(1000, CFE_1C.summer);
     const dac = marginalPricePerKwh(1000, CFE_1C.dac);
@@ -132,8 +138,30 @@ describe("CFE_1C schedules", () => {
   });
 
   it("has verified summer blocks and says so", () => {
-    expect(CFE_1C.summer.verified).toBe(true);
+    for (const version of CFE_1C.summerVersions) expect(version.verified).toBe(true);
     expect(CFE_1C.nonSummer.verified).toBe(false);
+  });
+
+  it("estimates the future with the latest prices", () => {
+    expect(CFE_1C.summer).toBe(SUMMER_AGO_OCT_26);
+  });
+});
+
+describe("dated tariff versions", () => {
+  const versions = CFE_1C.summerVersions;
+
+  it("prices a period with the version in force when it was cut", () => {
+    // The JUN–AGO bill was cut on 06 AGO, the day the next prices start.
+    expect(scheduleForPeriodEnd(versions, "2026-08-06")).toBe(SUMMER_JUN_AGO_26);
+    expect(scheduleForPeriodEnd(versions, "2026-10-07")).toBe(SUMMER_AGO_OCT_26);
+  });
+
+  it("uses the latest version for a period cut after every known one", () => {
+    expect(scheduleForPeriodEnd(versions, "2027-02-05")).toBe(SUMMER_AGO_OCT_26);
+  });
+
+  it("falls back to the oldest version before any is known", () => {
+    expect(scheduleForPeriodEnd(versions, "2026-01-01")).toBe(SUMMER_JUN_AGO_26);
   });
 });
 
@@ -141,12 +169,12 @@ describe("reproduces the real bill, period 08 JUN 26 – 06 AGO 26", () => {
   // 2,188 kWh on tariff 1C. The recibo itemises it as below and totals the
   // energy at $6,278.41 before IVA. If this drifts, the tariff table is wrong.
   it("splits 2,188 kWh into the same blocks as the recibo", () => {
-    const rows = breakdownByBlock(2188, CFE_1C.summer);
+    const rows = breakdownByBlock(2188, SUMMER_JUN_AGO_26);
     expect(rows.map((row) => row.kwh)).toEqual([300, 300, 300, 1288]);
   });
 
   it("prices each block as printed", () => {
-    const rows = breakdownByBlock(2188, CFE_1C.summer);
+    const rows = breakdownByBlock(2188, SUMMER_JUN_AGO_26);
     expect(rows[0]?.cost).toBeCloseTo(303.0, 2);
     expect(rows[1]?.cost).toBeCloseTo(351.3, 2);
     expect(rows[2]?.cost).toBeCloseTo(451.5, 2);
@@ -154,13 +182,30 @@ describe("reproduces the real bill, period 08 JUN 26 – 06 AGO 26", () => {
   });
 
   it("matches the energy subtotal to the centavo", () => {
-    expect(priceEnergy(2188, CFE_1C.summer)).toBeCloseTo(6278.41, 1);
+    expect(priceEnergy(2188, SUMMER_JUN_AGO_26)).toBeCloseTo(6278.41, 1);
   });
 
   it("values each displaced kWh at the excedente while above 900 kWh", () => {
-    expect(marginalPricePerKwh(2188, CFE_1C.summer)).toBe(4.016);
+    expect(marginalPricePerKwh(2188, SUMMER_JUN_AGO_26)).toBe(4.016);
     // One fewer kWh saves exactly the excedente price.
-    expect(savingsFromOffset(2188, 2187, CFE_1C.summer)).toBeCloseTo(4.016, 3);
+    expect(savingsFromOffset(2188, 2187, SUMMER_JUN_AGO_26)).toBeCloseTo(4.016, 3);
+  });
+});
+
+describe("reproduces the real bill, period 06 AGO 26 – 07 OCT 26", () => {
+  // 1,792 kWh (1,701 carried over from the old meter + 435 − 344 on the new
+  // one) on the prices printed on that recibo.
+  it("splits 1,792 kWh into the same blocks as the recibo", () => {
+    const rows = breakdownByBlock(1792, SUMMER_AGO_OCT_26);
+    expect(rows.map((row) => row.kwh)).toEqual([300, 300, 300, 892]);
+  });
+
+  it("matches energy, IVA and total to the centavo", () => {
+    expect(priceBill(1792, SUMMER_AGO_OCT_26)).toEqual({
+      energyMxn: 4717.57,
+      ivaMxn: 754.81,
+      totalMxn: 5472.38,
+    });
   });
 });
 

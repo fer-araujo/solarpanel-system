@@ -1,5 +1,7 @@
 // Uploads data/cfe-readings.json to Upstash so the deployed app starts with
 // the bill history. Reads UPSTASH_REDIS_REST_URL/TOKEN from .env or the shell.
+// Uploaded as-is: a version-1 file is migrated to version 2 by the server when
+// it is read (server/billing/readings-store.ts), so either version works.
 //
 //   node scripts/seed-upstash.mjs          # refuses to overwrite existing data
 //   node scripts/seed-upstash.mjs --force  # replaces what is in Upstash

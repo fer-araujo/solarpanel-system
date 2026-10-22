@@ -7,7 +7,7 @@ import {
   useQueryClient,
   type UseQueryResult,
 } from "@tanstack/react-query";
-import type { MeterReading } from "@core/billing/model/meter-reading";
+import type { MeterReading, PeriodBill } from "@core/billing/model/meter-reading";
 import { signOut } from "./auth";
 import { clearPersistedCache, PERSIST_MAX_AGE_MS } from "./persist";
 import {
@@ -288,6 +288,10 @@ export function useSaveReading() {
 
 export function useDeleteReading() {
   return useReadingsMutation<string>(api.deleteReading);
+}
+
+export function useClosePeriod() {
+  return useReadingsMutation<{ end: string; bill: PeriodBill }>(api.closePeriod);
 }
 
 export function useSaveMeter() {

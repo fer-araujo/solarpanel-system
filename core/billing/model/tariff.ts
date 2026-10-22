@@ -38,10 +38,25 @@ export interface TariffSchedule {
   source?: string;
 }
 
+/**
+ * A schedule as printed on one recibo. CFE adjusts prices every period, so a
+ * bill must be priced with the prices in force when it was cut, not today's.
+ */
+export interface TariffVersion extends TariffSchedule {
+  /**
+   * `YYYY-MM-DD`: first day of the billing period whose recibo printed these
+   * prices. They apply to every period cut AFTER this date.
+   */
+  effectiveFrom: string;
+}
+
 export interface Tariff {
   code: string;
   currency: string;
+  /** The latest summer prices: what forward-looking estimates use. */
   summer: TariffSchedule;
+  /** Every captured summer price set, oldest first. */
+  summerVersions: readonly TariffVersion[];
   nonSummer: TariffSchedule;
   /**
    * Trailing 12-month average consumption, in kWh per month, above which CFE
@@ -55,6 +70,21 @@ export interface Tariff {
     note: string;
     verified: boolean;
   };
+}
+
+/**
+ * The prices that applied to a period cut on `end` (`YYYY-MM-DD`): the latest
+ * version that took effect before that date. A cut before every known version
+ * falls back to the oldest, the closest thing on record.
+ */
+export function scheduleForPeriodEnd(
+  versions: readonly TariffVersion[],
+  end: string,
+): TariffVersion {
+  const sorted = [...versions].sort((a, b) => a.effectiveFrom.localeCompare(b.effectiveFrom));
+  const oldest = sorted[0];
+  if (!oldest) throw new Error("No tariff versions to choose from");
+  return sorted.filter((version) => version.effectiveFrom < end).at(-1) ?? oldest;
 }
 
 export function isBlockUnbounded(block: TariffBlock): boolean {
