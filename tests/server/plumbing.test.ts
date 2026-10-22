@@ -13,6 +13,7 @@ import { loadEnv } from "../../server/env";
 import { optional } from "../../server/app";
 import type { KeyValueStore } from "../../server/storage/kv";
 import { SolaxError } from "@core/solax/dto/envelope";
+import { ZodError } from "zod";
 
 /** A controllable clock, so nothing here sleeps. */
 function clock(start = 1_000_000) {
@@ -314,6 +315,36 @@ describe("TtlCache", () => {
       throw new RateLimitExceededError("minute", 30_000);
     });
     expect(result).toMatchObject({ value: "reading", stale: true });
+  });
+
+  it("logs which key went stale and why, without the message", async () => {
+    const time = clock();
+    const cache = new TtlCache({ now: time.now });
+    await cache.fetch("snapshot", 1000, async () => "reading");
+    time.advance(1001);
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => undefined);
+    await cache.fetch("snapshot", 1000, async () => {
+      throw new SolaxError({ code: 10406, message: "secret-ish detail" });
+    });
+    expect(warn).toHaveBeenCalledWith(expect.stringMatching(/"snapshot".*SolaxError 10406/));
+    expect(warn.mock.calls[0]?.[0]).not.toContain("secret-ish");
+    warn.mockRestore();
+  });
+
+  it.each([
+    ["rejected credentials", new SolaxError({ code: 10401, message: "bad" })],
+    ["an endpoint outside the package", new SolaxError({ code: 10403, message: "no access" })],
+    ["a schema change", new ZodError([])],
+  ])("does not hide %s behind stale data", async (_label, failure) => {
+    const time = clock();
+    const cache = new TtlCache({ now: time.now });
+    await cache.fetch("k", 1000, async () => "old");
+    time.advance(1001);
+    await expect(
+      cache.fetch("k", 1000, async () => {
+        throw failure;
+      }),
+    ).rejects.toBe(failure);
   });
 
   it("refreshes an expired Upstash entry when the load succeeds", async () => {

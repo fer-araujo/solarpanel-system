@@ -1,3 +1,5 @@
+import { ZodError } from "zod";
+import { SolaxCode, SolaxError } from "@core/solax/dto/envelope";
 import type { KeyValueStore } from "../storage/kv";
 
 /**
@@ -55,6 +57,32 @@ export interface TtlCacheOptions {
    * data another instance fetched seconds ago.
    */
   l2?: KeyValueStore;
+  /** Which failures may be papered over with old data. Defaults to `isWorthServingStale`. */
+  serveStaleOn?: (error: unknown) => boolean;
+}
+
+/**
+ * True for failures that old data can honestly cover: refusals, timeouts,
+ * outages. False for the ones that need a person — rejected credentials, an
+ * endpoint outside the API package (10401/10402/10403) or a response that no
+ * longer matches the schema. Serving stale data for those would keep the
+ * dashboard quietly showing last week while the real problem never surfaces.
+ */
+export function isWorthServingStale(error: unknown): boolean {
+  if (error instanceof ZodError) return false;
+  if (error instanceof SolaxError) {
+    return !(
+      [SolaxCode.badCredentials, SolaxCode.tokenInvalid, SolaxCode.noInterfaceAccess] as number[]
+    ).includes(error.code);
+  }
+  return true;
+}
+
+/** Error class and SolaX code, for logs: never the message or the request. */
+function describeFailure(error: unknown): string {
+  if (error instanceof SolaxError) return `SolaxError ${error.code}`;
+  if (error instanceof Error) return error.name;
+  return typeof error;
 }
 
 export class TtlCache {
@@ -63,11 +91,13 @@ export class TtlCache {
   private readonly now: () => number;
   private readonly maxEntries: number;
   private readonly l2: KeyValueStore | null;
+  private readonly serveStaleOn: (error: unknown) => boolean;
 
   constructor(options: TtlCacheOptions = {}) {
     this.now = options.now ?? Date.now;
     this.maxEntries = options.maxEntries ?? 200;
     this.l2 = options.l2 ?? null;
+    this.serveStaleOn = options.serveStaleOn ?? isWorthServingStale;
   }
 
   /**
@@ -76,7 +106,8 @@ export class TtlCache {
    * When `load` throws — a 10406, a local budget refusal, a timeout — the most
    * recent entry from memory OR Upstash is returned with `stale: true` instead
    * of propagating the error, however old it is. With nothing cached anywhere,
-   * the error propagates.
+   * or a failure `serveStaleOn` rejects (credentials, schema), the error
+   * propagates.
    */
   async fetch<T>(
     key: string,
@@ -110,7 +141,13 @@ export class TtlCache {
       const value = await this.loadOnce(key, ttlMs, load);
       return { value, stale: false, storedAt: this.now() };
     } catch (error) {
-      if (serveStaleOnError && fallback) {
+      if (serveStaleOnError && fallback && this.serveStaleOn(error)) {
+        // Visible in the logs, or a SolaX outage would hide behind old data
+        // for days. Class and code only: messages can carry request details.
+        console.warn(
+          `[cache] serving "${key}" stale (stored ${new Date(fallback.storedAt).toISOString()}) ` +
+            `after ${describeFailure(error)}`,
+        );
         // Kept in memory too, so the next request on this instance does not
         // need an Upstash round trip to find the same fallback.
         if (fallback !== existing) this.remember(key, fallback);

@@ -157,7 +157,10 @@ export class SolaxHttpClient {
       if (error instanceof SolaxError) {
         if (error.isRateLimit) {
           this.rateLimiter.penalise();
-          void this.sharedBudget?.penalise();
+          // Awaited: on serverless the instance may freeze as soon as the
+          // response is sent, and an unsent penalty lets every other instance
+          // walk straight back into the limit.
+          await this.sharedBudget?.penalise();
         }
         if (error.isQuotaExhausted) this.rateLimiter.markQuotaExhausted();
 
