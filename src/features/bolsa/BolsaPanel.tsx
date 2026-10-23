@@ -249,8 +249,12 @@ export function BolsaPanel({
   const last = data.periods[data.periods.length - 1];
   const open = data.open;
   const projection = data.projection;
-  /** No credit and something being billed: this is a warning, not a balance. */
-  const empty = (last?.bankKwh ?? 0) <= 0 && (last?.billedKwh ?? 0) > 0;
+  /**
+   * Warn only about the period still running: no credit left and the meter
+   * currently owes energy. A closed period was already billed (and paid), so
+   * its deficit is history, not something to act on.
+   */
+  const empty = (last?.bankKwh ?? 0) <= 0 && (open?.billedSoFarKwh ?? 0) > 0;
   const currency = data.currency ?? "MXN";
   const money = new Intl.NumberFormat("es-MX", {
     style: "currency",
@@ -308,10 +312,20 @@ export function BolsaPanel({
             // Already empty: a "runs out on…" projection is meaningless here.
             <div className="rounded-lg border border-alert/30 bg-alert/5 px-3.5 py-3">
               <p className="text-[12.5px] leading-relaxed text-ink-dim">
-                <span className="text-alert">Sin crédito en la bolsa.</span> Este periodo CFE
-                te cobra{" "}
-                <span className="tnum text-alert">{last?.billedKwh.toFixed(0)} kWh</span>. La
+                <span className="text-alert">Sin crédito en la bolsa.</span> Si el periodo en
+                curso cerrara hoy, CFE cobraría{" "}
+                <span className="tnum text-alert">{open?.billedSoFarKwh.toFixed(0)} kWh</span>. La
                 bolsa empieza a llenarse cuando tu medidor registre más retorno que consumo.
+              </p>
+            </div>
+          ) : last.bill && (last.bankKwh ?? 0) <= 0 ? (
+            // The last cut was billed and settled: report it, don't alarm.
+            <div className="rounded-lg border border-line/60 bg-void/40 px-3.5 py-3">
+              <p className="text-[12.5px] leading-relaxed text-ink-dim">
+                <span className="text-ink">{last.label}</span> ya facturado:{" "}
+                <span className="tnum">{last.billedKwh.toFixed(0)} kWh</span> ·{" "}
+                <span className="tnum">{money.format(last.bill.totalMxn)}</span>. La bolsa empieza
+                a llenarse al corte en que exportes más de lo que consumes.
               </p>
             </div>
           ) : projection?.depletesAt ? (
